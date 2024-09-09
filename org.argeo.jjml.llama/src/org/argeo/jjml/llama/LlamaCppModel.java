@@ -37,4 +37,8 @@ public class LlamaCppModel {
 		this.localPath = localPath;
 	}
 
+	Long getPointer() {
+		return pointer;
+	}
+
 }
