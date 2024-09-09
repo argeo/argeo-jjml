@@ -45,6 +45,8 @@ set(LLAMA_EXAMPLES ON)
 if(LLAMA_EXAMPLES)
 
 # examples
+#add_subdirectory(llama.cpp/common)
+
 if (NOT TARGET common)
 	# Use installed llama.cpp
 	set(LLAMA_COMMON_STATIC_LIBDIR /usr/lib/llama.cpp/common)
@@ -54,7 +56,7 @@ if (NOT TARGET common)
 	set_target_properties(common PROPERTIES IMPORTED_LOCATION ${LLAMA_COMMON_STATIC_LIBDIR}/libcommon.a)
 endif()
 
-add_subdirectory(examples/simple)
+add_subdirectory(llama.cpp/examples/simple)
 
 endif()
 
