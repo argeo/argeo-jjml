@@ -10,7 +10,11 @@ public class LlamaCppModel {
 
 	native long doInit(String localPathStr);
 
-	native void doDestroy(long pointer);
+	native void doDestroy();
+
+	native int[] doTokenize(String str, boolean addSpecial, boolean parseSpecial);
+
+	native String doDeTokenize(int[] tokens, boolean special);
 
 	public void init() {
 		if (pointer != null)
@@ -21,7 +25,7 @@ public class LlamaCppModel {
 
 	public void destroy() {
 		Objects.requireNonNull(pointer, "Model must be initialized");
-		doDestroy(pointer);
+		doDestroy();
 	}
 
 	public Path getLocalPath() {
@@ -37,7 +41,7 @@ public class LlamaCppModel {
 		this.localPath = localPath;
 	}
 
-	Long getPointer() {
+	final long getPointer() {
 		return pointer;
 	}
 

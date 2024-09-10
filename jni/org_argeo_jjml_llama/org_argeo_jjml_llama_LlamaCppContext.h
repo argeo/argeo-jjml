@@ -10,18 +10,18 @@ extern "C" {
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppContext
  * Method:    doInit
- * Signature: (J)J
+ * Signature: (Lorg/argeo/jjml/llama/LlamaCppModel;)J
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppContext
  * Method:    doDestroy
- * Signature: (J)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

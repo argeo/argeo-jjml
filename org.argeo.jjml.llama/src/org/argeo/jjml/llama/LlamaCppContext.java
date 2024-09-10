@@ -8,18 +8,18 @@ public class LlamaCppContext {
 
 	private Long pointer;
 
-	native long doInit(long modelPointer);
+	native long doInit(LlamaCppModel model);
 
-	native void doDestroy(long pointer);
+	native void doDestroy();
 
 	public void init() {
 		Objects.requireNonNull(model, "Model must be set");
-		pointer = doInit(model.getPointer());
+		pointer = doInit(model);
 	}
 
 	public void destroy() {
 		Objects.requireNonNull(pointer, "Context not initialized");
-		doDestroy(pointer);
+		doDestroy();
 	}
 
 	public LlamaCppModel getModel() {
@@ -28,6 +28,10 @@ public class LlamaCppContext {
 
 	public void setModel(LlamaCppModel model) {
 		this.model = model;
+	}
+
+	long getPointer() {
+		return pointer;
 	}
 
 }

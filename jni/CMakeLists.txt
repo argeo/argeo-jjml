@@ -55,6 +55,13 @@ if (NOT TARGET common)
 endif()
 
 add_subdirectory(llama.cpp/examples/simple)
+target_include_directories(llama-simple PRIVATE ${LLAMA_COMMON_INCLUDE_DIRS})
+
+add_subdirectory(llama.cpp/examples/main)
+target_include_directories(llama-cli PRIVATE ${LLAMA_COMMON_INCLUDE_DIRS})
+
+add_subdirectory(llama.cpp/examples/batched)
+target_include_directories(llama-batched PRIVATE ${LLAMA_COMMON_INCLUDE_DIRS})
 
 endif()
 
