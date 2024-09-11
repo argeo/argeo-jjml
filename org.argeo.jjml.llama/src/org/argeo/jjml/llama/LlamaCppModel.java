@@ -6,15 +6,29 @@ import java.util.Objects;
 public class LlamaCppModel {
 	private Path localPath;
 
+	// implementation
 	private Long pointer = null;
+
+	native int[] doTokenize(String str, boolean addSpecial, boolean parseSpecial);
+
+	native String doDeTokenize(int[] tokens, boolean special);
 
 	native long doInit(String localPathStr);
 
 	native void doDestroy();
 
-	native int[] doTokenize(String str, boolean addSpecial, boolean parseSpecial);
+	public String deTokenize(LlamaCppTokenList tokenList, boolean special) {
+		return doDeTokenize(tokenList.getTokens(), special);
+	}
 
-	native String doDeTokenize(int[] tokens, boolean special);
+	public LlamaCppTokenList tokenize(String str, boolean addSpecial) {
+		return tokenize(str, addSpecial, false);
+	}
+
+	public LlamaCppTokenList tokenize(String str, boolean addSpecial, boolean parseSpecial) {
+		int[] tokens = doTokenize(str, addSpecial, parseSpecial);
+		return new LlamaCppTokenList(this, tokens);
+	}
 
 	public void init() {
 		if (pointer != null)
