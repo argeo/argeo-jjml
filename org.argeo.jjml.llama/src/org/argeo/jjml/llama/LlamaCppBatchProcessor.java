@@ -72,6 +72,11 @@ public class LlamaCppBatchProcessor {
 		modelPathStr = "/srv/ai/models/OLMo-7B-Instruct-Q8_0.gguf";
 		// modelPathStr = "/srv/ai/models/tinyllama-1.1b-chat-v1.0.Q8_0.gguf";
 
+		String systemPrompt = """
+				Short implementation of a cycle detection algorithm in Java:
+				
+				""";
+
 		Path modelPath = Paths.get(modelPathStr);
 
 		LlamaCppBackend backend = new LlamaCppBackend();
@@ -85,7 +90,7 @@ public class LlamaCppBatchProcessor {
 		processor.setModel(model);
 		List<String> sequencePrompts = new ArrayList<>();
 		sequencePrompts.add("");
-		List<CompletionStage<LlamaCppTokenList>> output = processor.processBatch("My name is", sequencePrompts, 512);
+		List<CompletionStage<LlamaCppTokenList>> output = processor.processBatch(systemPrompt, sequencePrompts, 512);
 		for (CompletionStage<LlamaCppTokenList> cd : output) {
 			cd.thenAccept((tl) -> {
 				System.out.println(tl.toString());
