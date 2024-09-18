@@ -260,6 +260,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
 	const char *path_model = env->GetStringUTFChars(localPath, NULL);
 
 	llama_model_params mparams = llama_model_default_params();
+	//mparams.n_gpu_layers = 33;
 
 	llama_model *model = llama_load_model_from_file(path_model, mparams);
 

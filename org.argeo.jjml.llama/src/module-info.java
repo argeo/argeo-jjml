@@ -1,2 +1,3 @@
-module org.argeo.jjml.llamacpp {
+module org.argeo.jjml.llama {
+	exports org.argeo.jjml.llama;
 }

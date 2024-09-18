@@ -3,5 +3,5 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Llamacpp
 Bundle-SymbolicName: org.argeo.jjml.llama
 Bundle-Version: 1.0.0.qualifier
-Automatic-Module-Name: org.argeo.jjml.llamacpp
+Export-Package: org.argeo.jjml.llama
 Bundle-RequiredExecutionEnvironment: JavaSE-17

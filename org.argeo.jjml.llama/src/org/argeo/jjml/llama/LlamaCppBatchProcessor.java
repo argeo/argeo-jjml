@@ -1,7 +1,5 @@
 package org.argeo.jjml.llama;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -56,50 +54,14 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * Static utilities
 	 */
-	static <T> CompletionStage<Object> anyOf(List<CompletionStage<T>> css) {
+	public static <T> CompletionStage<Object> anyOf(List<CompletionStage<T>> css) {
 		return CompletableFuture
 				.anyOf(css.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new));
 	}
 
-	static <T> CompletionStage<Void> allOf(List<CompletionStage<T>> css) {
+	public static <T> CompletionStage<Void> allOf(List<CompletionStage<T>> css) {
 		return CompletableFuture
 				.allOf(css.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new));
-	}
-
-	public static void main(String[] args) {
-		String modelPathStr;
-		// modelPathStr = "/srv/ai/models/Meta-Llama-3.1-8B-Instruct-Q4_0.gguf";
-		modelPathStr = "/srv/ai/models/OLMo-7B-Instruct-Q8_0.gguf";
-		// modelPathStr = "/srv/ai/models/tinyllama-1.1b-chat-v1.0.Q8_0.gguf";
-
-		String systemPrompt = """
-				Short implementation of a cycle detection algorithm in Java:
-				
-				""";
-
-		Path modelPath = Paths.get(modelPathStr);
-
-		LlamaCppBackend backend = new LlamaCppBackend();
-		backend.init();
-
-		LlamaCppModel model = new LlamaCppModel();
-		model.setLocalPath(modelPath);
-		model.init();
-
-		LlamaCppBatchProcessor processor = new LlamaCppBatchProcessor();
-		processor.setModel(model);
-		List<String> sequencePrompts = new ArrayList<>();
-		sequencePrompts.add("");
-		List<CompletionStage<LlamaCppTokenList>> output = processor.processBatch(systemPrompt, sequencePrompts, 512);
-		for (CompletionStage<LlamaCppTokenList> cd : output) {
-			cd.thenAccept((tl) -> {
-				System.out.println(tl.toString());
-			});
-		}
-		allOf(output);
-
-		model.destroy();
-		backend.destroy();
 	}
 
 }

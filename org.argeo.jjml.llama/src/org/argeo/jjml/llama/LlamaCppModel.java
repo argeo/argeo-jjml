@@ -1,5 +1,6 @@
 package org.argeo.jjml.llama;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -34,6 +35,8 @@ public class LlamaCppModel {
 		if (pointer != null)
 			throw new IllegalStateException("Model is already initialized.");
 		Objects.requireNonNull(localPath, "Local path to the model must be set");
+		if (!Files.exists(localPath))
+			throw new IllegalArgumentException("Model file does not exist: " + localPath);
 		pointer = doInit(localPath.toString());
 	}
 
