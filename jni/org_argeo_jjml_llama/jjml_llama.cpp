@@ -58,6 +58,21 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 
 	const llama_model *model = llama_get_model(ctx);
 
+	// sampling
+	auto sparams = llama_sampler_chain_default_params();
+
+	llama_sampler *smpl = llama_sampler_chain_init(sparams);
+
+	const int top_k = 40;
+	const float top_p = 0.9f;
+	const float min_p = 0.9f;
+	const float temp = 0.4f;
+	llama_sampler_chain_add(smpl, llama_sampler_init_top_k(top_k));
+	llama_sampler_chain_add(smpl, llama_sampler_init_top_p(top_p, min_p));
+	llama_sampler_chain_add(smpl, llama_sampler_init_temp(temp));
+	// !! crashes if seed is not set
+	llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+
 	const int n_parallel = env->GetArrayLength(callbacks);
 
 	//std::vector<llama_token> tokens_list;
@@ -155,30 +170,8 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 				continue;
 			}
 
-			auto n_vocab = llama_n_vocab(model);
-			auto *logits = llama_get_logits_ith(ctx, i_batch[i]);
-
-			std::vector<llama_token_data> candidates;
-			candidates.reserve(n_vocab);
-
-			for (llama_token token_id = 0; token_id < n_vocab; token_id++) {
-				candidates.emplace_back(llama_token_data { token_id,
-						logits[token_id], 0.0f });
-			}
-
-			llama_token_data_array candidates_p = { candidates.data(),
-					candidates.size(), false };
-
-			const int top_k = 40;
-			const float top_p = 0.9f;
-			const float temp = 0.4f;
-
-			llama_sample_top_k(ctx, &candidates_p, top_k, 1);
-			llama_sample_top_p(ctx, &candidates_p, top_p, 1);
-			llama_sample_temp(ctx, &candidates_p, temp);
-
-			const llama_token new_token_id = llama_sample_token(ctx,
-					&candidates_p);
+			const llama_token new_token_id = llama_sampler_sample(smpl, ctx,
+					i_batch[i]);
 
 			//const llama_token new_token_id = llama_sample_token_greedy(ctx, &candidates_p);
 

@@ -38,7 +38,7 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 install(TARGETS org_argeo_jjml_llama LIBRARY)
 
-set(LLAMA_EXAMPLES ON)
+set(LLAMA_EXAMPLES On)
 ##
 ## llama.cpp examples (local)
 ##
