@@ -63,5 +63,8 @@ target_include_directories(llama-cli PRIVATE ${LLAMA_COMMON_INCLUDE_DIRS})
 add_subdirectory(llama.cpp/examples/batched)
 target_include_directories(llama-batched PRIVATE ${LLAMA_COMMON_INCLUDE_DIRS})
 
+add_subdirectory(llama.cpp/examples/embedding)
+target_include_directories(llama-embedding PRIVATE ${LLAMA_COMMON_INCLUDE_DIRS})
+
 endif()
 
