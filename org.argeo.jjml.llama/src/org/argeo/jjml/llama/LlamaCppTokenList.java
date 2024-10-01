@@ -30,7 +30,7 @@ public class LlamaCppTokenList {
 
 	@Override
 	public String toString() {
-		return model.doDeTokenize(tokens, false);
+		return model.doDeTokenize(tokens, true);
 	}
 
 }

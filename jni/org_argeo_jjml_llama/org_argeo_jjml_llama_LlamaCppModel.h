@@ -39,6 +39,14 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy
   (JNIEnv *, jobject);
 
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doFormatChatMessages
+ * Signature: ([Ljava/lang/String;[Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMessages
+  (JNIEnv *, jobject, jobjectArray, jobjectArray);
+
 #ifdef __cplusplus
 }
 #endif

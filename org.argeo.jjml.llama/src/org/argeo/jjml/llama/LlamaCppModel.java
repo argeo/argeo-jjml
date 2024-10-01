@@ -2,6 +2,7 @@ package org.argeo.jjml.llama;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 
 public class LlamaCppModel {
@@ -9,6 +10,10 @@ public class LlamaCppModel {
 
 	// implementation
 	private Long pointer = null;
+
+	/*
+	 * NATIVE METHODS
+	 */
 
 	native int[] doTokenize(String str, boolean addSpecial, boolean parseSpecial);
 
@@ -18,6 +23,11 @@ public class LlamaCppModel {
 
 	native void doDestroy();
 
+	native String doFormatChatMessages(String[] roles, String[] contents);
+
+	/*
+	 * USABLE METHODS
+	 */
 	public String deTokenize(LlamaCppTokenList tokenList, boolean special) {
 		return doDeTokenize(tokenList.getTokens(), special);
 	}
@@ -30,6 +40,24 @@ public class LlamaCppModel {
 		int[] tokens = doTokenize(str, addSpecial, parseSpecial);
 		return new LlamaCppTokenList(this, tokens);
 	}
+
+	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
+		String[] roles = new String[messages.size()];
+		String[] contents = new String[messages.size()];
+
+		for (int i = 0; i < messages.size(); i++) {
+			LlamaCppChatMessage message = messages.get(i);
+			roles[i] = message.role();
+			contents[i] = message.content();
+		}
+
+		String res = doFormatChatMessages(roles, contents);
+		return res;
+	}
+
+	/*
+	 * LIFECYCLE
+	 */
 
 	public void init() {
 		if (pointer != null)
@@ -44,6 +72,10 @@ public class LlamaCppModel {
 		Objects.requireNonNull(pointer, "Model must be initialized");
 		doDestroy();
 	}
+
+	/*
+	 * ACESSORS
+	 */
 
 	public Path getLocalPath() {
 		return localPath;

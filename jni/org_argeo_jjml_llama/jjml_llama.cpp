@@ -1,15 +1,15 @@
-#include <iostream>
-#include <vector>
-#include <algorithm>
-
+//#include "jjml_llama_jni.h"
+#include <ggml.h>
 #include <llama.h>
+#include <stddef.h>
+#include <algorithm>
+#include <iostream>
+#include <string>
+#include <vector>
 
-#include "org_argeo_jjml_llama_LlamaCppBatchProcessor.h"
-#include "org_argeo_jjml_llama_LlamaCppContext.h"
-#include "org_argeo_jjml_llama_LlamaCppModel.h"
-#include "org_argeo_jjml_llama_LlamaCppBackend.h"
+#include "jjml_llama_jni.h"
 
-/**
+/*
  * JNI Utilities
  */
 jlong getPointer(JNIEnv *env, jobject obj) {
@@ -27,7 +27,7 @@ void ThrowIllegalStateException(JNIEnv *env, char const *message) {
 }
 
 /*
- * Lllama Utilities
+ * Llama Utilities
  */
 
 void llama_batch_add(struct llama_batch &batch, llama_token id, llama_pos pos,
@@ -46,6 +46,10 @@ void llama_batch_add(struct llama_batch &batch, llama_token id, llama_pos pos,
 void llama_batch_clear(struct llama_batch &batch) {
 	batch.n_tokens = 0;
 }
+
+/*
+ * Chat
+ */
 
 /*
  * Batch processor
@@ -248,12 +252,72 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy(
 /*
  * Llama model
  */
+JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMessages(
+		JNIEnv *env, jobject obj, jobjectArray roles, jobjectArray contents) {
+	llama_model *model = (llama_model*) getPointer(env, obj);
+
+	const jsize messages_size = env->GetArrayLength(roles);
+
+	std::vector<llama_chat_message> chat_messages;
+	int alloc_size = 0;
+	for (int i = 0; i < messages_size; i++) {
+		jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
+		jboolean isCopy;
+		const char *role = env->GetStringUTFChars(roleStr, &isCopy);
+		std::cerr << role << isCopy << "\n";
+
+		jstring contentStr = (jstring) env->GetObjectArrayElement(contents, i);
+		const char *content = env->GetStringUTFChars(contentStr, nullptr);
+		std::cerr << content << "\n";
+
+		chat_messages.push_back( { role,content } );
+		// using the same factor as in common.cpp
+		alloc_size += (env->GetStringUTFLength(roleStr)
+				+ env->GetStringUTFLength(contentStr)) * 1.25;
+	}
+
+	const char *ptr_tmpl = nullptr; // TODO custom template
+	std::vector<char> buf(alloc_size);
+	int32_t res = llama_chat_apply_template(model, ptr_tmpl,
+			chat_messages.data(), chat_messages.size(), true, buf.data(),
+			buf.size());
+
+
+	// error: chat template is not supported
+	if (res < 0) {
+		if (ptr_tmpl != nullptr) {
+			ThrowIllegalStateException(env, "Custom template is not supported");
+		} else {
+			ThrowIllegalStateException(env,
+					"Built-in template is not supported");
+		}
+	}
+
+	// if it turns out that our buffer is too small, we resize it
+	if ((size_t) res > buf.size()) {
+		buf.resize(res);
+		res = llama_chat_apply_template(model, ptr_tmpl, chat_messages.data(),
+				chat_messages.size(), true, buf.data(), buf.size());
+	}
+
+	// we clean up, since we don't need the messages anymore
+	for (int i = 0; i < messages_size; i++) {
+		llama_chat_message message = chat_messages[i];
+		jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
+		env->ReleaseStringUTFChars(roleStr, message.role);
+		jstring contentStr = (jstring) env->GetObjectArrayElement(contents, i);
+		env->ReleaseStringUTFChars(contentStr, message.content);
+	}
+
+	return env->NewStringUTF(buf.data());
+}
+
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
 		JNIEnv *env, jobject obj, jstring localPath) {
-	const char *path_model = env->GetStringUTFChars(localPath, NULL);
+	const char *path_model = env->GetStringUTFChars(localPath, nullptr);
 
 	llama_model_params mparams = llama_model_default_params();
-	//mparams.n_gpu_layers = 33;
+	mparams.n_gpu_layers = 29;
 
 	llama_model *model = llama_load_model_from_file(path_model, mparams);
 
