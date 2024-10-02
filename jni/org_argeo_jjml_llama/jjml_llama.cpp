@@ -82,9 +82,11 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 	//std::vector<llama_token> tokens_list;
 
 	jsize system_prompt_tokens_size = env->GetArrayLength(systemPromptTokens);
-	jboolean *is_copy;
+	jboolean isCopy;
 	jint *system_prompt_tokens = (jint*) env->GetPrimitiveArrayCritical(
-			systemPromptTokens, is_copy);
+			systemPromptTokens, &isCopy);
+//	jint *system_prompt_tokens = (jint*) env->GetIntArrayElements(
+//			systemPromptTokens, &isCopy);
 
 	// make sure the KV cache is big enough to hold all the prompt and generated tokens
 //	if (n_kv_req > n_ctx) {
@@ -114,9 +116,11 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 	}
 	GGML_ASSERT(batch.n_tokens == (int ) system_prompt_tokens_size);
 
-	// array is released, we can copy it
+	// array is copied, we can release it
 	env->ReleasePrimitiveArrayCritical(systemPromptTokens, system_prompt_tokens,
 			0);
+//	env->ReleaseIntArrayElements(systemPromptTokens, system_prompt_tokens,
+//			0);
 
 	if (llama_model_has_encoder(model)) {
 		if (llama_encode(ctx, batch)) {
@@ -264,13 +268,13 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 		jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
 		jboolean isCopy;
 		const char *role = env->GetStringUTFChars(roleStr, &isCopy);
-		std::cerr << role << isCopy << "\n";
+//		std::cerr << role << isCopy << "\n";
 
 		jstring contentStr = (jstring) env->GetObjectArrayElement(contents, i);
 		const char *content = env->GetStringUTFChars(contentStr, nullptr);
-		std::cerr << content << "\n";
+//		std::cerr << content << "\n";
 
-		chat_messages.push_back( { role,content } );
+		chat_messages.push_back( { role, content });
 		// using the same factor as in common.cpp
 		alloc_size += (env->GetStringUTFLength(roleStr)
 				+ env->GetStringUTFLength(contentStr)) * 1.25;
@@ -281,7 +285,6 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 	int32_t res = llama_chat_apply_template(model, ptr_tmpl,
 			chat_messages.data(), chat_messages.size(), true, buf.data(),
 			buf.size());
-
 
 	// error: chat template is not supported
 	if (res < 0) {
