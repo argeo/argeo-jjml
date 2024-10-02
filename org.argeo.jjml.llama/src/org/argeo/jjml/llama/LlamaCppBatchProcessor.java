@@ -8,6 +8,7 @@ import java.util.function.Function;
 
 public class LlamaCppBatchProcessor {
 	private LlamaCppModel model;
+	private LlamaCppContext context;
 
 	native void doProcessBatch(CompletableFuture<?>[] callbacks, LlamaCppContext context, int[] systemPrompt,
 			int[][] sequencePrompts, int predictMax);
@@ -34,21 +35,31 @@ public class LlamaCppBatchProcessor {
 			callbacks.add(callbackCF);
 		}
 
-		LlamaCppContext context = new LlamaCppContext();
-		context.setModel(model);
-		context.setContextSize(maxKvSize);
-		context.setMaximumBatchSize(Math.max(predictMax, parallelCount));
-		context.init();
+		LlamaCppContext contextToUse;
+		if (context == null) {
+			contextToUse = new LlamaCppContext();
+			contextToUse.setModel(model);
+			contextToUse.setContextSize(maxKvSize);
+			contextToUse.setMaximumBatchSize(Math.max(predictMax, parallelCount));
+			contextToUse.init();
+		} else {
+			contextToUse = context;
+		}
 
-		doProcessBatch(callbacks.toArray(new CompletableFuture<?>[callbacks.size()]), context,
+		doProcessBatch(callbacks.toArray(new CompletableFuture<?>[callbacks.size()]), contextToUse,
 				systemPromptTL.getTokens(), null, predictMax);
 
-		context.destroy();
+		if (context == null)
+			contextToUse.destroy();
 		return res;
 	}
 
 	public void setModel(LlamaCppModel model) {
 		this.model = model;
+	}
+
+	public void setContext(LlamaCppContext context) {
+		this.context = context;
 	}
 
 	/*
