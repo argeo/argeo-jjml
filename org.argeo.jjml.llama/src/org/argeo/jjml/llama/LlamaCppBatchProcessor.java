@@ -59,6 +59,7 @@ public class LlamaCppBatchProcessor {
 	}
 
 	public void setContext(LlamaCppContext context) {
+		// TODO check consistency with model
 		this.context = context;
 	}
 

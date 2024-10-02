@@ -6,6 +6,8 @@ public class LlamaCppContext {
 
 	private LlamaCppModel model;
 
+	private LlamaCppPoolingType poolingType;
+
 	/*
 	 * Parameters
 	 */
@@ -17,13 +19,23 @@ public class LlamaCppContext {
 	// implementation
 	private Long pointer;
 
+	/*
+	 * NATIVE
+	 */
 	native long doInit(LlamaCppModel model);
 
 	native void doDestroy();
 
+	native int doGetPoolingType();
+
+	/*
+	 * LIFECYCLE
+	 */
 	public void init() {
 		Objects.requireNonNull(model, "Model must be set");
 		pointer = doInit(model);
+		int poolingTypeCode = doGetPoolingType();
+		poolingType = LlamaCppPoolingType.byCode(poolingTypeCode);
 	}
 
 	public void destroy() {
@@ -38,6 +50,11 @@ public class LlamaCppContext {
 	protected void checkNotInitialized() {
 		if (pointer != null)
 			throw new IllegalStateException("Context is already initialized, destroy it first.");
+	}
+
+	protected void checkInitialized() {
+		if (pointer == null)
+			throw new IllegalStateException("Context is not initialized.");
 	}
 
 	/*
@@ -71,7 +88,13 @@ public class LlamaCppContext {
 		this.maximumBatchSize = maximumBatchSize;
 	}
 
+	public LlamaCppPoolingType getPoolingType() {
+		checkInitialized();
+		return poolingType;
+	}
+
 	long getPointer() {
+		checkInitialized();
 		return pointer;
 	}
 

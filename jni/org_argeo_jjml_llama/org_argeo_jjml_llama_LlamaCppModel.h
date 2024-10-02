@@ -47,6 +47,14 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMessages
   (JNIEnv *, jobject, jobjectArray, jobjectArray);
 
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doGetEmbeddingSize
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSize
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

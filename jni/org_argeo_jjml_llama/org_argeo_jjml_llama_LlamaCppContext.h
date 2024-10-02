@@ -23,6 +23,14 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy
   (JNIEnv *, jobject);
 
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppContext
+ * Method:    doGetPoolingType
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetPoolingType
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

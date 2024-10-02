@@ -11,6 +11,8 @@ public class LlamaCppModel {
 	// implementation
 	private Long pointer = null;
 
+	private int embeddingSize;
+
 	/*
 	 * NATIVE METHODS
 	 */
@@ -24,6 +26,8 @@ public class LlamaCppModel {
 	native void doDestroy();
 
 	native String doFormatChatMessages(String[] roles, String[] contents);
+
+	native int doGetEmbeddingSize();
 
 	/*
 	 * USABLE METHODS
@@ -66,6 +70,7 @@ public class LlamaCppModel {
 		if (!Files.exists(localPath))
 			throw new IllegalArgumentException("Model file does not exist: " + localPath);
 		pointer = doInit(localPath.toString());
+		embeddingSize = doGetEmbeddingSize();
 	}
 
 	public void destroy() {
@@ -88,6 +93,10 @@ public class LlamaCppModel {
 
 	public void setLocalPath(Path localPath) {
 		this.localPath = localPath;
+	}
+
+	public int getEmbeddingSize() {
+		return embeddingSize;
 	}
 
 	final long getPointer() {

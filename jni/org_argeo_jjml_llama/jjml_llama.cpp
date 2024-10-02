@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 
 #include "jjml_llama_jni.h"
 
@@ -27,10 +28,10 @@ void ThrowIllegalStateException(JNIEnv *env, char const *message) {
 }
 
 /*
- * Llama Utilities
+ * LLAMA UTILITIES
  */
 
-void llama_batch_add(struct llama_batch &batch, llama_token id, llama_pos pos,
+static void llama_batch_add(struct llama_batch &batch, llama_token id, llama_pos pos,
 		const std::vector<llama_seq_id> &seq_ids, bool logits) {
 	batch.token[batch.n_tokens] = id;
 	batch.pos[batch.n_tokens] = pos;
@@ -43,16 +44,155 @@ void llama_batch_add(struct llama_batch &batch, llama_token id, llama_pos pos,
 	batch.n_tokens++;
 }
 
-void llama_batch_clear(struct llama_batch &batch) {
+static void llama_batch_clear(struct llama_batch &batch) {
 	batch.n_tokens = 0;
 }
 
 /*
- * Chat
+ * EMBEDDING
  */
+// from llama.cpp's common llama_embd_normalize
+static void embd_normalize(const float *inp, float *out, int n, int embd_norm) {
+	double sum = 0.0;
+
+	switch (embd_norm) {
+	case -1: // no normalisation
+		sum = 1.0;
+		break;
+	case 0: // max absolute
+		for (int i = 0; i < n; i++) {
+			if (sum < std::abs(inp[i]))
+				sum = std::abs(inp[i]);
+		}
+		sum /= 32760.0; // make an int16 range
+		break;
+	case 2: // euclidean
+		for (int i = 0; i < n; i++) {
+			sum += inp[i] * inp[i];
+		}
+		sum = std::sqrt(sum);
+		break;
+	default: // p-norm (euclidean is p-norm p=2)
+		for (int i = 0; i < n; i++) {
+			sum += std::pow(std::abs(inp[i]), embd_norm);
+		}
+		sum = std::pow(sum, 1.0 / embd_norm);
+		break;
+	}
+
+	const float norm = sum > 0.0 ? 1.0 / sum : 0.0f;
+
+	for (int i = 0; i < n; i++) {
+		out[i] = inp[i] * norm;
+	}
+}
+
+// from llama.cpp's example/embedding
+static void embd_batch_decode(llama_context *ctx, llama_batch &batch,
+		float *output, int n_seq, int n_embd, int embd_norm) {
+	const enum llama_pooling_type pooling_type = llama_pooling_type(ctx);
+	const struct llama_model *model = llama_get_model(ctx);
+
+	// clear previous kv_cache values (irrelevant for embeddings)
+	llama_kv_cache_clear(ctx);
+
+	// run model
+//    LOG_INF("%s: n_tokens = %d, n_seq = %d\n", __func__, batch.n_tokens, n_seq);
+	if (llama_model_has_encoder(model) && !llama_model_has_decoder(model)) {
+		// encoder-only model
+		if (llama_encode(ctx, batch) < 0) {
+//            LOG_ERR("%s : failed to encode\n", __func__);
+		}
+	} else if (!llama_model_has_encoder(model)
+			&& llama_model_has_decoder(model)) {
+		// decoder-only model
+		if (llama_decode(ctx, batch) < 0) {
+//            LOG_ERR("%s : failed to decode\n", __func__);
+		}
+	}
+
+	for (int i = 0; i < batch.n_tokens; i++) {
+		if (!batch.logits[i]) {
+			continue;
+		}
+
+		const float *embd = nullptr;
+		int embd_pos = 0;
+
+		if (pooling_type == LLAMA_POOLING_TYPE_NONE) {
+			// try to get token embeddings
+			embd = llama_get_embeddings_ith(ctx, i);
+			embd_pos = i;
+			GGML_ASSERT(embd != NULL && "failed to get token embeddings");
+		} else {
+			// try to get sequence embeddings - supported only when pooling_type is not NONE
+			embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
+			embd_pos = batch.seq_id[i][0];
+			GGML_ASSERT(embd != NULL && "failed to get sequence embeddings");
+		}
+
+		float *out = output + embd_pos * n_embd;
+		embd_normalize(embd, out, n_embd, embd_norm);
+	}
+}
+
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppEmbeddingProcessor_doProcessEmbeddings(
+		JNIEnv *env, jobject obj, jfloatArray res, jobject contextObj,
+		jobjectArray tokenLists) {
+	// TODO deal with normalization
+	int embd_normalize = -1;
+
+	llama_context *ctx = (llama_context*) getPointer(env, contextObj);
+
+	int n_embd = llama_n_embd(llama_get_model(ctx));
+	int n_batch = llama_n_batch(ctx);
+	const enum llama_pooling_type pooling_type = llama_pooling_type(ctx);
+
+	struct llama_batch batch = llama_batch_init(n_batch, 0, 1);
+
+	int n_prompts = env->GetArrayLength(tokenLists);
+
+	jfloat *emb = (jfloat*) env->GetPrimitiveArrayCritical(res, nullptr);
+
+	// break into batches
+	int e = 0; // number of embeddings already stored
+	int s = 0; // number of prompts in current batch
+	for (int k = 0; k < n_prompts; k++) {
+		jintArray tokenList = (jintArray) env->GetObjectArrayElement(tokenLists,
+				k);
+
+		const uint64_t n_toks = env->GetArrayLength(tokenList);
+
+		// encode if at capacity
+		if (batch.n_tokens + n_toks > n_batch) {
+			float *out = emb + e * n_embd;
+			embd_batch_decode(ctx, batch, out, s, n_embd, embd_normalize);
+			e += pooling_type == LLAMA_POOLING_TYPE_NONE ? batch.n_tokens : s;
+			s = 0;
+			llama_batch_clear(batch);
+		}
+
+		// add to batch
+//		embd_batch_add_seq(batch, inp, s);
+		size_t n_tokens = env->GetArrayLength(tokenList);
+		int *tokens = (int*) env->GetPrimitiveArrayCritical(tokenList, nullptr);
+		for (size_t i = 0; i < n_tokens; i++) {
+			llama_batch_add(batch, tokens[i], i, { s }, true);
+		}
+		env->ReleasePrimitiveArrayCritical(tokenList, tokens, 0);
+
+		s += 1;
+	}
+
+	// final batch
+	float *out = emb + e * n_embd;
+	embd_batch_decode(ctx, batch, out, s, n_embd, embd_normalize);
+
+	env->ReleasePrimitiveArrayCritical(res, emb, 0);
+}
 
 /*
- * Batch processor
+ * BATCH
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProcessBatch(
 		JNIEnv *env, jobject, jobjectArray callbacks, jobject contextObj,
@@ -88,7 +228,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 //	jint *system_prompt_tokens = (jint*) env->GetIntArrayElements(
 //			systemPromptTokens, &isCopy);
 
-	// make sure the KV cache is big enough to hold all the prompt and generated tokens
+// make sure the KV cache is big enough to hold all the prompt and generated tokens
 //	if (n_kv_req > n_ctx) {
 //		LOG_TEE(
 //				"%s: error: n_kv_req (%d) > n_ctx, the required KV cache size is not big enough\n",
@@ -231,13 +371,19 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 }
 
 /*
- * Llama context
+ * CONTEXT
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 		JNIEnv *env, jobject obj, jobject modelObj) {
 	llama_model *model = (llama_model*) getPointer(env, modelObj);
 
 	llama_context_params ctx_params = llama_context_default_params();
+
+	// Embedding config
+	// FIXME make it configurable
+	ctx_params.embeddings = true;
+	ctx_params.n_batch = 2048;
+	ctx_params.n_ubatch = ctx_params.n_batch;
 
 	llama_context *ctx = llama_new_context_with_model(model, ctx_params);
 
@@ -253,8 +399,14 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy(
 	llama_free(ctx);
 }
 
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetPoolingType(
+		JNIEnv *env, jobject obj) {
+	llama_context *ctx = (llama_context*) getPointer(env, obj);
+	return llama_pooling_type(ctx);
+}
+
 /*
- * Llama model
+ * MODEL
  */
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMessages(
 		JNIEnv *env, jobject obj, jobjectArray roles, jobjectArray contents) {
@@ -386,8 +538,14 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenize(
 	return res;
 }
 
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSize(
+		JNIEnv *env, jobject obj) {
+	llama_model *model = (llama_model*) getPointer(env, obj);
+	return llama_n_embd(model);
+}
+
 /*
- * Llama backend
+ * BACKEND
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doInit(JNIEnv*,
 		jobject) {
