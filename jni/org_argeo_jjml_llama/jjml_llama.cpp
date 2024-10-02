@@ -31,8 +31,8 @@ void ThrowIllegalStateException(JNIEnv *env, char const *message) {
  * LLAMA UTILITIES
  */
 
-static void llama_batch_add(struct llama_batch &batch, llama_token id, llama_pos pos,
-		const std::vector<llama_seq_id> &seq_ids, bool logits) {
+static void llama_batch_add(struct llama_batch &batch, llama_token id,
+		llama_pos pos, const std::vector<llama_seq_id> &seq_ids, bool logits) {
 	batch.token[batch.n_tokens] = id;
 	batch.pos[batch.n_tokens] = pos;
 	batch.n_seq_id[batch.n_tokens] = seq_ids.size();
@@ -381,9 +381,9 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 
 	// Embedding config
 	// FIXME make it configurable
-	ctx_params.embeddings = true;
-	ctx_params.n_batch = 2048;
-	ctx_params.n_ubatch = ctx_params.n_batch;
+//	ctx_params.embeddings = true;
+//	ctx_params.n_batch = 2048;
+//	ctx_params.n_ubatch = ctx_params.n_batch;
 
 	llama_context *ctx = llama_new_context_with_model(model, ctx_params);
 
@@ -472,7 +472,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
 	const char *path_model = env->GetStringUTFChars(localPath, nullptr);
 
 	llama_model_params mparams = llama_model_default_params();
-	mparams.n_gpu_layers = 29;
+//	mparams.n_gpu_layers = 29;
 
 	llama_model *model = llama_load_model_from_file(path_model, mparams);
 
