@@ -27,7 +27,9 @@ target_link_libraries(llama INTERFACE ${GGML_LOCATION})
 # org_argeo_jjml_llama
 add_library(org_argeo_jjml_llama SHARED 
 	org_argeo_jjml_llama/jjml_llama.cpp
-	org_argeo_jjml_llama/jjml_llama_jni.h
+	org_argeo_jjml_llama/jjml_llama_model.cpp
+	org_argeo_jjml_llama/jjml_llama_batch.cpp
+	org_argeo_jjml_llama/jjml_llama_embedding.cpp
 )
 set_target_properties(org_argeo_jjml_llama PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(org_argeo_jjml_llama PRIVATE org_argeo_jjml_llama ${JNI_INCLUDE_DIRS})
