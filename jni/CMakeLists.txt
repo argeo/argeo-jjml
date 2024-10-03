@@ -38,34 +38,3 @@ target_link_libraries(org_argeo_jjml_llama PRIVATE llama)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 install(TARGETS org_argeo_jjml_llama LIBRARY)
-
-set(LLAMA_EXAMPLES OFF)
-##
-## llama.cpp examples (local)
-##
-if(LLAMA_EXAMPLES)
-
-# examples
-if (NOT TARGET common)
-	# Use installed llama.cpp
-	set(LLAMA_COMMON_STATIC_LIBDIR /usr/lib/llama.cpp/common)
-	set(LLAMA_COMMON_INCLUDE_DIRS /usr/include/llama.cpp/common)
-	target_include_directories(org_argeo_jjml_llama PRIVATE ${LLAMA_COMMON_INCLUDE_DIRS})
-	add_library(common STATIC IMPORTED GLOBAL)
-	set_target_properties(common PROPERTIES IMPORTED_LOCATION ${LLAMA_COMMON_STATIC_LIBDIR}/libcommon.a)
-endif()
-
-add_subdirectory(llama.cpp/examples/simple)
-target_include_directories(llama-simple PRIVATE ${LLAMA_COMMON_INCLUDE_DIRS})
-
-add_subdirectory(llama.cpp/examples/main)
-target_include_directories(llama-cli PRIVATE ${LLAMA_COMMON_INCLUDE_DIRS})
-
-add_subdirectory(llama.cpp/examples/batched)
-target_include_directories(llama-batched PRIVATE ${LLAMA_COMMON_INCLUDE_DIRS})
-
-add_subdirectory(llama.cpp/examples/embedding)
-target_include_directories(llama-embedding PRIVATE ${LLAMA_COMMON_INCLUDE_DIRS})
-
-endif()
-

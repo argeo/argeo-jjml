@@ -49,10 +49,6 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="llama.cpp/examples/batched"/>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="llama.cpp/examples/embedding"/>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="llama.cpp/examples/main"/>
-						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="llama.cpp/examples/simple"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="org_argeo_jjml_llama"/>
 					</sourceEntries>
 				</configuration>
