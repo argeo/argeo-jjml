@@ -13,7 +13,15 @@ extern "C" {
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doInit
-  (JNIEnv *, jobject);
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppBackend
+ * Method:    doNumaInit
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doNumaInit
+  (JNIEnv *, jclass, jint);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppBackend
@@ -21,7 +29,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doInit
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doDestroy
-  (JNIEnv *, jobject);
+  (JNIEnv *, jclass);
 
 #ifdef __cplusplus
 }

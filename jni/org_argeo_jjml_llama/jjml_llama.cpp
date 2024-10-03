@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <cassert>
 
 #include "jjml_llama_jni.h"
 
@@ -548,13 +549,36 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSiz
  * BACKEND
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doInit(JNIEnv*,
-		jobject) {
+		jclass) {
 	llama_backend_init();
-	//llama_numa_init(params.numa);
+}
+
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doNumaInit(
+		JNIEnv*, jclass, jint numaStrategy) {
+	switch (numaStrategy) {
+	case GGML_NUMA_STRATEGY_DISABLED:
+		llama_numa_init(GGML_NUMA_STRATEGY_DISABLED);
+		break;
+	case GGML_NUMA_STRATEGY_DISTRIBUTE:
+		llama_numa_init(GGML_NUMA_STRATEGY_DISTRIBUTE);
+		break;
+	case GGML_NUMA_STRATEGY_ISOLATE:
+		llama_numa_init(GGML_NUMA_STRATEGY_ISOLATE);
+		break;
+	case GGML_NUMA_STRATEGY_NUMACTL:
+		llama_numa_init(GGML_NUMA_STRATEGY_NUMACTL);
+		break;
+	case GGML_NUMA_STRATEGY_MIRROR:
+		llama_numa_init(GGML_NUMA_STRATEGY_MIRROR);
+		break;
+	default:
+		assert(!"Invalid NUMA streategy enum value");
+		break;
+	}
 }
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doDestroy(
-		JNIEnv*, jobject) {
+		JNIEnv*, jclass) {
 	llama_backend_free();
 }
 
