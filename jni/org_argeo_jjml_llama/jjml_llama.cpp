@@ -572,7 +572,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doNumaInit(
 		llama_numa_init(GGML_NUMA_STRATEGY_MIRROR);
 		break;
 	default:
-		assert(!"Invalid NUMA streategy enum value");
+		assert(!"Invalid NUMA strategy enum value");
 		break;
 	}
 }
