@@ -37,10 +37,11 @@ public class LlamaCppBatchProcessor {
 
 		LlamaCppContext contextToUse;
 		if (context == null) {
+			LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
 			contextToUse = new LlamaCppContext();
 			contextToUse.setModel(model);
-			contextToUse.setContextSize(maxKvSize);
-			contextToUse.setMaximumBatchSize(Math.max(predictMax, parallelCount));
+			contextParams.setContextSize(maxKvSize);
+			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
 			contextToUse.init();
 		} else {
 			contextToUse = context;

@@ -163,10 +163,8 @@ static void get_model_params(JNIEnv *env, jobject modelParams,
 			LlamaCppModelParams$useMlock(env));
 }
 
-JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParameters(
+JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParams(
 		JNIEnv *env, jclass) {
-	jclass clss = LlamaCppModelParams(env);
-	jmethodID meth = LlamaCppModelParams$LlamaCppModelParams(env);
 	jobject res = env->NewObject(LlamaCppModelParams(env),
 			LlamaCppModelParams$LlamaCppModelParams(env));
 	llama_model_params default_mparams = llama_model_default_params();

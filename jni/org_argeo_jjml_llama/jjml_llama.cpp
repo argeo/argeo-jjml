@@ -6,44 +6,7 @@
 
 #include "argeo_jni_utils.h"
 
-#include "org_argeo_jjml_llama_LlamaCppContext.h"
 #include "org_argeo_jjml_llama_LlamaCppBackend.h"
-
-/*
- * CONTEXT
- */
-JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
-		JNIEnv *env, jobject obj, jobject modelObj) {
-	llama_model *model = (llama_model*) getPointer(env, modelObj);
-
-	llama_context_params ctx_params = llama_context_default_params();
-
-	// Embedding config
-	// FIXME make it configurable
-//	ctx_params.embeddings = true;
-//	ctx_params.n_batch = 2048;
-//	ctx_params.n_ubatch = ctx_params.n_batch;
-
-	llama_context *ctx = llama_new_context_with_model(model, ctx_params);
-
-	if (ctx == NULL) {
-		ThrowIllegalStateException(env, "Failed to create llama.cpp context");
-		return 0;
-	}
-	return (jlong) ctx;
-}
-
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy(
-		JNIEnv *env, jobject obj) {
-	llama_context *ctx = (llama_context*) getPointer(env, obj);
-	llama_free(ctx);
-}
-
-JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetPoolingType(
-		JNIEnv *env, jobject obj) {
-	llama_context *ctx = (llama_context*) getPointer(env, obj);
-	return llama_pooling_type(ctx);
-}
 
 /*
  * BACKEND

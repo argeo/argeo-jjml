@@ -12,7 +12,7 @@ public class LlamaCppModel {
 	// implementation
 	private Long pointer = null;
 
-	private LlamaCppModelParams modelParams;
+	private LlamaCppModelParams initParams;
 
 	private int embeddingSize;
 
@@ -71,7 +71,7 @@ public class LlamaCppModel {
 	 */
 	/** Init model with defaults. */
 	public void init() {
-		init(LlamaCppModelParams.defaultModelParameters(), null);
+		init(LlamaCppModelParams.defaultModelParams(), null);
 	}
 
 	public void init(LlamaCppModelParams modelParams, DoublePredicate progressCallback) {
@@ -81,7 +81,7 @@ public class LlamaCppModel {
 		if (!Files.exists(localPath))
 			throw new IllegalArgumentException("Model file does not exist: " + localPath);
 		pointer = doInit(localPath.toString(), modelParams, progressCallback);
-		this.modelParams = modelParams;
+		this.initParams = modelParams;
 		embeddingSize = doGetEmbeddingSize();
 	}
 
@@ -105,6 +105,10 @@ public class LlamaCppModel {
 
 	public void setLocalPath(Path localPath) {
 		this.localPath = localPath;
+	}
+
+	public LlamaCppModelParams getInitParams() {
+		return initParams;
 	}
 
 	public int getEmbeddingSize() {

@@ -1,5 +1,10 @@
 package org.argeo.jjml.llama;
 
+/**
+ * Pooling type.
+ * 
+ * @see llama.h - enum llama_pooling_type
+ */
 public enum LlamaCppPoolingType {
 	LLAMA_POOLING_TYPE_UNSPECIFIED(-1), //
 	LLAMA_POOLING_TYPE_NONE(0), //

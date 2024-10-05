@@ -8,13 +8,7 @@ public class LlamaCppContext {
 
 	private LlamaCppPoolingType poolingType;
 
-	/*
-	 * Parameters
-	 */
-	/** Text context size. Taken from model if 0 (default). */
-	private int contextSize = 0;
-	/** Logical maximum batch size (must be >=32 to use BLAS). */
-	private int maximumBatchSize = 2048;
+	private LlamaCppContextParams initParams;
 
 	// implementation
 	private Long pointer;
@@ -22,7 +16,7 @@ public class LlamaCppContext {
 	/*
 	 * NATIVE
 	 */
-	native long doInit(LlamaCppModel model);
+	native long doInit(LlamaCppModel model, LlamaCppContextParams params);
 
 	native void doDestroy();
 
@@ -32,8 +26,13 @@ public class LlamaCppContext {
 	 * LIFECYCLE
 	 */
 	public void init() {
+		init(LlamaCppContextParams.defaultContextParams());
+	}
+
+	public void init(LlamaCppContextParams params) {
 		Objects.requireNonNull(model, "Model must be set");
-		pointer = doInit(model);
+		pointer = doInit(model, params);
+		this.initParams = params;
 		int poolingTypeCode = doGetPoolingType();
 		poolingType = LlamaCppPoolingType.byCode(poolingTypeCode);
 	}
@@ -70,22 +69,9 @@ public class LlamaCppContext {
 		this.model = model;
 	}
 
-	public int getContextSize() {
-		return contextSize;
-	}
-
-	public void setContextSize(int contextSize) {
-		checkNotInitialized();
-		this.contextSize = contextSize;
-	}
-
-	public int getMaximumBatchSize() {
-		return maximumBatchSize;
-	}
-
-	public void setMaximumBatchSize(int maximumBatchSize) {
-		checkNotInitialized();
-		this.maximumBatchSize = maximumBatchSize;
+	public LlamaCppContextParams getInitParams() {
+		checkInitialized();
+		return initParams;
 	}
 
 	public LlamaCppPoolingType getPoolingType() {

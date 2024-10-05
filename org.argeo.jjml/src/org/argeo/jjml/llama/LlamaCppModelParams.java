@@ -1,6 +1,12 @@
 package org.argeo.jjml.llama;
 
-/** Initialization parameters of a model. */
+/**
+ * Initialization parameters of a model. New instance should be created with
+ * {@link #defaultModelParams()}, so that the shared library can be used to
+ * populate the default values.
+ * 
+ * @see llama.h - llama_model_params
+ */
 public class LlamaCppModelParams {
 	int gpuLayersCount;
 
@@ -16,9 +22,9 @@ public class LlamaCppModelParams {
 	 * 
 	 * @see llama.h - llama_model_default_params()
 	 */
-	public static LlamaCppModelParams defaultModelParameters() {
+	public static LlamaCppModelParams defaultModelParams() {
 		LlamaCppNative.ensureLibrariesLoaded();
-		return LlamaCppNative.newModelParameters();
+		return LlamaCppNative.newModelParams();
 	}
 
 	public int getGpuLayersCount() {

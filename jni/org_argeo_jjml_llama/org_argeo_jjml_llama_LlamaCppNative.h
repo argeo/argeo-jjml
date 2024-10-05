@@ -9,10 +9,18 @@ extern "C" {
 #endif
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppNative
- * Method:    newModelParameters
- * Signature: ()Lorg/argeo/jjml/llama/LlamaCppModelParameters;
+ * Method:    newModelParams
+ * Signature: ()Lorg/argeo/jjml/llama/LlamaCppModelParams;
  */
-JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParameters
+JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParams
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppNative
+ * Method:    newContextParams
+ * Signature: ()Lorg/argeo/jjml/llama/LlamaCppContextParams;
+ */
+JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newContextParams
   (JNIEnv *, jclass);
 
 #ifdef __cplusplus

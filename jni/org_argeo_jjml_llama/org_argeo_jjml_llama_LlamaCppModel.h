@@ -26,7 +26,7 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenize
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel
  * Method:    doInit
- * Signature: (Ljava/lang/String;Lorg/argeo/jjml/llama/LlamaCppModelParameters;Ljava/util/function/DoublePredicate;)J
+ * Signature: (Ljava/lang/String;Lorg/argeo/jjml/llama/LlamaCppModelParams;Ljava/util/function/DoublePredicate;)J
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit
   (JNIEnv *, jobject, jstring, jobject, jobject);
