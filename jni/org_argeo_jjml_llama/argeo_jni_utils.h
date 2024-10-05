@@ -1,7 +1,7 @@
 #include <jni.h>
 
-#ifndef _argeo_jni_utils
-#define _argeo_jni_utils
+#ifndef _argeo_jni_utils_h
+#define _argeo_jni_utils_h
 
 /*
  * Canonical JNI utilities to be inlined.

@@ -1,8 +1,17 @@
 #include <llama.h>
 #include <vector>
 
+#ifndef _jjml_llama_h
+#define _jjml_llama_h
+
 /*
- * Utilities shared across the various units. Implemented in jjml_llama.cpp.
+ * SHARED CONSTANTS
+ */
+
+/*
+ * SHARED UTILITIES
+ *
+ * Implemented in jjml_llama.cpp.
  */
 
 /**
@@ -23,3 +32,5 @@ void llama_batch_add(struct llama_batch &batch, llama_token id, llama_pos pos,
  * @param batch the batch to clear
  */
 void llama_batch_clear(struct llama_batch &batch);
+
+#endif

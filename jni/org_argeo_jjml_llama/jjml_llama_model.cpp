@@ -4,11 +4,14 @@
 #include <llama.h>
 
 #include "argeo_jni_utils.h"
+#include "jjml_llama.h"
 
+#include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppModel.h"
+#include "org_argeo_jjml_llama_LlamaCppNative.h"
 
 /*
- * MODEL
+ * CHAT
  */
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMessages(
 		JNIEnv *env, jobject obj, jobjectArray roles, jobjectArray contents) {
@@ -70,25 +73,9 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 	return env->NewStringUTF(buf.data());
 }
 
-JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
-		JNIEnv *env, jobject obj, jstring localPath) {
-	const char *path_model = env->GetStringUTFChars(localPath, nullptr);
-
-	llama_model_params mparams = llama_model_default_params();
-//	mparams.n_gpu_layers = 29;
-
-	llama_model *model = llama_load_model_from_file(path_model, mparams);
-
-	env->ReleaseStringUTFChars(localPath, path_model);
-	return (jlong) model;
-}
-
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy(
-		JNIEnv *env, jobject obj) {
-	llama_model *model = (llama_model*) getPointer(env, obj);
-	llama_free_model(model);
-}
-
+/*
+ * TOKENS
+ */
 JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenize(
 		JNIEnv *env, jobject obj, jstring str, jboolean add_special,
 		jboolean parse_special) {
@@ -141,8 +128,98 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenize(
 	return res;
 }
 
+/*
+ * ACCESSORS
+ */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSize(
 		JNIEnv *env, jobject obj) {
 	llama_model *model = (llama_model*) getPointer(env, obj);
 	return llama_n_embd(model);
 }
+
+/*
+ * PARAMETERS
+ */
+
+/** @brief Set model parameters from native to Java.*/
+static void set_model_params(JNIEnv *env, jobject modelParams,
+		llama_model_params mparams) {
+	env->SetIntField(modelParams, LlamaCppModelParams$gpuLayerCount(env),
+			mparams.n_gpu_layers);
+	env->SetBooleanField(modelParams, LlamaCppModelParams$vocabOnly(env),
+			mparams.vocab_only);
+	env->SetBooleanField(modelParams, LlamaCppModelParams$useMlock(env),
+			mparams.use_mlock);
+}
+
+/** @brief Get model parameters from Java to native.*/
+static void get_model_params(JNIEnv *env, jobject modelParams,
+		llama_model_params *mparams) {
+	mparams->n_gpu_layers = env->GetIntField(modelParams,
+			LlamaCppModelParams$gpuLayerCount(env));
+	mparams->vocab_only = env->GetBooleanField(modelParams,
+			LlamaCppModelParams$vocabOnly(env));
+	mparams->use_mlock = env->GetBooleanField(modelParams,
+			LlamaCppModelParams$useMlock(env));
+}
+
+JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParameters(
+		JNIEnv *env, jclass) {
+	jclass clss = LlamaCppModelParams(env);
+	jmethodID meth = LlamaCppModelParams$LlamaCppModelParams(env);
+	jobject res = env->NewObject(LlamaCppModelParams(env),
+			LlamaCppModelParams$LlamaCppModelParams(env));
+	llama_model_params default_mparams = llama_model_default_params();
+	set_model_params(env, res, default_mparams);
+	return res;
+}
+
+/*
+ * LIFECYCLE
+ */
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
+		JNIEnv *env, jobject obj, jstring localPath, jobject modelParams,
+		jobject progressCallback) {
+	const char *path_model = env->GetStringUTFChars(localPath, nullptr);
+
+	llama_model_params mparams = llama_model_default_params();
+	get_model_params(env, modelParams, &mparams);
+
+	// progress callback
+	if (progressCallback != nullptr) {
+		// struct used to pass references to the lambda
+		struct java_callback {
+			const jobject callback;
+			JavaVM *jvm;
+		} progress_data { progressCallback };
+		// we may have multiple JVMs, we therefore don't centralize a static reference
+		env->GetJavaVM(&progress_data.jvm);
+		mparams.progress_callback_user_data = &progress_data;
+
+		mparams.progress_callback = [](float progress,
+				void *user_data) -> bool {
+			java_callback *cb = (java_callback*) user_data;
+			// While the callback is called from the loading thread, this may change in the future,
+			// so we make sure that we have a valid JNIEnv for the calling thread.
+			// Note: we therefore currently don't bother detaching the thread later on.
+			JNIEnv *threadEnv;
+			cb->jvm->AttachCurrentThreadAsDaemon((void**) &threadEnv, nullptr);
+
+			return threadEnv->CallBooleanMethod(cb->callback,
+					DoublePredicate$test(threadEnv),
+					static_cast<double>(progress));
+		};
+	}
+
+	llama_model *model = llama_load_model_from_file(path_model, mparams);
+
+	env->ReleaseStringUTFChars(localPath, path_model);
+	return (jlong) model;
+}
+
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy(
+		JNIEnv *env, jobject obj) {
+	llama_model *model = (llama_model*) getPointer(env, obj);
+	llama_free_model(model);
+}
+

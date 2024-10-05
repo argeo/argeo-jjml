@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.DoublePredicate;
 
 public class LlamaCppModel {
 	private Path localPath;
@@ -11,7 +12,13 @@ public class LlamaCppModel {
 	// implementation
 	private Long pointer = null;
 
+	private LlamaCppModelParams modelParams;
+
 	private int embeddingSize;
+
+	public LlamaCppModel() {
+		LlamaCppBackend.ensureInitialized();
+	}
 
 	/*
 	 * NATIVE METHODS
@@ -21,7 +28,7 @@ public class LlamaCppModel {
 
 	native String doDeTokenize(int[] tokens, boolean special);
 
-	native long doInit(String localPathStr);
+	native long doInit(String localPathStr, LlamaCppModelParams params, DoublePredicate progressCallback);
 
 	native void doDestroy();
 
@@ -62,14 +69,19 @@ public class LlamaCppModel {
 	/*
 	 * LIFECYCLE
 	 */
-
+	/** Init model with defaults. */
 	public void init() {
+		init(LlamaCppModelParams.defaultModelParameters(), null);
+	}
+
+	public void init(LlamaCppModelParams modelParams, DoublePredicate progressCallback) {
 		if (pointer != null)
 			throw new IllegalStateException("Model is already initialized.");
 		Objects.requireNonNull(localPath, "Local path to the model must be set");
 		if (!Files.exists(localPath))
 			throw new IllegalArgumentException("Model file does not exist: " + localPath);
-		pointer = doInit(localPath.toString());
+		pointer = doInit(localPath.toString(), modelParams, progressCallback);
+		this.modelParams = modelParams;
 		embeddingSize = doGetEmbeddingSize();
 	}
 
