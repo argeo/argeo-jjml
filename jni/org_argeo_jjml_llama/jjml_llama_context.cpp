@@ -2,8 +2,6 @@
 
 #include <cassert>
 
-#include "argeo_jni_utils.h"
-
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppContext.h"
 #include "org_argeo_jjml_llama_LlamaCppNative.h"
@@ -96,7 +94,7 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newContextPar
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 		JNIEnv *env, jobject obj, jobject modelObj, jobject contextParams) {
-	llama_model *model = (llama_model*) getPointer(env, modelObj);
+	auto *model = getPointer<llama_model*>(env, modelObj);
 
 	llama_context_params ctx_params = llama_context_default_params();
 	get_context_params(env, contextParams, &ctx_params);
@@ -119,7 +117,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy(
 		JNIEnv *env, jobject obj) {
-	llama_context *ctx = (llama_context*) getPointer(env, obj);
+	auto *ctx = getPointer<llama_context*>(env, obj);
 	llama_free(ctx);
 }
 
@@ -128,7 +126,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy(
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetPoolingType(
 		JNIEnv *env, jobject obj) {
-	llama_context *ctx = (llama_context*) getPointer(env, obj);
+	auto *ctx = getPointer<llama_context*>(env, obj);
 	return llama_pooling_type(ctx);
 }
 

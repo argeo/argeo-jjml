@@ -2,7 +2,6 @@
 
 #include <llama.h>
 
-#include "argeo_jni_utils.h"
 #include "jjml_llama.h"
 
 #include "org_argeo_jjml_llama_.h"
@@ -18,7 +17,7 @@
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProcessBatch(
 		JNIEnv *env, jobject, jobjectArray callbacks, jobject contextObj,
 		jintArray systemPromptTokens, jobjectArray, jint n_predict) {
-	llama_context *ctx = (llama_context*) getPointer(env, contextObj);
+	auto *ctx = getPointer<llama_context*>(env, contextObj);
 	const int n_ctx = llama_n_ctx(ctx);
 
 	const llama_model *model = llama_get_model(ctx);

@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.DoublePredicate;
 
-public class LlamaCppModel {
+/**
+ * Access to a llama.cpp model
+ * 
+ * @see llama.h - llama_model
+ */
+public class LlamaCppModel extends NativeReference {
 	private Path localPath;
-
-	// implementation
-	private Long pointer = null;
 
 	private LlamaCppModelParams initParams;
 
@@ -30,6 +32,7 @@ public class LlamaCppModel {
 
 	native long doInit(String localPathStr, LlamaCppModelParams params, DoublePredicate progressCallback);
 
+	@Override
 	native void doDestroy();
 
 	native String doFormatChatMessages(String[] roles, String[] contents);
@@ -75,19 +78,14 @@ public class LlamaCppModel {
 	}
 
 	public void init(LlamaCppModelParams modelParams, DoublePredicate progressCallback) {
-		if (pointer != null)
-			throw new IllegalStateException("Model is already initialized.");
+		checkNotInitialized();
 		Objects.requireNonNull(localPath, "Local path to the model must be set");
 		if (!Files.exists(localPath))
 			throw new IllegalArgumentException("Model file does not exist: " + localPath);
-		pointer = doInit(localPath.toString(), modelParams, progressCallback);
+		long pointer = doInit(localPath.toString(), modelParams, progressCallback);
+		setPointer(pointer);
 		this.initParams = modelParams;
 		embeddingSize = doGetEmbeddingSize();
-	}
-
-	public void destroy() {
-		Objects.requireNonNull(pointer, "Model must be initialized");
-		doDestroy();
 	}
 
 	/*
@@ -114,9 +112,4 @@ public class LlamaCppModel {
 	public int getEmbeddingSize() {
 		return embeddingSize;
 	}
-
-	final long getPointer() {
-		return pointer;
-	}
-
 }

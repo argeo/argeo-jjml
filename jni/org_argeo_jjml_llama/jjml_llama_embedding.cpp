@@ -2,8 +2,9 @@
 
 #include <llama.h>
 
-#include "argeo_jni_utils.h"
 #include "jjml_llama.h"
+
+#include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppEmbeddingProcessor.h"
 
 /*
@@ -100,7 +101,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppEmbeddingProcessor_doPr
 	// TODO deal with normalization
 	int embd_normalize = -1;
 
-	llama_context *ctx = (llama_context*) getPointer(env, contextObj);
+	auto *ctx = getPointer<llama_context*>(env, contextObj);
 
 	int n_embd = llama_n_embd(llama_get_model(ctx));
 	int n_batch = llama_n_batch(ctx);

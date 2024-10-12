@@ -5,7 +5,7 @@
 
 #include <jni.h>
 
-#include "argeo_jni_utils.h"
+#include "org_argeo_jjml_llama_.h"
 
 /*
  * Standard Java
@@ -45,6 +45,12 @@ jfieldID LlamaCppContextParams$poolingTypeCode;
 jfieldID LlamaCppContextParams$embeddings;
 // CONSTRUCTORS
 jmethodID LlamaCppContextParams$LlamaCppContextParams;
+
+/*
+ * NativeReference
+ */
+// METHODS
+jmethodID NativeReference$getPointer;
 
 static void org_argeo_jjml_llama_(JNIEnv *env) {
 	/*
@@ -101,39 +107,29 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	// booleans
 	LlamaCppContextParams$embeddings = env->GetFieldID(LlamaCppContextParams,
 			"embeddings", "Z");
-
 	// CONSTRUCTORS
 	LlamaCppContextParams$LlamaCppContextParams = env->GetMethodID(
 			LlamaCppContextParams, "<init>", "()V");
-}
 
-/**
- *  Check the (unlikely) case where casting pointers as jlong would fail,
- *  since it is relied upon in order to map Java and native structures
- */
-static void checkPlatformPointerSize(JNIEnv *env) {
-	int pointerSize = sizeof(void*);
-	int jlongSize = sizeof(jlong);
-	if (pointerSize > jlongSize) {
-		env->ThrowNew(IllegalStateException,
-				"Platform pointer size is not supported");
-		return;
-	}
+	/*
+	 * NativeReference
+	 */
+	jclass NativeReference = env->FindClass("org/argeo/jjml/llama/NativeReference");
+	// METHODS
+	NativeReference$getPointer = env->GetMethodID(NativeReference, "getPointer",
+			"()J");
 }
 
 /*
  * JNI
  */
+/** Called when the library is loaded, before any other function. */
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 	//std::cerr << "JNI_OnLoad";
 
 	// load a new JNIEnv
 	JNIEnv *env;
 	vm->AttachCurrentThreadAsDaemon((void**) &env, nullptr);
-
-	// make sure pointer casting will work
-	// TODO provide alternative mechanism, such as a registry
-	checkPlatformPointerSize(env);
 
 	// cache Java references
 	org_argeo_jjml_llama_(env);

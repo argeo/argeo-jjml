@@ -1,9 +1,9 @@
 #include <string>
 #include <vector>
 
+#include <ggml.h>
 #include <llama.h>
 
-#include "argeo_jni_utils.h"
 #include "jjml_llama.h"
 
 #include "org_argeo_jjml_llama_.h"
@@ -15,7 +15,7 @@
  */
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMessages(
 		JNIEnv *env, jobject obj, jobjectArray roles, jobjectArray contents) {
-	llama_model *model = (llama_model*) getPointer(env, obj);
+	auto *model = getPointer<llama_model*>(env, obj);
 
 	const jsize messages_size = env->GetArrayLength(roles);
 
@@ -25,11 +25,9 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 		jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
 		jboolean isCopy;
 		const char *role = env->GetStringUTFChars(roleStr, &isCopy);
-//		std::cerr << role << isCopy << "\n";
 
 		jstring contentStr = (jstring) env->GetObjectArrayElement(contents, i);
 		const char *content = env->GetStringUTFChars(contentStr, nullptr);
-//		std::cerr << content << "\n";
 
 		chat_messages.push_back( { role, content });
 		// using the same factor as in common.cpp
@@ -80,7 +78,7 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenize(
 		JNIEnv *env, jobject obj, jstring str, jboolean add_special,
 		jboolean parse_special) {
-	llama_model *model = (llama_model*) getPointer(env, obj);
+	auto *model = getPointer<llama_model*>(env, obj);
 
 	const char *chars = env->GetStringUTFChars(str, NULL);
 	std::string text(chars);
@@ -106,7 +104,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenize(
 
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenize(
 		JNIEnv *env, jobject obj, jintArray tokens, jboolean special) {
-	llama_model *model = (llama_model*) getPointer(env, obj);
+	auto *model = getPointer<llama_model*>(env, obj);
 
 	jsize tokens_size = env->GetArrayLength(tokens);
 	jboolean *is_copy;
@@ -134,7 +132,7 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenize(
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSize(
 		JNIEnv *env, jobject obj) {
-	llama_model *model = (llama_model*) getPointer(env, obj);
+	auto *model = getPointer<llama_model*>(env, obj);
 	return llama_n_embd(model);
 }
 
@@ -217,7 +215,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy(
 		JNIEnv *env, jobject obj) {
-	llama_model *model = (llama_model*) getPointer(env, obj);
+	auto *model = getPointer<llama_model*>(env, obj);
 	llama_free_model(model);
 }
 

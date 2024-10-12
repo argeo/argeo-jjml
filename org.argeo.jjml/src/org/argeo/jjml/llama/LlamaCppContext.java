@@ -2,7 +2,12 @@ package org.argeo.jjml.llama;
 
 import java.util.Objects;
 
-public class LlamaCppContext {
+/**
+ * Access to a llama.cpp context
+ * 
+ * @see llama.h - llama_context
+ */
+public class LlamaCppContext extends NativeReference {
 
 	private LlamaCppModel model;
 
@@ -10,14 +15,12 @@ public class LlamaCppContext {
 
 	private LlamaCppContextParams initParams;
 
-	// implementation
-	private Long pointer;
-
 	/*
 	 * NATIVE
 	 */
 	native long doInit(LlamaCppModel model, LlamaCppContextParams params);
 
+	@Override
 	native void doDestroy();
 
 	native int doGetPoolingType();
@@ -31,29 +34,11 @@ public class LlamaCppContext {
 
 	public void init(LlamaCppContextParams params) {
 		Objects.requireNonNull(model, "Model must be set");
-		pointer = doInit(model, params);
+		long pointer = doInit(model, params);
+		setPointer(pointer);
 		this.initParams = params;
 		int poolingTypeCode = doGetPoolingType();
 		poolingType = LlamaCppPoolingType.byCode(poolingTypeCode);
-	}
-
-	public void destroy() {
-		Objects.requireNonNull(pointer, "Context not initialized");
-		doDestroy();
-		pointer = null;
-	}
-
-	/*
-	 * UTILITIES
-	 */
-	protected void checkNotInitialized() {
-		if (pointer != null)
-			throw new IllegalStateException("Context is already initialized, destroy it first.");
-	}
-
-	protected void checkInitialized() {
-		if (pointer == null)
-			throw new IllegalStateException("Context is not initialized.");
 	}
 
 	/*
@@ -78,10 +63,4 @@ public class LlamaCppContext {
 		checkInitialized();
 		return poolingType;
 	}
-
-	long getPointer() {
-		checkInitialized();
-		return pointer;
-	}
-
 }
