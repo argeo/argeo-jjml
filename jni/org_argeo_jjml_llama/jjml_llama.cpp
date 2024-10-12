@@ -48,8 +48,8 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doDestroy(
 /*
  * UTILITIES
  */
-void llama_batch_add(struct llama_batch &batch, llama_token id, llama_pos pos,
-		const std::vector<llama_seq_id> &seq_ids, bool logits) {
+void jjml_llama_batch_add(struct llama_batch &batch, llama_token id,
+		llama_pos pos, const std::vector<llama_seq_id> &seq_ids, bool logits) {
 	batch.token[batch.n_tokens] = id;
 	batch.pos[batch.n_tokens] = pos;
 	batch.n_seq_id[batch.n_tokens] = seq_ids.size();
@@ -61,6 +61,6 @@ void llama_batch_add(struct llama_batch &batch, llama_token id, llama_pos pos,
 	batch.n_tokens++;
 }
 
-void llama_batch_clear(struct llama_batch &batch) {
+void jjml_llama_batch_clear(struct llama_batch &batch) {
 	batch.n_tokens = 0;
 }

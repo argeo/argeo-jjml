@@ -11,7 +11,6 @@
  * LLAMA UTILITIES
  */
 
-
 /*
  * BATCH
  */
@@ -73,7 +72,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 	// evaluate the initial prompt
 	// TODO memcopy?
 	for (size_t i = 0; i < system_prompt_tokens_size; i++) {
-		llama_batch_add(batch, system_prompt_tokens[i], i, seq_ids, false);
+		jjml_llama_batch_add(batch, system_prompt_tokens[i], i, seq_ids, false);
 	}
 	GGML_ASSERT(batch.n_tokens == (int ) system_prompt_tokens_size);
 
@@ -95,8 +94,8 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 			decoder_start_token_id = llama_token_bos(model);
 		}
 
-		llama_batch_clear(batch);
-		llama_batch_add(batch, decoder_start_token_id, 0, seq_ids, false);
+		jjml_llama_batch_clear(batch);
+		jjml_llama_batch_add(batch, decoder_start_token_id, 0, seq_ids, false);
 	}
 
 	// llama_decode will output logits only for the last token of the prompt
@@ -131,7 +130,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 
 	while (n_cur <= n_predict) {
 		// prepare the next batch
-		llama_batch_clear(batch);
+		jjml_llama_batch_clear(batch);
 
 		// sample the next token for each parallel sequence / stream
 		for (int32_t i = 0; i < n_parallel; ++i) {
@@ -172,7 +171,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 			i_batch[i] = batch.n_tokens;
 
 			// push this new token for next evaluation
-			llama_batch_add(batch, new_token_id, n_cur, { i }, true);
+			jjml_llama_batch_add(batch, new_token_id, n_cur, { i }, true);
 
 			n_decode += 1;
 		}

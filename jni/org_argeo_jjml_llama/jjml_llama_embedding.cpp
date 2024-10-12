@@ -127,7 +127,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppEmbeddingProcessor_doPr
 			embd_batch_decode(ctx, batch, out, s, n_embd, embd_normalize);
 			e += pooling_type == LLAMA_POOLING_TYPE_NONE ? batch.n_tokens : s;
 			s = 0;
-			llama_batch_clear(batch);
+			jjml_llama_batch_clear(batch);
 		}
 
 		// add to batch
@@ -135,7 +135,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppEmbeddingProcessor_doPr
 		size_t n_tokens = env->GetArrayLength(tokenList);
 		int *tokens = (int*) env->GetPrimitiveArrayCritical(tokenList, nullptr);
 		for (size_t i = 0; i < n_tokens; i++) {
-			llama_batch_add(batch, tokens[i], i, { s }, true);
+			jjml_llama_batch_add(batch, tokens[i], i, { s }, true);
 		}
 		env->ReleasePrimitiveArrayCritical(tokenList, tokens, 0);
 
@@ -148,5 +148,4 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppEmbeddingProcessor_doPr
 
 	env->ReleasePrimitiveArrayCritical(res, emb, 0);
 }
-
 
