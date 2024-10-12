@@ -7,8 +7,14 @@
 
 #include "argeo_jni_utils.h"
 
+/*
+ * Standard Java
+ */
 // METHODS
 jmethodID DoublePredicate$test;
+// EXCEPTIONS
+jclass IllegalStateException;
+jclass IllegalArgumentException;
 
 /*
  * LlamaCppModelParams
@@ -48,12 +54,17 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	DoublePredicate$test = env->GetMethodID(
 			env->FindClass("java/util/function/DoublePredicate"), "test",
 			"(D)Z");
+	// EXCEPTIONS
+	IllegalStateException = env->FindClass("java/lang/IllegalStateException");
+	IllegalArgumentException = env->FindClass(
+			"java/lang/IllegalArgumentException");
 
 	/*
 	 * LlamaCppModelParams
 	 */
 	LlamaCppModelParams = env->FindClass(
 			"org/argeo/jjml/llama/LlamaCppModelParams");
+
 	// FIELDS
 	LlamaCppModelParams$gpuLayerCount = env->GetFieldID(LlamaCppModelParams,
 			"gpuLayersCount", "I");
@@ -94,6 +105,20 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	// CONSTRUCTORS
 	LlamaCppContextParams$LlamaCppContextParams = env->GetMethodID(
 			LlamaCppContextParams, "<init>", "()V");
+}
+
+/**
+ *  Check the (unlikely) case where casting pointers as jlong would fail,
+ *  since it is relied upon in order to map Java and native structures
+ */
+static void checkPlatformPointerSize(JNIEnv *env) {
+	int pointerSize = sizeof(void*);
+	int jlongSize = sizeof(jlong);
+	if (pointerSize > jlongSize) {
+		env->ThrowNew(IllegalStateException,
+				"Platform pointer size is not supported");
+		return;
+	}
 }
 
 /*

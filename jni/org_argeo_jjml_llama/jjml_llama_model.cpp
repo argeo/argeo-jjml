@@ -46,9 +46,10 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 	// error: chat template is not supported
 	if (res < 0) {
 		if (ptr_tmpl != nullptr) {
-			ThrowIllegalStateException(env, "Custom template is not supported");
+			env->ThrowNew(IllegalStateException,
+					"Custom template is not supported");
 		} else {
-			ThrowIllegalStateException(env,
+			env->ThrowNew(IllegalStateException,
 					"Built-in template is not supported");
 		}
 		return nullptr;

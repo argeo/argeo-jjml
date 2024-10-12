@@ -11,6 +11,9 @@
  */
 // METHODS
 extern jmethodID DoublePredicate$test;
+// EXCEPTIONS
+extern jclass IllegalStateException;
+extern jclass IllegalArgumentException;
 
 /*
  * LlamaCppModelParams

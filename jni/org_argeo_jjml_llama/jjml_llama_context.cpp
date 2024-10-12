@@ -110,7 +110,8 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 	llama_context *ctx = llama_new_context_with_model(model, ctx_params);
 
 	if (ctx == NULL) {
-		ThrowIllegalStateException(env, "Failed to create llama.cpp context");
+		env->ThrowNew(IllegalStateException,
+				"Failed to create llama.cpp context");
 		return 0;
 	}
 	return (jlong) ctx;

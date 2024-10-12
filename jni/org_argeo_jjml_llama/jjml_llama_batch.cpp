@@ -5,6 +5,7 @@
 #include "argeo_jni_utils.h"
 #include "jjml_llama.h"
 
+#include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppBatchProcessor.h"
 
 /*
@@ -84,7 +85,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 
 	if (llama_model_has_encoder(model)) {
 		if (llama_encode(ctx, batch)) {
-			ThrowIllegalStateException(env, "Failed to encode");
+			env->ThrowNew(IllegalStateException, "Failed to encode");
 			return;
 		}
 
@@ -102,7 +103,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 	batch.logits[batch.n_tokens - 1] = true;
 
 	if (llama_decode(ctx, batch) != 0) {
-		ThrowIllegalStateException(env, "Decode failed");
+		env->ThrowNew(IllegalStateException, "Decode failed");
 	}
 
 	// main loop
@@ -185,7 +186,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 
 		// evaluate the current batch with the transformer model
 		if (llama_decode(ctx, batch)) {
-			ThrowIllegalStateException(env, "Failed to decode");
+			env->ThrowNew(IllegalStateException, "Failed to decode");
 		}
 	}
 
