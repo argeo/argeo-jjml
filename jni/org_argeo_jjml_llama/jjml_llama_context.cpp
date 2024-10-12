@@ -15,27 +15,25 @@
 static void set_context_params(JNIEnv *env, jobject contextParams,
 		llama_context_params ctx_params) {
 	// integers
-	env->SetIntField(contextParams, LlamaCppContextParams$contextSize(env),
+	env->SetIntField(contextParams, LlamaCppContextParams$contextSize,
 			ctx_params.n_ctx);
-	env->SetIntField(contextParams, LlamaCppContextParams$maxBatchSize(env),
+	env->SetIntField(contextParams, LlamaCppContextParams$maxBatchSize,
 			ctx_params.n_batch);
-	env->SetIntField(contextParams,
-			LlamaCppContextParams$physicalMaxBatchSize(env),
+	env->SetIntField(contextParams, LlamaCppContextParams$physicalMaxBatchSize,
 			ctx_params.n_ubatch);
-	env->SetIntField(contextParams,
-			LlamaCppContextParams$maxSequencesCount(env), ctx_params.n_seq_max);
-	env->SetIntField(contextParams,
-			LlamaCppContextParams$generationThreadCount(env),
+	env->SetIntField(contextParams, LlamaCppContextParams$maxSequencesCount,
+			ctx_params.n_seq_max);
+	env->SetIntField(contextParams, LlamaCppContextParams$generationThreadCount,
 			ctx_params.n_threads);
-	env->SetIntField(contextParams, LlamaCppContextParams$batchThreadCount(env),
+	env->SetIntField(contextParams, LlamaCppContextParams$batchThreadCount,
 			ctx_params.n_threads_batch);
 
 	// enums
-	env->SetIntField(contextParams, LlamaCppContextParams$poolingTypeCode(env),
+	env->SetIntField(contextParams, LlamaCppContextParams$poolingTypeCode,
 			ctx_params.pooling_type);
 
 	// booleans
-	env->SetBooleanField(contextParams, LlamaCppContextParams$embeddings(env),
+	env->SetBooleanField(contextParams, LlamaCppContextParams$embeddings,
 			ctx_params.embeddings);
 }
 
@@ -44,21 +42,21 @@ static void get_context_params(JNIEnv *env, jobject contextParams,
 		llama_context_params *ctx_params) {
 	// integers
 	ctx_params->n_ctx = env->GetIntField(contextParams,
-			LlamaCppContextParams$contextSize(env));
+			LlamaCppContextParams$contextSize);
 	ctx_params->n_batch = env->GetIntField(contextParams,
-			LlamaCppContextParams$maxBatchSize(env));
+			LlamaCppContextParams$maxBatchSize);
 	ctx_params->n_ubatch = env->GetIntField(contextParams,
-			LlamaCppContextParams$physicalMaxBatchSize(env));
+			LlamaCppContextParams$physicalMaxBatchSize);
 	ctx_params->n_seq_max = env->GetIntField(contextParams,
-			LlamaCppContextParams$maxSequencesCount(env));
+			LlamaCppContextParams$maxSequencesCount);
 	ctx_params->n_threads = env->GetIntField(contextParams,
-			LlamaCppContextParams$generationThreadCount(env));
+			LlamaCppContextParams$generationThreadCount);
 	ctx_params->n_threads_batch = env->GetIntField(contextParams,
-			LlamaCppContextParams$batchThreadCount(env));
+			LlamaCppContextParams$batchThreadCount);
 
 	// enums
 	switch (env->GetIntField(contextParams,
-			LlamaCppContextParams$poolingTypeCode(env))) {
+			LlamaCppContextParams$poolingTypeCode)) {
 	case LLAMA_POOLING_TYPE_UNSPECIFIED:
 		ctx_params->pooling_type = LLAMA_POOLING_TYPE_UNSPECIFIED;
 		break;
@@ -81,13 +79,13 @@ static void get_context_params(JNIEnv *env, jobject contextParams,
 
 	// booleans
 	ctx_params->embeddings = env->GetBooleanField(contextParams,
-			LlamaCppContextParams$embeddings(env));
+			LlamaCppContextParams$embeddings);
 }
 
 JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newContextParams(
 		JNIEnv *env, jclass) {
-	jobject res = env->NewObject(LlamaCppContextParams(env),
-			LlamaCppContextParams$LlamaCppContextParams(env));
+	jobject res = env->NewObject(LlamaCppContextParams,
+			LlamaCppContextParams$LlamaCppContextParams);
 	llama_context_params ctx_params = llama_context_default_params();
 	set_context_params(env, res, ctx_params);
 	return res;

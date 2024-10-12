@@ -1,42 +1,43 @@
+#include <jni.h>
 /*
  * package org.argeo.jjml.llama
  */
 
-// We favor here clarity and consistency over optimization, since findClass() will be called repeatedly.
-// Such patterns should therefore be used for non-critical code, such as setting parameters.
+// NOTE: Only standard Java or this package's classes should be cached,
+// as the class loader may change in a dynamic environment (such as OSGi)
+
 /*
  * Standard Java
  */
-// METHOD
-#define DoublePredicate$test(env) env->GetMethodID(env->FindClass("java/util/function/DoublePredicate"),"test","(D)Z")
+// METHODS
+extern jmethodID DoublePredicate$test;
 
 /*
  * LlamaCppModelParams
  */
-#define LlamaCppModelParams(env) env->FindClass("org/argeo/jjml/llama/LlamaCppModelParams")
+extern jclass LlamaCppModelParams;
 // FIELDS
-#define LlamaCppModelParams$gpuLayerCount(env) env->GetFieldID(LlamaCppModelParams(env), "gpuLayersCount", "I")
-#define LlamaCppModelParams$vocabOnly(env) env->GetFieldID(LlamaCppModelParams(env), "vocabOnly", "Z")
-#define LlamaCppModelParams$useMlock(env) env->GetFieldID(LlamaCppModelParams(env), "useMlock", "Z")
+extern jfieldID LlamaCppModelParams$gpuLayerCount;
+extern jfieldID LlamaCppModelParams$vocabOnly;
+extern jfieldID LlamaCppModelParams$useMlock;
 // CONSTRUCTORS
-#define LlamaCppModelParams$LlamaCppModelParams(env) env->GetMethodID(LlamaCppModelParams(env), "<init>","()V")
+extern jmethodID LlamaCppModelParams$LlamaCppModelParams;
 
 /*
  * LlamaCppContextParams
  */
-#define LlamaCppContextParams(env) env->FindClass("org/argeo/jjml/llama/LlamaCppContextParams")
+extern jclass LlamaCppContextParams;
 // FIELDS
 // integers
-#define LlamaCppContextParams$contextSize(env) env->GetFieldID(LlamaCppContextParams(env), "contextSize", "I")
-#define LlamaCppContextParams$maxBatchSize(env) env->GetFieldID(LlamaCppContextParams(env), "maxBatchSize", "I")
-#define LlamaCppContextParams$physicalMaxBatchSize(env) env->GetFieldID(LlamaCppContextParams(env), "physicalMaxBatchSize", "I")
-#define LlamaCppContextParams$maxSequencesCount(env) env->GetFieldID(LlamaCppContextParams(env), "maxSequencesCount", "I")
-#define LlamaCppContextParams$generationThreadCount(env) env->GetFieldID(LlamaCppContextParams(env), "generationThreadCount", "I")
-#define LlamaCppContextParams$batchThreadCount(env) env->GetFieldID(LlamaCppContextParams(env), "batchThreadCount", "I")
+extern jfieldID LlamaCppContextParams$contextSize;
+extern jfieldID LlamaCppContextParams$maxBatchSize;
+extern jfieldID LlamaCppContextParams$physicalMaxBatchSize;
+extern jfieldID LlamaCppContextParams$maxSequencesCount;
+extern jfieldID LlamaCppContextParams$generationThreadCount;
+extern jfieldID LlamaCppContextParams$batchThreadCount;
 // enums
-#define LlamaCppContextParams$poolingTypeCode(env) env->GetFieldID(LlamaCppContextParams(env), "poolingTypeCode", "I")
+extern jfieldID LlamaCppContextParams$poolingTypeCode;
 // booleans
-#define LlamaCppContextParams$embeddings(env) env->GetFieldID(LlamaCppContextParams(env), "embeddings", "Z")
-
+extern jfieldID LlamaCppContextParams$embeddings;
 // CONSTRUCTORS
-#define LlamaCppContextParams$LlamaCppContextParams(env) env->GetMethodID(LlamaCppContextParams(env), "<init>","()V")
+extern jmethodID LlamaCppContextParams$LlamaCppContextParams;

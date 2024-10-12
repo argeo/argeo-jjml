@@ -144,11 +144,11 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSiz
 /** @brief Set model parameters from native to Java.*/
 static void set_model_params(JNIEnv *env, jobject modelParams,
 		llama_model_params mparams) {
-	env->SetIntField(modelParams, LlamaCppModelParams$gpuLayerCount(env),
+	env->SetIntField(modelParams, LlamaCppModelParams$gpuLayerCount,
 			mparams.n_gpu_layers);
-	env->SetBooleanField(modelParams, LlamaCppModelParams$vocabOnly(env),
+	env->SetBooleanField(modelParams, LlamaCppModelParams$vocabOnly,
 			mparams.vocab_only);
-	env->SetBooleanField(modelParams, LlamaCppModelParams$useMlock(env),
+	env->SetBooleanField(modelParams, LlamaCppModelParams$useMlock,
 			mparams.use_mlock);
 }
 
@@ -156,17 +156,17 @@ static void set_model_params(JNIEnv *env, jobject modelParams,
 static void get_model_params(JNIEnv *env, jobject modelParams,
 		llama_model_params *mparams) {
 	mparams->n_gpu_layers = env->GetIntField(modelParams,
-			LlamaCppModelParams$gpuLayerCount(env));
+			LlamaCppModelParams$gpuLayerCount);
 	mparams->vocab_only = env->GetBooleanField(modelParams,
-			LlamaCppModelParams$vocabOnly(env));
+			LlamaCppModelParams$vocabOnly);
 	mparams->use_mlock = env->GetBooleanField(modelParams,
-			LlamaCppModelParams$useMlock(env));
+			LlamaCppModelParams$useMlock);
 }
 
 JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParams(
 		JNIEnv *env, jclass) {
-	jobject res = env->NewObject(LlamaCppModelParams(env),
-			LlamaCppModelParams$LlamaCppModelParams(env));
+	jobject res = env->NewObject(LlamaCppModelParams,
+			LlamaCppModelParams$LlamaCppModelParams);
 	llama_model_params default_mparams = llama_model_default_params();
 	set_model_params(env, res, default_mparams);
 	return res;
@@ -204,8 +204,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
 			cb->jvm->AttachCurrentThreadAsDaemon((void**) &threadEnv, nullptr);
 
 			return threadEnv->CallBooleanMethod(cb->callback,
-					DoublePredicate$test(threadEnv),
-					static_cast<double>(progress));
+					DoublePredicate$test, static_cast<double>(progress));
 		};
 	}
 

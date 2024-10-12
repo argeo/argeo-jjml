@@ -1,18 +1,20 @@
 #include "jjml_llama.h"
 
 #include <cassert>
+#include <iostream>
 
 #include <llama.h>
 
 #include "argeo_jni_utils.h"
 
+#include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppBackend.h"
 
 /*
  * BACKEND
  */
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doInit(JNIEnv*,
-		jclass) {
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doInit(
+		JNIEnv *env, jclass) {
 	llama_backend_init();
 }
 

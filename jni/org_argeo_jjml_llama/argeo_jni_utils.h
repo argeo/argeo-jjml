@@ -50,4 +50,17 @@ inline void* getPointer(JNIEnv *env, jobject obj) {
 	return reinterpret_cast<void*>(pointer);
 }
 
+/**
+ *  Check the (unlikely) case where casting pointers as jlong would fail,
+ *  since it is relied upon in order to map Java and native structures
+ */
+inline void checkPlatformPointerSize(JNIEnv *env) {
+	int pointerSize = sizeof(void*);
+	int jlongSize = sizeof(jlong);
+	if (pointerSize > jlongSize) {
+		ThrowIllegalStateException(env,
+				"Platform pointer size is not supported");
+	}
+}
+
 #endif
