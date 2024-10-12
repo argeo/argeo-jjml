@@ -1,11 +1,10 @@
 /*
  * package org.argeo.jjml.llama
  */
-#include <string>
-
-#include <jni.h>
 
 #include "org_argeo_jjml_llama_.h"
+
+#include "/usr/lib/jvm/java-17-openjdk-amd64/include/linux/jni_md.h"
 
 /*
  * Standard Java
@@ -68,8 +67,9 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	/*
 	 * LlamaCppModelParams
 	 */
-	LlamaCppModelParams = env->FindClass(
-			"org/argeo/jjml/llama/LlamaCppModelParams");
+	// Note: jclass are apparently local references (TODO check it in details)
+	LlamaCppModelParams = static_cast<jclass>(env->NewWeakGlobalRef(
+			env->FindClass("org/argeo/jjml/llama/LlamaCppModelParams")));
 
 	// FIELDS
 	LlamaCppModelParams$gpuLayerCount = env->GetFieldID(LlamaCppModelParams,
@@ -85,8 +85,8 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	/*
 	 * LlamaCppContextParams
 	 */
-	LlamaCppContextParams = env->FindClass(
-			"org/argeo/jjml/llama/LlamaCppContextParams");
+	LlamaCppContextParams = static_cast<jclass>(env->NewWeakGlobalRef(
+			env->FindClass("org/argeo/jjml/llama/LlamaCppContextParams")));
 	// FIELDS
 	// integers
 	LlamaCppContextParams$contextSize = env->GetFieldID(LlamaCppContextParams,
@@ -114,7 +114,8 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	/*
 	 * NativeReference
 	 */
-	jclass NativeReference = env->FindClass("org/argeo/jjml/llama/NativeReference");
+	jclass NativeReference = env->FindClass(
+			"org/argeo/jjml/llama/NativeReference");
 	// METHODS
 	NativeReference$getPointer = env->GetMethodID(NativeReference, "getPointer",
 			"()J");
