@@ -46,7 +46,8 @@ inline void* getPointer(JNIEnv *env, jobject obj) {
 		return nullptr;
 	}
 	jlong pointer = env->CallLongMethod(obj, method);
-	return (void*) pointer;
+	// return static_cast<void*>(pointer); // cannot work since jlong is a 'long int'
+	return reinterpret_cast<void*>(pointer);
 }
 
 #endif
