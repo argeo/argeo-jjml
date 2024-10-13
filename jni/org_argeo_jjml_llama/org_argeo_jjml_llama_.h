@@ -1,5 +1,7 @@
 #include <jni.h>
-#include <type_traits>
+#include <jni_md.h>
+
+#include <argeo/argeo_jni.h>
 
 /*
  * package org.argeo.jjml.llama
@@ -57,17 +59,6 @@ extern jmethodID NativeReference$getPointer;
 /*
  * FUNCTIONS
  */
-/** Cast a jlong to a pointer. */
-template<typename T>
-inline T getPointer(jlong pointer) {
-	static_assert(std::is_pointer<T>::value);
-	// Check the (unlikely) case where casting pointers as jlong would fail,
-	// since it is relied upon in order to map Java and native structures
-	// TODO provide alternative mechanism, such as a registry?
-	static_assert(sizeof(T) <= sizeof(jlong));
-	return reinterpret_cast<T>(pointer);
-}
-
 /**
  * Get a native pointer from a Java object implementing a method returning a (Java) long.
  *
@@ -78,7 +69,7 @@ inline T getPointer(jlong pointer) {
 template<typename T>
 inline T getPointer(JNIEnv *env, jobject obj) {
 	jlong pointer = env->CallLongMethod(obj, NativeReference$getPointer);
-	return getPointer<T>(pointer);
+	return argeo::jni::getPointer<T>(pointer);
 }
 
 #endif
