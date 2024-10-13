@@ -1,13 +1,11 @@
 #include <argeo/argeo_jni.h>
 #include <bits/stdint-intn.h>
-#include <bits/types/mbstate_t.h>
 #include <ggml.h>
 #include <jni.h>
 #include <jni_md.h>
 #include <llama.h>
 #include <stddef.h>
 #include <algorithm>
-#include <fstream>
 #include <locale>
 #include <string>
 #include <vector>
@@ -16,9 +14,11 @@
 #include "org_argeo_jjml_llama_LlamaCppModel.h" // IWYU pragma: keep
 #include "org_argeo_jjml_llama_LlamaCppNative.h" // IWYU pragma: keep
 
-std::wstring_convert<
-		argeo::jni::deletable_facet<std::codecvt<char16_t, char, std::mbstate_t>>,
-		char16_t> convertUtf16;
+/*
+ * FIELDS
+ */
+/** UTF-16 converter. */
+static argeo::jni::utf16_convert utf16_converter;
 
 /*
  * CHAT
@@ -175,18 +175,15 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeSt
 		jboolean parseSpecial) {
 	auto *model = getPointer<llama_model*>(env, obj);
 
-	const char16_t *u16chars =
-			reinterpret_cast<const char16_t*>(env->GetStringCritical(str,
-					nullptr));
-
-	std::u16string u16text(u16chars);
-	std::string text = convertUtf16.to_bytes(u16text);
+	const jchar *jchars = env->GetStringCritical(str, nullptr);
+	std::u16string u16text = argeo::jni::jcharsToUtf16(jchars);
+	std::string text = utf16_converter.to_bytes(u16text);
 
 	std::vector<llama_token> tokens = jjml_cpp_string_to_tokens(model, text,
 			addSpecial, parseSpecial);
 
 	// clean up
-	env->ReleaseStringCritical(str, reinterpret_cast<const jchar*>(u16chars));
+	env->ReleaseStringCritical(str, jchars);
 
 	jintArray res = env->NewIntArray(tokens.size());
 	env->SetIntArrayRegion(res, 0, tokens.size(), tokens.data());
@@ -196,8 +193,6 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeSt
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsString(
 		JNIEnv *env, jobject modelObj, jintArray tokenList,
 		jboolean removeSpecial, jboolean unparseSpecial) {
-
-//	std::string text = reinterpret_cast<const char*>(+u8"zß水🍌");
 	auto *model = getPointer<llama_model*>(env, modelObj);
 
 	int32_t n_tokens = env->GetArrayLength(tokenList);
@@ -212,10 +207,8 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAs
 	// clean up
 	env->ReleasePrimitiveArrayCritical(tokenList, tokens, 0);
 
-	std::u16string u16text = convertUtf16.from_bytes(text);
-	const jchar *resChars = reinterpret_cast<const jchar*>(u16text.data());
-	jstring res = env->NewString(resChars, u16text.size());
-	return res;
+	std::u16string u16text = utf16_converter.from_bytes(text);
+	return argeo::jni::utf16ToJstring(env, u16text);
 }
 
 /*

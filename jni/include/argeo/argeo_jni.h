@@ -1,30 +1,24 @@
 #ifndef argeo_jni_h
 #define argeo_jni_h
 
+#include <bits/types/mbstate_t.h>
+#include <jni.h>
 #include <jni_md.h>
 #include <fstream>
+#include <locale>
+#include <string>
 #include <type_traits>
 
 namespace argeo::jni {
-/*
- * ENCODING
- */
-/**
- * Required in order to override destructor in order to use encoding conversions.
- *
- * Usage:
- * <code></code>
- */
-template<class I, class E, class S>
-struct codecvt: std::codecvt<I, E, S> {
-	~codecvt() {
-	}
-};
-
+// TYPES
 /** Utility wrapper to adapt locale-bound facets for wstring/wbuffer convert
  *
  * @see https://en.cppreference.com/w/cpp/locale/codecvt
  */
+/*
+ * ENCODING
+ */
+// TYPES
 template<class Facet>
 struct deletable_facet: Facet {
 	template<class ... Args>
@@ -34,6 +28,33 @@ struct deletable_facet: Facet {
 	~deletable_facet() {
 	}
 };
+
+/** A converter from std::string to std::u16string.
+ *
+ * Usage:
+ * <code>
+ * </code>*/
+typedef std::wstring_convert<
+		argeo::jni::deletable_facet<std::codecvt<char16_t, char, std::mbstate_t>>,
+		char16_t> utf16_convert;
+
+/** Convenience method to make casting more readable in code.*/
+inline std::u16string jcharsToUtf16(const jchar *jchars) {
+	const char16_t *u16chars = reinterpret_cast<const char16_t*>(jchars);
+	std::u16string u16text(u16chars);
+	return u16text;
+}
+
+// METHODS
+/** Convenience method to make casting more readable in code.*/
+inline const jchar* utf16ToJchars(std::u16string u16text) {
+	return reinterpret_cast<const jchar*>(u16text.data());
+}
+
+/** UTF-16 string to Java string. No conversion is needed, as this is the default format.*/
+inline jstring utf16ToJstring(JNIEnv *env, std::u16string u16text) {
+	return env->NewString(utf16ToJchars(u16text), u16text.size());
+}
 
 /*
  * POINTERS
@@ -51,5 +72,4 @@ inline T getPointer(jlong pointer) {
 }
 
 }  // namespace argeo::jni
-
 #endif

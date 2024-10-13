@@ -1,11 +1,13 @@
 #include "jjml_llama.h"
 
+#include <argeo/argeo_jni.h>
+#include <ggml.h>
+#include <jni.h>
+#include <jni_md.h>
+#include <stddef.h>
 #include <cassert>
-#include <iostream>
 
-#include <llama.h>
-
-#include "org_argeo_jjml_llama_LlamaCppBackend.h"
+#include "org_argeo_jjml_llama_LlamaCppBackend.h" // IWYU pragma: keep
 
 /*
  * BACKEND
