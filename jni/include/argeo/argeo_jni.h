@@ -19,6 +19,9 @@ namespace argeo::jni {
  * ENCODING
  */
 // TYPES
+// We need to use this wrapper in order to have an UTF-16 converter which can be instantiated.
+// see https://en.cppreference.com/w/cpp/locale/codecvt
+// TODO Make sure that there is no better way.
 template<class Facet>
 struct deletable_facet: Facet {
 	template<class ... Args>
