@@ -45,7 +45,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doDestroy(
 }
 
 /*
- * UTILITIES
+ * BATCH UTILITIES
  */
 void jjml_llama_batch_add(struct llama_batch &batch, llama_token id,
 		llama_pos pos, const std::vector<llama_seq_id> &seq_ids, bool logits) {

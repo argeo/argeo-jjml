@@ -9,22 +9,6 @@ extern "C" {
 #endif
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel
- * Method:    doTokenize
- * Signature: ([BZZ)[I
- */
-JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenize
-  (JNIEnv *, jobject, jbyteArray, jboolean, jboolean);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppModel
- * Method:    doDeTokenize
- * Signature: ([IZZ)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenize
-  (JNIEnv *, jobject, jintArray, jboolean, jboolean);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppModel
  * Method:    doInit
  * Signature: (Ljava/lang/String;Lorg/argeo/jjml/llama/LlamaCppModelParams;Ljava/util/function/DoublePredicate;)J
  */
@@ -38,6 +22,38 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy
   (JNIEnv *, jobject);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doTokenizeUtf8Array
+ * Signature: ([BZZ)[I
+ */
+JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeUtf8Array
+  (JNIEnv *, jobject, jbyteArray, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doDeTokenizeAsUtf8Array
+ * Signature: ([IZZ)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsUtf8Array
+  (JNIEnv *, jobject, jintArray, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doTokenizeString
+ * Signature: (Ljava/lang/String;ZZ)[I
+ */
+JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeString
+  (JNIEnv *, jobject, jstring, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doDeTokenizeAsString
+ * Signature: ([IZZ)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsString
+  (JNIEnv *, jobject, jintArray, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel

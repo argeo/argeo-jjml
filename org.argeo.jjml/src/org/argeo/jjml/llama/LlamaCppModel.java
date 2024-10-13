@@ -1,7 +1,5 @@
 package org.argeo.jjml.llama;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -27,17 +25,35 @@ public class LlamaCppModel extends NativeReference {
 	/*
 	 * NATIVE METHODS
 	 */
-	/** Tokenize a standard UTF-8 encoded string. */
-	native int[] doTokenize(byte[] str, boolean addSpecial, boolean parseSpecial);
-
-	/** De-tokenize as a standard UTF-8 encoded string. */
-	native byte[] doDeTokenize(int[] tokens, boolean removeSpecial, boolean unparseSpecial);
+	// Lifcycle
 
 	native long doInit(String localPathStr, LlamaCppModelParams params, DoublePredicate progressCallback);
 
 	@Override
 	native void doDestroy();
 
+	// Tokenization
+	/**
+	 * Tokenize a string encoded as a standard UTF-8 byte array. To use when it
+	 * makes more sense to convert on the Java side.
+	 * 
+	 * @see #doDeTokenizeAsUtf8Array(int[], boolean, boolean)
+	 */
+	native int[] doTokenizeUtf8Array(byte[] str, boolean addSpecial, boolean parseSpecial);
+
+	/** De-tokenize as a string encoded in standard UTF-8. */
+	native byte[] doDeTokenizeAsUtf8Array(int[] tokens, boolean removeSpecial, boolean unparseSpecial);
+
+	/**
+	 * Tokenize a Java {@link String}. Its UTF-16 representation will be used
+	 * without copy on the native side, where it will be converted to UTF-8.
+	 */
+	native int[] doTokenizeString(String str, boolean addSpecial, boolean parseSpecial);
+
+	/** De-tokenize as a Java {@link String}. */
+	native String doDeTokenizeAsString(int[] tokens, boolean removeSpecial, boolean unparseSpecial);
+
+	// Chat
 	native String doFormatChatMessages(String[] roles, String[] contents);
 
 	native int doGetEmbeddingSize();
@@ -50,8 +66,9 @@ public class LlamaCppModel extends NativeReference {
 	}
 
 	public String deTokenize(LlamaCppTokenList tokenList, boolean removeSpecial, boolean unparseSpecial) {
-		byte[] str = doDeTokenize(tokenList.getTokens(), removeSpecial, unparseSpecial);
-		return new String(str, UTF_8);
+//		byte[] str = doDeTokenizeAsUtf8Array(tokenList.getTokens(), removeSpecial, unparseSpecial);
+//		return new String(str, UTF_8);
+		return doDeTokenizeAsString(tokenList.getTokens(), removeSpecial, unparseSpecial);
 	}
 
 	public LlamaCppTokenList tokenize(String str, boolean addSpecial) {
@@ -59,7 +76,9 @@ public class LlamaCppModel extends NativeReference {
 	}
 
 	public LlamaCppTokenList tokenize(String str, boolean addSpecial, boolean parseSpecial) {
-		int[] tokens = doTokenize(str.getBytes(UTF_8), addSpecial, parseSpecial);
+		// int[] tokens = doTokenizeUtf8Array(str.getBytes(UTF_8), addSpecial,
+		// parseSpecial);
+		int[] tokens = doTokenizeString(str, addSpecial, parseSpecial);
 		return new LlamaCppTokenList(this, tokens);
 	}
 
@@ -94,6 +113,9 @@ public class LlamaCppModel extends NativeReference {
 		setPointer(pointer);
 		this.initParams = modelParams;
 		embeddingSize = doGetEmbeddingSize();
+
+//		String str = doDeTokenizeAsString(null, false, false);
+//		System.out.println(str);
 	}
 
 	/*
