@@ -43,6 +43,9 @@ typedef std::wstring_convert<
 
 /** Convenience method to make casting more readable in code.*/
 inline std::u16string jcharsToUtf16(const jchar *jchars) {
+	// sanity check
+	static_assert(sizeof(char16_t) == sizeof(jchar));
+
 	const char16_t *u16chars = reinterpret_cast<const char16_t*>(jchars);
 	std::u16string u16text(u16chars);
 	return u16text;
@@ -51,6 +54,9 @@ inline std::u16string jcharsToUtf16(const jchar *jchars) {
 // METHODS
 /** Convenience method to make casting more readable in code.*/
 inline const jchar* utf16ToJchars(std::u16string u16text) {
+	// sanity check
+	static_assert(sizeof(char16_t) == sizeof(jchar));
+
 	return reinterpret_cast<const jchar*>(u16text.data());
 }
 
