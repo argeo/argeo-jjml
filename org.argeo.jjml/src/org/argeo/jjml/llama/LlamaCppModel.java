@@ -1,5 +1,7 @@
 package org.argeo.jjml.llama;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -25,10 +27,11 @@ public class LlamaCppModel extends NativeReference {
 	/*
 	 * NATIVE METHODS
 	 */
+	/** Tokenize a standard UTF-8 encoded string. */
+	native int[] doTokenize(byte[] str, boolean addSpecial, boolean parseSpecial);
 
-	native int[] doTokenize(String str, boolean addSpecial, boolean parseSpecial);
-
-	native String doDeTokenize(int[] tokens, boolean special);
+	/** De-tokenize as a standard UTF-8 encoded string. */
+	native byte[] doDeTokenize(int[] tokens, boolean removeSpecial, boolean unparseSpecial);
 
 	native long doInit(String localPathStr, LlamaCppModelParams params, DoublePredicate progressCallback);
 
@@ -42,8 +45,13 @@ public class LlamaCppModel extends NativeReference {
 	/*
 	 * USABLE METHODS
 	 */
-	public String deTokenize(LlamaCppTokenList tokenList, boolean special) {
-		return doDeTokenize(tokenList.getTokens(), special);
+	public String deTokenize(LlamaCppTokenList tokenList, boolean unparseSpecial) {
+		return deTokenize(tokenList, false, unparseSpecial);
+	}
+
+	public String deTokenize(LlamaCppTokenList tokenList, boolean removeSpecial, boolean unparseSpecial) {
+		byte[] str = doDeTokenize(tokenList.getTokens(), removeSpecial, unparseSpecial);
+		return new String(str, UTF_8);
 	}
 
 	public LlamaCppTokenList tokenize(String str, boolean addSpecial) {
@@ -51,7 +59,7 @@ public class LlamaCppModel extends NativeReference {
 	}
 
 	public LlamaCppTokenList tokenize(String str, boolean addSpecial, boolean parseSpecial) {
-		int[] tokens = doTokenize(str, addSpecial, parseSpecial);
+		int[] tokens = doTokenize(str.getBytes(UTF_8), addSpecial, parseSpecial);
 		return new LlamaCppTokenList(this, tokens);
 	}
 

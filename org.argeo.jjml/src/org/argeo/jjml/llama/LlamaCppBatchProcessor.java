@@ -2,6 +2,7 @@ package org.argeo.jjml.llama;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -15,9 +16,15 @@ public class LlamaCppBatchProcessor {
 
 	public List<CompletionStage<LlamaCppTokenList>> processBatch(String systemPrompt, List<String> sequencePrompt,
 			int predictMax) {
+		Objects.requireNonNull(systemPrompt, "System prompt must be provided.");
+
 		List<CompletionStage<LlamaCppTokenList>> res = new ArrayList<>(sequencePrompt.size());
 
 		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
+
+//		System.out.println(Arrays.toString(systemPrompt.toCharArray()));
+//		System.out.println(Arrays.toString(systemPromptTL.toString().toCharArray()));
+//		assert systemPrompt.equals(systemPromptTL.toString());
 
 		// TODO process sequence-specific prompts
 		int parallelCount = sequencePrompt.size();

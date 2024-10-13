@@ -10,18 +10,18 @@ extern "C" {
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel
  * Method:    doTokenize
- * Signature: (Ljava/lang/String;ZZ)[I
+ * Signature: ([BZZ)[I
  */
 JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenize
-  (JNIEnv *, jobject, jstring, jboolean, jboolean);
+  (JNIEnv *, jobject, jbyteArray, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel
  * Method:    doDeTokenize
- * Signature: ([IZ)Ljava/lang/String;
+ * Signature: ([IZZ)[B
  */
-JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenize
-  (JNIEnv *, jobject, jintArray, jboolean);
+JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenize
+  (JNIEnv *, jobject, jintArray, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel
