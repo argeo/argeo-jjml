@@ -86,9 +86,6 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenize(
 	char *text_chars = static_cast<char*>(env->GetPrimitiveArrayCritical(str,
 	NULL));
 
-//	const char *chars = env->GetStringUTFChars(str, NULL);
-//	int text_length = env->GetStringLength(str);
-
 	std::string text(text_chars);
 
 	// upper limit for the number of tokens
@@ -104,6 +101,10 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenize(
 	} else {
 		result.resize(n_tokens);
 	}
+
+	// clean up
+	env->ReleasePrimitiveArrayCritical(str, text_chars, 0);
+
 	jintArray res = env->NewIntArray(result.size());
 	env->SetIntArrayRegion(res, 0, result.size(), result.data());
 	return res;
@@ -119,23 +120,22 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokeniz
 	void *region = env->GetPrimitiveArrayCritical(tokens, is_copy);
 
 	std::string text;
-	//text.resize(std::max(text.capacity(), tokens_size));
+	text.resize(std::max((int) text.capacity(), (int) tokens_size));
 	int32_t n_chars = llama_detokenize(model, (int*) region, tokens_size,
 			&text[0], (int32_t) text.size(), removeSpecial, unparseSpecial);
 	if (n_chars < 0) {
 		text.resize(-n_chars);
 		n_chars = llama_detokenize(model, (int*) region, tokens_size, &text[0],
 				(int32_t) text.size(), removeSpecial, unparseSpecial);
-		GGML_ASSERT(n_chars <= (int32_t )text.size()); // whitespace trimming is performed after per-token detokenization
+		GGML_ASSERT(n_chars <= (int32_t ) text.size()); // whitespace trimming is performed after per-token detokenization
 	}
+
+	// clean up
 	env->ReleasePrimitiveArrayCritical(tokens, region, 0);
 
 	text.resize(n_chars);
-//	jstring res = env->NewStringUTF(text.data());
-//	return res;
 
 	jbyteArray res = env->NewByteArray(text.size());
-	// FIXME this cast seems dangerous
 	env->SetByteArrayRegion(res, 0, text.size(),
 			reinterpret_cast<jbyte*>(text.data()));
 	return res;
