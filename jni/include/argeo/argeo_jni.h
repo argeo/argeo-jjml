@@ -4,6 +4,7 @@
 #include <bits/types/mbstate_t.h>
 #include <jni.h>
 #include <jni_md.h>
+#include <cstdarg>
 #include <fstream>
 #include <locale>
 #include <string>
@@ -15,6 +16,55 @@ namespace argeo::jni {
  *
  * @see https://en.cppreference.com/w/cpp/locale/codecvt
  */
+/*
+ * CALLBACKS
+ */
+struct java_callback {
+	jobject callback = nullptr;
+	jmethodID method = nullptr;
+	JavaVM *jvm = nullptr;
+};
+
+/**
+ * Return the JNI environment for the current thread or attach it if it was detached.
+ * @return true if the current thread was detached before this call.
+ */
+inline jboolean load_thread_jnienv(JavaVM *jvm, void **penv) {
+	jint status = jvm->GetEnv(penv, JNI_VERSION_10);
+	jboolean wasDetached = true;
+	if (JNI_EVERSION == status) {
+		// JNI version unsupported
+		// TODO throw exception?
+		wasDetached = true;
+	} else if (JNI_EDETACHED == status) {
+		wasDetached = true;
+		jvm->AttachCurrentThreadAsDaemon(penv, nullptr);
+	} else {
+		//std::assert(threadEnv != nullptr,"");
+		wasDetached = false;
+	}
+	return wasDetached;
+}
+
+/** Calls the callback's method on the provided Java object.*/
+inline jboolean exec_boolean_callback(java_callback *cb, ...) {
+	JNIEnv *threadEnv;
+	jboolean wasDetached = load_thread_jnienv(cb->jvm, (void**) &threadEnv);
+	//cb->jvm->AttachCurrentThreadAsDaemon((void**) &threadEnv, nullptr);
+	jobject obj = threadEnv->NewLocalRef(cb->callback);
+//	jboolean res = threadEnv->CallBooleanMethod(obj, cb->method);
+
+	// process variable arguments
+	va_list args;
+	jboolean result;
+	va_start(args, cb);
+	result = threadEnv->CallBooleanMethodV(obj, cb->method, args);
+	va_end(args);
+	if (wasDetached)
+		cb->jvm->DetachCurrentThread();
+	return result;
+}
+
 /*
  * ENCODING
  */

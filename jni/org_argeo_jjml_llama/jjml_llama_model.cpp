@@ -267,31 +267,35 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
 	get_model_params(env, modelParams, &mparams);
 
 	// progress callback
+	argeo::jni::java_callback progress_data;
 	if (progressCallback != nullptr) {
-		// struct used to pass references to the lambda
-		struct java_callback {
-			const jobject callback;
-			JavaVM *jvm;
-		} progress_data { progressCallback };
-		// we may have multiple JVMs, we therefore don't centralize a static reference
+		progress_data.callback = env->NewGlobalRef(progressCallback);
+		progress_data.method = DoublePredicate$test;
 		env->GetJavaVM(&progress_data.jvm);
 		mparams.progress_callback_user_data = &progress_data;
 
 		mparams.progress_callback = [](float progress,
 				void *user_data) -> bool {
-			java_callback *cb = (java_callback*) user_data;
+//			auto *cb = (argeo::jni::java_callback*) user_data;
 			// While the callback is called from the loading thread, this may change in the future,
 			// so we make sure that we have a valid JNIEnv for the calling thread.
 			// Note: we therefore currently don't bother detaching the thread later on.
-			JNIEnv *threadEnv;
-			cb->jvm->AttachCurrentThreadAsDaemon((void**) &threadEnv, nullptr);
+//			JNIEnv *threadEnv;
+//			cb->jvm->AttachCurrentThreadAsDaemon((void**) &threadEnv, nullptr);
 
-			return threadEnv->CallBooleanMethod(cb->callback,
-					DoublePredicate$test, static_cast<double>(progress));
+//			return threadEnv->CallBooleanMethod(cb->callback, cb->method,
+//					static_cast<double>(progress));
+			return argeo::jni::exec_boolean_callback(
+					static_cast<argeo::jni::java_callback*>(user_data),
+					static_cast<jdouble>(progress));
 		};
 	}
 
 	llama_model *model = llama_load_model_from_file(path_model, mparams);
+
+	// free callback clobal reference
+	if (progress_data.callback != nullptr)
+		env->DeleteGlobalRef(progress_data.callback);
 
 	env->ReleaseStringUTFChars(localPath, path_model);
 	return (jlong) model;
