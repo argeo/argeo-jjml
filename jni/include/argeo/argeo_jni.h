@@ -11,11 +11,6 @@
 #include <type_traits>
 
 namespace argeo::jni {
-// TYPES
-/** Utility wrapper to adapt locale-bound facets for wstring/wbuffer convert
- *
- * @see https://en.cppreference.com/w/cpp/locale/codecvt
- */
 /*
  * CALLBACKS
  */
@@ -29,9 +24,9 @@ struct java_callback {
  * Return the JNI environment for the current thread or attach it if it was detached.
  * @return true if the current thread was detached before this call.
  */
-inline jboolean load_thread_jnienv(JavaVM *jvm, void **penv) {
+inline bool load_thread_jnienv(JavaVM *jvm, void **penv) {
 	jint status = jvm->GetEnv(penv, JNI_VERSION_10);
-	jboolean wasDetached = true;
+	bool wasDetached = true;
 	if (JNI_EVERSION == status) {
 		// JNI version unsupported
 		// TODO throw exception?
@@ -49,10 +44,8 @@ inline jboolean load_thread_jnienv(JavaVM *jvm, void **penv) {
 /** Calls the callback's method on the provided Java object.*/
 inline jboolean exec_boolean_callback(java_callback *cb, ...) {
 	JNIEnv *threadEnv;
-	jboolean wasDetached = load_thread_jnienv(cb->jvm, (void**) &threadEnv);
-	//cb->jvm->AttachCurrentThreadAsDaemon((void**) &threadEnv, nullptr);
+	bool wasDetached = load_thread_jnienv(cb->jvm, (void**) &threadEnv);
 	jobject obj = threadEnv->NewLocalRef(cb->callback);
-//	jboolean res = threadEnv->CallBooleanMethod(obj, cb->method);
 
 	// process variable arguments
 	va_list args;
@@ -60,15 +53,35 @@ inline jboolean exec_boolean_callback(java_callback *cb, ...) {
 	va_start(args, cb);
 	result = threadEnv->CallBooleanMethodV(obj, cb->method, args);
 	va_end(args);
+
 	if (wasDetached)
 		cb->jvm->DetachCurrentThread();
 	return result;
 }
 
 /*
+ * POINTERS
+ */
+
+/** Cast a jlong to a pointer. */
+template<typename T>
+inline T getPointer(jlong pointer) {
+	static_assert(std::is_pointer<T>::value);
+	// Check the (unlikely) case where casting pointers as jlong would fail,
+	// since it is relied upon in order to map Java and native structures
+	// TODO provide alternative mechanism, such as a registry?
+	static_assert(sizeof(T) <= sizeof(jlong));
+	return reinterpret_cast<T>(pointer);
+}
+
+/*
  * ENCODING
  */
 // TYPES
+/** Utility wrapper to adapt locale-bound facets for wstring/wbuffer convert
+ *
+ * @see https://en.cppreference.com/w/cpp/locale/codecvt
+ */
 // We need to use this wrapper in order to have an UTF-16 converter which can be instantiated.
 // see https://en.cppreference.com/w/cpp/locale/codecvt
 // TODO Make sure that there is no better way.
@@ -113,21 +126,6 @@ inline const jchar* utf16ToJchars(std::u16string u16text) {
 /** UTF-16 string to Java string. No conversion is needed, as this is the default format.*/
 inline jstring utf16ToJstring(JNIEnv *env, std::u16string u16text) {
 	return env->NewString(utf16ToJchars(u16text), u16text.size());
-}
-
-/*
- * POINTERS
- */
-
-/** Cast a jlong to a pointer. */
-template<typename T>
-inline T getPointer(jlong pointer) {
-	static_assert(std::is_pointer<T>::value);
-	// Check the (unlikely) case where casting pointers as jlong would fail,
-	// since it is relied upon in order to map Java and native structures
-	// TODO provide alternative mechanism, such as a registry?
-	static_assert(sizeof(T) <= sizeof(jlong));
-	return reinterpret_cast<T>(pointer);
 }
 
 }  // namespace argeo::jni
