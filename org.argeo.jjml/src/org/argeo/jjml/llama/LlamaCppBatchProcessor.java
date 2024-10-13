@@ -1,5 +1,8 @@
 package org.argeo.jjml.llama;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -11,8 +14,55 @@ public class LlamaCppBatchProcessor {
 	private LlamaCppModel model;
 	private LlamaCppContext context;
 
+	/*
+	 * NATIVE METHODS
+	 */
 	native void doProcessBatch(CompletableFuture<?>[] callbacks, LlamaCppContext context, int[] systemPrompt,
 			int[][] sequencePrompts, int predictMax);
+
+	native int doProcessSingleBatch(long contextPointer, ByteBuffer buf, int predictMax);
+
+	/*
+	 * USABLE METHODS
+	 */
+	public String processSingleBatch(String systemPrompt, int predictMax) {
+		ByteBuffer buf = ByteBuffer.allocateDirect(predictMax * Integer.BYTES);
+		buf.order(ByteOrder.nativeOrder());
+
+		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
+		int[] tokens = systemPromptTL.getTokens();
+		IntBuffer intBuf = buf.asIntBuffer();
+		intBuf.put(tokens);
+		buf.position(tokens.length * Integer.BYTES);
+		buf.flip();
+
+		int maxKvSize = systemPromptTL.size() + (predictMax - systemPromptTL.size());
+
+		LlamaCppContext contextToUse;
+		if (context == null) {
+			LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
+			contextToUse = new LlamaCppContext();
+			contextToUse.setModel(model);
+			contextParams.setContextSize(maxKvSize);
+			contextParams.setMaxBatchSize(predictMax);
+			contextToUse.init();
+		} else {
+			contextToUse = context;
+		}
+
+		doProcessSingleBatch(contextToUse.getPointer(), buf, predictMax);
+
+		int newPosition = buf.position();
+		int newLimit = buf.limit();
+		System.out.println("newPosition=" + newPosition + ", newLimit=" + newLimit);
+		intBuf.limit(newLimit / Integer.BYTES);
+		intBuf.position(newPosition / Integer.BYTES);
+		int[] newTokens = new int[intBuf.limit() - intBuf.position()];
+		intBuf.get(newTokens);
+		LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
+
+		return newTL.toString();
+	}
 
 	public List<CompletionStage<LlamaCppTokenList>> processBatch(String systemPrompt, List<String> sequencePrompt,
 			int predictMax) {

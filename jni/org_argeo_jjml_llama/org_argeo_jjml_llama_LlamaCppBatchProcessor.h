@@ -15,6 +15,14 @@ extern "C" {
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProcessBatch
   (JNIEnv *, jobject, jobjectArray, jobject, jintArray, jobjectArray, jint);
 
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
+ * Method:    doProcessSingleBatch
+ * Signature: (JLjava/nio/ByteBuffer;I)I
+ */
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProcessSingleBatch
+  (JNIEnv *, jobject, jlong, jobject, jint);
+
 #ifdef __cplusplus
 }
 #endif

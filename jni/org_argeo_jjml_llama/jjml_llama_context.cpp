@@ -3,8 +3,8 @@
 #include <cassert>
 
 #include "org_argeo_jjml_llama_.h"
-#include "org_argeo_jjml_llama_LlamaCppContext.h"
-#include "org_argeo_jjml_llama_LlamaCppNative.h"
+#include "org_argeo_jjml_llama_LlamaCppContext.h" // IWYU pragma: keep
+#include "org_argeo_jjml_llama_LlamaCppNative.h" // IWYU pragma: keep
 
 /*
  * PARAMETERS
