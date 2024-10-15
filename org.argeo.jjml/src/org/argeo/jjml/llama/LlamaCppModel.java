@@ -30,7 +30,7 @@ public class LlamaCppModel extends NativeReference {
 	native long doInit(String localPathStr, LlamaCppModelParams params, DoublePredicate progressCallback);
 
 	@Override
-	native void doDestroy();
+	native void doDestroy(long pointer);
 
 	// Tokenization
 	/**

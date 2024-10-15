@@ -302,8 +302,8 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
 }
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy(
-		JNIEnv *env, jobject obj) {
-	auto *model = getPointer<llama_model*>(env, obj);
+		JNIEnv *env, jobject, jlong pointer) {
+	auto *model = argeo::jni::getPointer<llama_model*>(pointer);
 	llama_free_model(model);
 }
 

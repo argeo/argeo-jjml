@@ -18,10 +18,10 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel
  * Method:    doDestroy
- * Signature: ()V
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel

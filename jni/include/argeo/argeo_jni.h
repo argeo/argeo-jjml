@@ -10,15 +10,45 @@
 #include <string>
 #include <type_traits>
 
+/*
+ * PRE-PROCESSING
+ */
+#ifndef ARGEO_PERF
+#include <chrono>
+#include <iomanip>
+#include <iostream>
+
+#define ARGEO_PERF 1
+#define PERF_DURATION(_begin_) std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - _begin_).count()
+#define PERF_NS(_begin_, msg) "## ARGEO_PERF ## " << std::setfill(' ') << std::setw(16) << PERF_DURATION(_begin_) << " ns " << msg << std::endl
+#define PERF_BEGIN() auto _begin_ = std::chrono::high_resolution_clock::now()
+#define PERF_END(msg) std::cout << PERF_NS(_begin_, msg)
+#endif
+
 namespace argeo::jni {
+/*
+ * EXCEPTION HANDLING
+ */
+//	inline CheckJava
+/*
+ * SAFE FIELDS AN METHODS ACCESSORS
+ */
+inline jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
+		const char *sig) {
+	return env->GetFieldID(clazz, name, sig);
+}
+
 /*
  * CALLBACKS
  */
-struct java_callback {
+/**
+ * A structure holding the reference required for executing callback in the Java code.
+ */
+typedef struct java_callback {
 	jobject callback = nullptr;
 	jmethodID method = nullptr;
 	JavaVM *jvm = nullptr;
-};
+} java_callback;
 
 /**
  * Return the JNI environment for the current thread or attach it if it was detached.

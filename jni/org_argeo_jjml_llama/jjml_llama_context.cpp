@@ -1,5 +1,8 @@
+#include <argeo/argeo_jni.h>
+#include <jni.h>
+#include <jni_md.h>
 #include <llama.h>
-
+#include <stddef.h>
 #include <cassert>
 
 #include "org_argeo_jjml_llama_.h"
@@ -93,8 +96,9 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newContextPar
  * LIFECYCLE
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
-		JNIEnv *env, jobject obj, jobject modelObj, jobject contextParams) {
-	auto *model = getPointer<llama_model*>(env, modelObj);
+		JNIEnv *env, jobject, jlong modelPointer, jobject contextParams) {
+	//auto *model = getPointer<llama_model*>(env, modelObj);
+	auto *model = argeo::jni::getPointer<llama_model*>(modelPointer);
 
 	llama_context_params ctx_params = llama_context_default_params();
 	get_context_params(env, contextParams, &ctx_params);
@@ -116,8 +120,8 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 }
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy(
-		JNIEnv *env, jobject obj) {
-	auto *ctx = getPointer<llama_context*>(env, obj);
+		JNIEnv *env, jobject obj, jlong pointer) {
+	auto *ctx = argeo::jni::getPointer<llama_context*>(pointer);
 	llama_free(ctx);
 }
 
@@ -125,8 +129,13 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy(
  * ACESSORS
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetPoolingType(
-		JNIEnv *env, jobject obj) {
-	auto *ctx = getPointer<llama_context*>(env, obj);
+		JNIEnv *env, jobject obj, jlong pointer) {
+	auto *ctx = argeo::jni::getPointer<llama_context*>(pointer);
 	return llama_pooling_type(ctx);
 }
 
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetContextSize(
+		JNIEnv*, jobject, jlong pointer) {
+	auto *ctx = argeo::jni::getPointer<llama_context*>(pointer);
+	return llama_n_ctx(ctx);
+}

@@ -4,7 +4,7 @@ package org.argeo.jjml.llama;
 abstract class NativeReference {
 	private Long pointer;
 
-	abstract void doDestroy();
+	abstract void doDestroy(long pointer);
 
 	/*
 	 * UTILITIES
@@ -21,7 +21,7 @@ abstract class NativeReference {
 
 	public void destroy() {
 		checkInitialized();
-		doDestroy();
+		doDestroy(pointer);
 		pointer = null;
 	}
 

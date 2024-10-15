@@ -7,6 +7,10 @@
 #include "/usr/lib/jvm/java-17-openjdk-amd64/include/linux/jni_md.h"
 
 /*
+ * DEBUG & PERF
+ */
+
+/*
  * Standard Java
  */
 // METHODS
@@ -14,6 +18,11 @@ jmethodID DoublePredicate$test;
 // EXCEPTIONS
 jclass IllegalStateException;
 jclass IllegalArgumentException;
+
+jmethodID ByteBuffer$limit;
+jmethodID ByteBuffer$limitI;
+jmethodID ByteBuffer$position;
+jmethodID ByteBuffer$positionI;
 
 /*
  * LlamaCppModelParams
@@ -59,6 +68,14 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	DoublePredicate$test = env->GetMethodID(
 			env->FindClass("java/util/function/DoublePredicate"), "test",
 			"(D)Z");
+	jclass ByteBuffer = env->FindClass("java/nio/ByteBuffer");
+	ByteBuffer$limit = env->GetMethodID(ByteBuffer, "limit", "()I");
+	ByteBuffer$limitI = env->GetMethodID(ByteBuffer, "limit",
+			"(I)Ljava/nio/ByteBuffer;");
+	ByteBuffer$position = env->GetMethodID(ByteBuffer, "position", "()I");
+	ByteBuffer$positionI = env->GetMethodID(ByteBuffer, "position",
+			"(I)Ljava/nio/ByteBuffer;");
+
 	// EXCEPTIONS
 	IllegalStateException = env->FindClass("java/lang/IllegalStateException");
 	IllegalArgumentException = env->FindClass(

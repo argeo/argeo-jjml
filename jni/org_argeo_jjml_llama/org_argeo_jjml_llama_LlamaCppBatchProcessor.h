@@ -18,10 +18,10 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
  * Method:    doProcessSingleBatch
- * Signature: (JLjava/nio/ByteBuffer;I)I
+ * Signature: (JLjava/nio/ByteBuffer;Ljava/nio/ByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProcessSingleBatch
-  (JNIEnv *, jobject, jlong, jobject, jint);
+  (JNIEnv *, jobject, jlong, jobject, jobject);
 
 #ifdef __cplusplus
 }

@@ -28,9 +28,13 @@ public class LlamaCppTokenList {
 		}
 	}
 
+	public String getAsText() {
+		return model.deTokenize(this, true, true);
+	}
+
 	@Override
 	public String toString() {
-		return model.deTokenize(this, true, true);
+		return "TokenList model=" + model.getPointer() + ", " + tokens.length + " tokens";
 	}
 
 }

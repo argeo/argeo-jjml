@@ -16,6 +16,12 @@
  */
 // METHODS
 extern jmethodID DoublePredicate$test;
+
+extern jmethodID ByteBuffer$limit;
+extern jmethodID ByteBuffer$limitI;
+extern jmethodID ByteBuffer$position;
+extern jmethodID ByteBuffer$positionI;
+
 // EXCEPTIONS
 extern jclass IllegalStateException;
 extern jclass IllegalArgumentException;

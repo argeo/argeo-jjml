@@ -20,48 +20,71 @@ public class LlamaCppBatchProcessor {
 	native void doProcessBatch(CompletableFuture<?>[] callbacks, LlamaCppContext context, int[] systemPrompt,
 			int[][] sequencePrompts, int predictMax);
 
-	native int doProcessSingleBatch(long contextPointer, ByteBuffer buf, int predictMax);
+	native int doProcessSingleBatch(long contextPointer, ByteBuffer input, ByteBuffer output);
 
 	/*
 	 * USABLE METHODS
 	 */
 	public String processSingleBatch(String systemPrompt, int predictMax) {
+		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
+
 		ByteBuffer buf = ByteBuffer.allocateDirect(predictMax * Integer.BYTES);
 		buf.order(ByteOrder.nativeOrder());
 
-		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
-		int[] tokens = systemPromptTL.getTokens();
-		IntBuffer intBuf = buf.asIntBuffer();
-		intBuf.put(tokens);
-		buf.position(tokens.length * Integer.BYTES);
-		buf.flip();
+		int newDirectBufPosition = predictMax * Integer.BYTES;
+		ByteBuffer input = buf.slice(buf.position(), systemPromptTL.size() * Integer.BYTES);
+		input.order(ByteOrder.nativeOrder());
+		buf.position(buf.position() + input.capacity());
+		ByteBuffer output = buf.slice(buf.position(), newDirectBufPosition - buf.position());
+		output.order(ByteOrder.nativeOrder());
+		buf.position(newDirectBufPosition);
 
-		int maxKvSize = systemPromptTL.size() + (predictMax - systemPromptTL.size());
+//		int[] tokens = systemPromptTL.getTokens();
+//		IntBuffer inputI = input.asIntBuffer();
+//		inputI.put(tokens);
+		input.asIntBuffer().put(systemPromptTL.getTokens());
+		input.limit(systemPromptTL.size() * Integer.BYTES);
+//		buf.position(tokens.length * Integer.BYTES);
+//		buf.flip();
+
+//		int maxKvSize = systemPromptTL.size() + (predictMax - systemPromptTL.size());
 
 		LlamaCppContext contextToUse;
 		if (context == null) {
 			LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
 			contextToUse = new LlamaCppContext();
 			contextToUse.setModel(model);
-			contextParams.setContextSize(maxKvSize);
+			contextParams.setContextSize(predictMax);
 			contextParams.setMaxBatchSize(predictMax);
-			contextToUse.init();
+			contextToUse.init(contextParams);
 		} else {
 			contextToUse = context;
 		}
 
-		doProcessSingleBatch(contextToUse.getPointer(), buf, predictMax);
+		int contextSize = contextToUse.getContextSize();
+		System.out.println("Context size: "+contextSize);
+		if (contextSize < predictMax)
+			predictMax = contextSize;
 
-		int newPosition = buf.position();
-		int newLimit = buf.limit();
-		System.out.println("newPosition=" + newPosition + ", newLimit=" + newLimit);
-		intBuf.limit(newLimit / Integer.BYTES);
-		intBuf.position(newPosition / Integer.BYTES);
-		int[] newTokens = new int[intBuf.limit() - intBuf.position()];
-		intBuf.get(newTokens);
+		buf.position(0);
+		buf.limit(input.capacity());
+		long begin = System.nanoTime();
+		doProcessSingleBatch(contextToUse.getPointer(), input, output);
+		System.out.println("Process single batch    " + (System.nanoTime() - begin) / 1 + " ns");
+
+//		int newPosition = buf.position();
+//		int newLimit = buf.limit();
+//		System.out.println("newPosition=" + newPosition + ", newLimit=" + newLimit);
+//		intBuf.limit(newLimit / Integer.BYTES);
+//		intBuf.position(newPosition / Integer.BYTES);
+		output.flip();
+		IntBuffer outputI = output.asIntBuffer();
+		outputI.limit(output.limit() / Integer.BYTES);
+		int[] newTokens = new int[outputI.limit() - outputI.position()];
+		outputI.get(newTokens);
 		LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
 
-		return newTL.toString();
+		return newTL.getAsText();
 	}
 
 	public List<CompletionStage<LlamaCppTokenList>> processBatch(String systemPrompt, List<String> sequencePrompt,

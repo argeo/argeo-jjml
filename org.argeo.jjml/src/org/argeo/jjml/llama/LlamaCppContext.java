@@ -11,19 +11,23 @@ public class LlamaCppContext extends NativeReference {
 
 	private LlamaCppModel model;
 
-	private LlamaCppPoolingType poolingType;
-
 	private LlamaCppContextParams initParams;
+
+	// Effective parameters
+	private LlamaCppPoolingType poolingType;
+	private int contextSize;
 
 	/*
 	 * NATIVE
 	 */
-	native long doInit(LlamaCppModel model, LlamaCppContextParams params);
+	private native long doInit(long modelPointer, LlamaCppContextParams params);
 
 	@Override
-	native void doDestroy();
+	native void doDestroy(long pointer);
 
-	native int doGetPoolingType();
+	private native int doGetPoolingType(long pointer);
+
+	private native int doGetContextSize(long pointer);
 
 	/*
 	 * LIFECYCLE
@@ -34,11 +38,12 @@ public class LlamaCppContext extends NativeReference {
 
 	public void init(LlamaCppContextParams params) {
 		Objects.requireNonNull(model, "Model must be set");
-		long pointer = doInit(model, params);
+		long pointer = doInit(model.getPointer(), params);
 		setPointer(pointer);
 		this.initParams = params;
-		int poolingTypeCode = doGetPoolingType();
+		int poolingTypeCode = doGetPoolingType(getPointer());
 		poolingType = LlamaCppPoolingType.byCode(poolingTypeCode);
+		contextSize = doGetContextSize(getPointer());
 	}
 
 	/*
@@ -63,4 +68,9 @@ public class LlamaCppContext extends NativeReference {
 		checkInitialized();
 		return poolingType;
 	}
+
+	public int getContextSize() {
+		return contextSize;
+	}
+
 }
