@@ -23,6 +23,22 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProcessSingleBatch
   (JNIEnv *, jobject, jlong, jobject, jobject);
 
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
+ * Method:    doWriteBatch
+ * Signature: (JI[Ljava/nio/ByteBuffer;[IZ)I
+ */
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteBatch
+  (JNIEnv *, jclass, jlong, jint, jobjectArray, jintArray, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
+ * Method:    doReadBatch
+ * Signature: (JI[Ljava/nio/ByteBuffer;[ILjava/nio/channels/CompletionHandler;)I
+ */
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBatch
+  (JNIEnv *, jclass, jlong, jint, jobjectArray, jintArray, jobject);
+
 #ifdef __cplusplus
 }
 #endif

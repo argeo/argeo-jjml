@@ -14,15 +14,22 @@
  * Standard Java
  */
 // METHODS
+jclass Integer;
+jmethodID Integer$valueOf;
+
 jmethodID DoublePredicate$test;
-// EXCEPTIONS
-jclass IllegalStateException;
-jclass IllegalArgumentException;
 
 jmethodID ByteBuffer$limit;
 jmethodID ByteBuffer$limitI;
 jmethodID ByteBuffer$position;
 jmethodID ByteBuffer$positionI;
+
+jmethodID CompletionHandler$completed;
+jmethodID CompletionHandler$failed;
+
+// EXCEPTIONS
+jclass IllegalStateException;
+jclass IllegalArgumentException;
 
 /*
  * LlamaCppModelParams
@@ -64,10 +71,15 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	/*
 	 * Standard Java
 	 */
+	Integer = env->FindClass("java/lang/Integer");
+	Integer$valueOf = env->GetStaticMethodID(Integer, "valueOf",
+			"(I)Ljava/lang/Integer;");
+
 	// METHODS
 	DoublePredicate$test = env->GetMethodID(
 			env->FindClass("java/util/function/DoublePredicate"), "test",
 			"(D)Z");
+
 	jclass ByteBuffer = env->FindClass("java/nio/ByteBuffer");
 	ByteBuffer$limit = env->GetMethodID(ByteBuffer, "limit", "()I");
 	ByteBuffer$limitI = env->GetMethodID(ByteBuffer, "limit",
@@ -81,6 +93,12 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	IllegalArgumentException = env->FindClass(
 			"java/lang/IllegalArgumentException");
 
+	jclass CompletionHandler = env->FindClass(
+			"java/nio/channels/CompletionHandler");
+	CompletionHandler$completed = env->GetMethodID(CompletionHandler,
+			"completed", "(Ljava/lang/Object;Ljava/lang/Object;)V");
+	CompletionHandler$failed = env->GetMethodID(CompletionHandler, "failed",
+			"(Ljava/lang/Throwable;Ljava/lang/Object;)V");
 	/*
 	 * LlamaCppModelParams
 	 */

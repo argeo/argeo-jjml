@@ -15,12 +15,18 @@
  * Standard Java
  */
 // METHODS
+extern jclass Integer;
+extern jmethodID Integer$valueOf;
+
 extern jmethodID DoublePredicate$test;
 
 extern jmethodID ByteBuffer$limit;
 extern jmethodID ByteBuffer$limitI;
 extern jmethodID ByteBuffer$position;
 extern jmethodID ByteBuffer$positionI;
+
+extern jmethodID CompletionHandler$completed;
+extern jmethodID CompletionHandler$failed;
 
 // EXCEPTIONS
 extern jclass IllegalStateException;

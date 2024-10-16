@@ -3,6 +3,8 @@ package org.argeo.jjml.llama;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
+import java.nio.channels.AsynchronousByteChannel;
+import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -17,10 +19,16 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * NATIVE METHODS
 	 */
-	native void doProcessBatch(CompletableFuture<?>[] callbacks, LlamaCppContext context, int[] systemPrompt,
+	private native void doProcessBatch(CompletableFuture<?>[] callbacks, LlamaCppContext context, int[] systemPrompt,
 			int[][] sequencePrompts, int predictMax);
 
-	native int doProcessSingleBatch(long contextPointer, ByteBuffer input, ByteBuffer output);
+	private native int doProcessSingleBatch(long contextPointer, ByteBuffer input, ByteBuffer output);
+
+	private static native int doWriteBatch(long contextPointer, int contextPosition, ByteBuffer[] input,
+			int[] sequenceIds, boolean lastLogit);
+
+	private static native int doReadBatch(long contextPointer, int contextPosition, ByteBuffer[] output,
+			int[] sequenceIds, CompletionHandler<Integer, Integer> completionHandler);
 
 	/*
 	 * USABLE METHODS
@@ -62,15 +70,50 @@ public class LlamaCppBatchProcessor {
 		}
 
 		int contextSize = contextToUse.getContextSize();
-		System.out.println("Context size: "+contextSize);
+		System.out.println("Context size: " + contextSize);
 		if (contextSize < predictMax)
 			predictMax = contextSize;
 
 		buf.position(0);
 		buf.limit(input.capacity());
 		long begin = System.nanoTime();
-		doProcessSingleBatch(contextToUse.getPointer(), input, output);
-		System.out.println("Process single batch    " + (System.nanoTime() - begin) / 1 + " ns");
+
+		boolean singleBatch = false;
+		if (singleBatch) {
+			doProcessSingleBatch(contextToUse.getPointer(), input, output);
+		} else {
+			CompletionHandler<Integer, Integer> completionHandler = new CompletionHandler<Integer, Integer>() {
+
+				@Override
+				public void failed(Throwable exc, Integer attachment) {
+				}
+
+				@Override
+				public void completed(Integer result, Integer sequenceId) {
+					System.out.println("Sequence " + sequenceId + " completed.");
+				}
+			};
+
+			final int contextPosition = 0;
+			int sequenceId = 789;
+
+			CompletableFuture<Integer> doIt = CompletableFuture.supplyAsync( //
+					() -> doWriteBatch(contextToUse.getPointer(), contextPosition, new ByteBuffer[] { input },
+							new int[] { sequenceId }, true) //
+			).thenApplyAsync(//
+					(pos) -> doReadBatch(contextToUse.getPointer(), pos, new ByteBuffer[] { output },
+							new int[] { sequenceId }, completionHandler));
+
+			int newContextPosition = doIt.join();
+			System.out.println("newContextPosition=" + newContextPosition);
+
+//			contextPosition = doWriteBatch(contextToUse.getPointer(), contextPosition, new ByteBuffer[] { input },
+//					new int[] { sequenceId }, true);
+//			doReadBatch(contextToUse.getPointer(), contextPosition, new ByteBuffer[] { output },
+//					new int[] { sequenceId }, completionHandler);
+		}
+
+		System.out.println("Processed batch in    " + (System.nanoTime() - begin) / 1 + " ns.");
 
 //		int newPosition = buf.position();
 //		int newLimit = buf.limit();
