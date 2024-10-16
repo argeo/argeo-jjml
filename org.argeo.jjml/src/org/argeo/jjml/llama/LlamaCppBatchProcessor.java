@@ -3,11 +3,11 @@ package org.argeo.jjml.llama;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
-import java.nio.channels.AsynchronousByteChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -36,16 +36,29 @@ public class LlamaCppBatchProcessor {
 	public String processSingleBatch(String systemPrompt, int predictMax) {
 		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
 
-		ByteBuffer buf = ByteBuffer.allocateDirect(predictMax * Integer.BYTES);
+		int[] sequenceIds = { 579, 258, 123 };
+		//int[] sequenceIds = { 756 };
+
+		int parallelCount = sequenceIds.length;
+		int outputMax = predictMax - systemPromptTL.size();
+		int requiredContextSize = systemPromptTL.size() + outputMax * parallelCount;
+
+		ByteBuffer buf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
 		buf.order(ByteOrder.nativeOrder());
 
-		int newDirectBufPosition = predictMax * Integer.BYTES;
+//		int newDirectBufPosition = predictMax * Integer.BYTES;
 		ByteBuffer input = buf.slice(buf.position(), systemPromptTL.size() * Integer.BYTES);
 		input.order(ByteOrder.nativeOrder());
 		buf.position(buf.position() + input.capacity());
-		ByteBuffer output = buf.slice(buf.position(), newDirectBufPosition - buf.position());
-		output.order(ByteOrder.nativeOrder());
-		buf.position(newDirectBufPosition);
+
+		ByteBuffer[] outputs = new ByteBuffer[parallelCount];
+		for (int i = 0; i < parallelCount; i++) {
+			ByteBuffer output = buf.slice(buf.position(), outputMax * Integer.BYTES);
+			output.order(ByteOrder.nativeOrder());
+
+			outputs[i] = output;
+			buf.position(buf.position() + output.capacity());
+		}
 
 //		int[] tokens = systemPromptTL.getTokens();
 //		IntBuffer inputI = input.asIntBuffer();
@@ -62,25 +75,29 @@ public class LlamaCppBatchProcessor {
 			LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
 			contextToUse = new LlamaCppContext();
 			contextToUse.setModel(model);
-			contextParams.setContextSize(predictMax);
-			contextParams.setMaxBatchSize(predictMax);
+			contextParams.setContextSize(requiredContextSize);
+			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
 			contextToUse.init(contextParams);
 		} else {
 			contextToUse = context;
 		}
 
 		int contextSize = contextToUse.getContextSize();
-		System.out.println("Context size: " + contextSize);
-		if (contextSize < predictMax)
-			predictMax = contextSize;
+//		System.out.println("Context size: " + contextSize);
+		if (contextToUse.getContextSize() < requiredContextSize)
+			throw new IllegalArgumentException(
+					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
+							+ " available. Reduce parallel or increase context size.");
 
-		buf.position(0);
-		buf.limit(input.capacity());
+		StringJoiner res = new StringJoiner("\n---------------------------------------\n");
+
+//		buf.position(0);
+//		buf.limit(input.capacity());
 		long begin = System.nanoTime();
 
 		boolean singleBatch = false;
 		if (singleBatch) {
-			doProcessSingleBatch(contextToUse.getPointer(), input, output);
+			doProcessSingleBatch(contextToUse.getPointer(), input, outputs[0]);
 		} else {
 			CompletionHandler<Integer, Integer> completionHandler = new CompletionHandler<Integer, Integer>() {
 
@@ -91,18 +108,25 @@ public class LlamaCppBatchProcessor {
 				@Override
 				public void completed(Integer result, Integer sequenceId) {
 					System.out.println("Sequence " + sequenceId + " completed.");
+//
+//					Integer idx = null;
+//					for (int i = 0; i < sequenceIds.length; i++) {
+//						if (sequenceIds[i] == sequenceId) {
+//							idx = i;
+//							break;
+//						}
+//					}
+//					Objects.requireNonNull(idx);// assert?
 				}
 			};
 
 			final int contextPosition = 0;
-			int sequenceId = 789;
 
 			CompletableFuture<Integer> doIt = CompletableFuture.supplyAsync( //
 					() -> doWriteBatch(contextToUse.getPointer(), contextPosition, new ByteBuffer[] { input },
-							new int[] { sequenceId }, true) //
+							sequenceIds, true) //
 			).thenApplyAsync(//
-					(pos) -> doReadBatch(contextToUse.getPointer(), pos, new ByteBuffer[] { output },
-							new int[] { sequenceId }, completionHandler));
+					(pos) -> doReadBatch(contextToUse.getPointer(), pos, outputs, sequenceIds, completionHandler));
 
 			int newContextPosition = doIt.join();
 			System.out.println("newContextPosition=" + newContextPosition);
@@ -120,14 +144,19 @@ public class LlamaCppBatchProcessor {
 //		System.out.println("newPosition=" + newPosition + ", newLimit=" + newLimit);
 //		intBuf.limit(newLimit / Integer.BYTES);
 //		intBuf.position(newPosition / Integer.BYTES);
-		output.flip();
-		IntBuffer outputI = output.asIntBuffer();
-		outputI.limit(output.limit() / Integer.BYTES);
-		int[] newTokens = new int[outputI.limit() - outputI.position()];
-		outputI.get(newTokens);
-		LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
 
-		return newTL.getAsText();
+		for (ByteBuffer output : outputs) {
+			output.flip();
+			IntBuffer outputI = output.asIntBuffer();
+			outputI.limit(output.limit() / Integer.BYTES);
+			int[] newTokens = new int[outputI.limit() - outputI.position()];
+			outputI.get(newTokens);
+			LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
+
+			String outputStr = newTL.getAsText();
+			res.add(outputStr);
+		}
+		return res.toString();
 	}
 
 	public List<CompletionStage<LlamaCppTokenList>> processBatch(String systemPrompt, List<String> sequencePrompt,
