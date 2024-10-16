@@ -36,8 +36,8 @@ public class LlamaCppBatchProcessor {
 	public String processSingleBatch(String systemPrompt, int predictMax) {
 		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
 
-		int[] sequenceIds = { 579, 258, 123 };
-		//int[] sequenceIds = { 756 };
+//		int[] sequenceIds = { 579, 258, 123 };
+		int[] sequenceIds = { 756 };
 
 		int parallelCount = sequenceIds.length;
 		int outputMax = predictMax - systemPromptTL.size();
@@ -145,7 +145,8 @@ public class LlamaCppBatchProcessor {
 //		intBuf.limit(newLimit / Integer.BYTES);
 //		intBuf.position(newPosition / Integer.BYTES);
 
-		for (ByteBuffer output : outputs) {
+		for (int i = 0; i < outputs.length; i++) {
+			ByteBuffer output = outputs[i];
 			output.flip();
 			IntBuffer outputI = output.asIntBuffer();
 			outputI.limit(output.limit() / Integer.BYTES);

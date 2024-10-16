@@ -196,10 +196,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	const int outBuffersCount = env->GetArrayLength(outputBuffers);
 	assert(outBuffersCount == n_parallel && "As many buffers as sequences");
 
-	llama_token **seq_tokens = new llama_token*[outBuffersCount];
-	int *seq_output_capacities = new int[n_parallel];
-	int total_output_capacity = 0;
-	int max_output_capacity = 0;
+	llama_token **seq_tokens = new llama_token*[n_parallel];
+	int *seq_tokens_size = new int[n_parallel];
+//	int total_output_capacity = 0;
+	int max_decodes = 0;
 
 	for (int i = 0; i < n_parallel; i++) {
 		jobject outputBuf = env->GetObjectArrayElement(outputBuffers, i);
@@ -214,10 +214,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 		llama_token *output_tokens = static_cast<llama_token*>(output);
 
 		seq_tokens[i] = output_tokens;
-		seq_output_capacities[i] =outputCapacity;
-		total_output_capacity = total_output_capacity + outputCapacity;
-		if (outputCapacity > max_output_capacity)
-			max_output_capacity = outputCapacity;
+		seq_tokens_size[i] = out_tokens_size;
+//		total_output_capacity = total_output_capacity + outputCapacity;
+		if (out_tokens_size > max_decodes)
+			max_decodes = out_tokens_size;
 	}
 
 	PERF_BEGIN();
@@ -237,9 +237,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	llama_batch batch = llama_batch_init(n_parallel, 0, n_parallel);
 
 	// FIXME deal more precisely with the upper limit
-	assert(total_output_capacity % sizeof(llama_token) == 0);
-	int n_predict = cur_pos + max_output_capacity;
+	assert(max_decodes % sizeof(llama_token) == 0);
+	int n_predict = cur_pos + max_decodes;
 	while (cur_pos <= n_predict) {
+//		while (true) {
 
 		// prepare the next batch
 		jjml_llama_batch_clear(batch);
@@ -259,7 +260,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 
 				// is it an end of generation? -> mark the stream as finished
 				if (llama_token_is_eog(model, new_token_id) //
-				|| next_idx == seq_output_capacities[i] //
+				|| next_idx == seq_tokens_size[i] //
 				|| cur_pos == n_predict //
 						) {
 					i_batch[i] = -1;
@@ -288,7 +289,9 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 					continue;
 				}
 
-				//std::cerr << next_token_pos << "\t" << new_token_id << std::endl;
+				std::cerr << next_idx << "\t" << i << "\t" << new_token_id
+						<< std::endl;
+				assert(next_idx < seq_tokens_size[i] && "No overflow");
 				seq_tokens[i][next_idx] = new_token_id;
 
 				i_batch[i] = batch.n_tokens;
