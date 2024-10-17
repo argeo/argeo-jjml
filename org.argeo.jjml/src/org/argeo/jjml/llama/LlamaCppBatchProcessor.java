@@ -16,19 +16,28 @@ public class LlamaCppBatchProcessor {
 	private LlamaCppModel model;
 	private LlamaCppContext context;
 
+	// private int contextPosition = 0;
+
 	/*
 	 * NATIVE METHODS
 	 */
 	private native void doProcessBatch(CompletableFuture<?>[] callbacks, LlamaCppContext context, int[] systemPrompt,
 			int[][] sequencePrompts, int predictMax);
 
-	private native int doProcessSingleBatch(long contextPointer, ByteBuffer input, ByteBuffer output);
+	private native int doProcessSingleBatch(long contextPointer, IntBuffer input, IntBuffer output);
 
-	private static native int doWriteBatch(long contextPointer, int contextPosition, ByteBuffer[] input,
+	private static native int doWriteBatch(long contextPointer, int contextPosition, IntBuffer[] input,
 			int[] sequenceIds, boolean lastLogit);
 
-	private static native int doReadBatch(long contextPointer, int contextPosition, ByteBuffer[] output,
+	private static native int doReadBatch(long contextPointer, int contextPosition, IntBuffer[] output,
 			int[] sequenceIds, CompletionHandler<Integer, Integer> completionHandler);
+
+	/*
+	 * LOW-LEVEL ACCESS
+	 */
+	void writeBatch(ByteBuffer[] input, int[] sequenceIds, boolean lastLogit) {
+		// doWriteBatch(context.getPointer(), 0, input, sequenceIds, lastLogit);
+	}
 
 	/*
 	 * USABLE METHODS
@@ -36,26 +45,34 @@ public class LlamaCppBatchProcessor {
 	public String processSingleBatch(String systemPrompt, int predictMax) {
 		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
 
-		//int[] sequenceIds = { 579, 258, 123, 78, 12 };
-		int[] sequenceIds = { 579, 258, 123 };
-//		int[] sequenceIds = { 756 };
+		// int[] sequenceIds = { 579, 258, 123, 78, 12 };
+//		int[] sequenceIds = { 579, 258, 123 };
+		int[] sequenceIds = { 756 };
 
 		int parallelCount = sequenceIds.length;
 		int outputMax = predictMax - systemPromptTL.size();
 		int requiredContextSize = systemPromptTL.size() + outputMax * parallelCount;
-
-		ByteBuffer buf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
-		buf.order(ByteOrder.nativeOrder());
+		IntBuffer buf;
+		{
+//			ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);// warmup
+//			long begin = System.nanoTime();
+			ByteBuffer directBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
+			directBuf.order(ByteOrder.nativeOrder());// IMPORTANT!
+//			long end = System.nanoTime();
+//			System.out.println("Allocated buffer in    " + (end - begin) / 10 + " ns.");
+			buf = directBuf.asIntBuffer();
+		}
+//		buf.order(ByteOrder.nativeOrder());
 
 //		int newDirectBufPosition = predictMax * Integer.BYTES;
-		ByteBuffer input = buf.slice(buf.position(), systemPromptTL.size() * Integer.BYTES);
-		input.order(ByteOrder.nativeOrder());
+		IntBuffer input = buf.slice(buf.position(), systemPromptTL.size());
+//		input.order(ByteOrder.nativeOrder());
 		buf.position(buf.position() + input.capacity());
 
-		ByteBuffer[] outputs = new ByteBuffer[parallelCount];
+		IntBuffer[] outputs = new IntBuffer[parallelCount];
 		for (int i = 0; i < parallelCount; i++) {
-			ByteBuffer output = buf.slice(buf.position(), outputMax * Integer.BYTES);
-			output.order(ByteOrder.nativeOrder());
+			IntBuffer output = buf.slice(buf.position(), outputMax);
+//			output.order(ByteOrder.nativeOrder());
 
 			outputs[i] = output;
 			buf.position(buf.position() + output.capacity());
@@ -64,8 +81,8 @@ public class LlamaCppBatchProcessor {
 //		int[] tokens = systemPromptTL.getTokens();
 //		IntBuffer inputI = input.asIntBuffer();
 //		inputI.put(tokens);
-		input.asIntBuffer().put(systemPromptTL.getTokens());
-		input.limit(systemPromptTL.size() * Integer.BYTES);
+		input.put(systemPromptTL.getTokens());
+//		input.limit(systemPromptTL.size() * Integer.BYTES);
 //		buf.position(tokens.length * Integer.BYTES);
 //		buf.flip();
 
@@ -90,16 +107,17 @@ public class LlamaCppBatchProcessor {
 					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
 							+ " available. Reduce parallel or increase context size.");
 
-		StringJoiner res = new StringJoiner("\n\n\n---------------------------------------------------------------\n\n\n");
+		StringJoiner res = new StringJoiner(
+				"\n\n\n---------------------------------------------------------------\n\n\n");
 
 //		buf.position(0);
 //		buf.limit(input.capacity());
-		long begin = System.nanoTime();
 
 		boolean singleBatch = false;
 		if (singleBatch) {
 			doProcessSingleBatch(contextToUse.getPointer(), input, outputs[0]);
 		} else {
+			long begin = System.nanoTime();
 			CompletionHandler<Integer, Integer> completionHandler = new CompletionHandler<Integer, Integer>() {
 
 				@Override
@@ -121,24 +139,23 @@ public class LlamaCppBatchProcessor {
 				}
 			};
 
-			final int contextPosition = 0;
+			int contextPosition = 0;
 
-			CompletableFuture<Integer> doIt = CompletableFuture.supplyAsync( //
-					() -> doWriteBatch(contextToUse.getPointer(), contextPosition, new ByteBuffer[] { input },
-							sequenceIds, true) //
-			).thenApplyAsync(//
-					(pos) -> doReadBatch(contextToUse.getPointer(), pos, outputs, sequenceIds, completionHandler));
+//			CompletableFuture<Integer> doIt = CompletableFuture.supplyAsync( //
+//					() -> doWriteBatch(contextToUse.getPointer(), contextPosition, new IntBuffer[] { input },
+//							sequenceIds, true) //
+//			).thenApplyAsync(//
+//					(pos) -> doReadBatch(contextToUse.getPointer(), pos, outputs, sequenceIds, completionHandler));
+//
+//			int newContextPosition = doIt.join();
+			// System.out.println("newContextPosition=" + newContextPosition);
 
-			int newContextPosition = doIt.join();
-			System.out.println("newContextPosition=" + newContextPosition);
-
-//			contextPosition = doWriteBatch(contextToUse.getPointer(), contextPosition, new ByteBuffer[] { input },
-//					new int[] { sequenceId }, true);
-//			doReadBatch(contextToUse.getPointer(), contextPosition, new ByteBuffer[] { output },
-//					new int[] { sequenceId }, completionHandler);
+			contextPosition = doWriteBatch(contextToUse.getPointer(), contextPosition, new IntBuffer[] { input },
+					sequenceIds, true);
+			doReadBatch(contextToUse.getPointer(), contextPosition, outputs, sequenceIds, completionHandler);
+			long end = System.nanoTime();
+			System.out.println("Processed batch in    " + (end - begin) / 1 + " ns.");
 		}
-
-		System.out.println("Processed batch in    " + (System.nanoTime() - begin) / 1 + " ns.");
 
 //		int newPosition = buf.position();
 //		int newLimit = buf.limit();
@@ -147,12 +164,12 @@ public class LlamaCppBatchProcessor {
 //		intBuf.position(newPosition / Integer.BYTES);
 
 		for (int i = 0; i < outputs.length; i++) {
-			ByteBuffer output = outputs[i];
+			IntBuffer output = outputs[i];
 			output.flip();
-			IntBuffer outputI = output.asIntBuffer();
-			outputI.limit(output.limit() / Integer.BYTES);
-			int[] newTokens = new int[outputI.limit() - outputI.position()];
-			outputI.get(newTokens);
+//			IntBuffer outputI = output.asIntBuffer();
+//			outputI.limit(output.limit() / Integer.BYTES);
+			int[] newTokens = new int[output.limit() - output.position()];
+			output.get(newTokens);
 			LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
 
 			String outputStr = newTL.getAsText();

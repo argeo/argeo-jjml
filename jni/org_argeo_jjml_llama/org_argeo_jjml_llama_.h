@@ -20,10 +20,10 @@ extern jmethodID Integer$valueOf;
 
 extern jmethodID DoublePredicate$test;
 
-extern jmethodID ByteBuffer$limit;
-extern jmethodID ByteBuffer$limitI;
-extern jmethodID ByteBuffer$position;
-extern jmethodID ByteBuffer$positionI;
+extern jmethodID IntBuffer$limit;
+extern jmethodID IntBuffer$limitI;
+extern jmethodID IntBuffer$position;
+extern jmethodID IntBuffer$positionI;
 
 extern jmethodID CompletionHandler$completed;
 extern jmethodID CompletionHandler$failed;

@@ -19,10 +19,10 @@ jmethodID Integer$valueOf;
 
 jmethodID DoublePredicate$test;
 
-jmethodID ByteBuffer$limit;
-jmethodID ByteBuffer$limitI;
-jmethodID ByteBuffer$position;
-jmethodID ByteBuffer$positionI;
+jmethodID IntBuffer$limit;
+jmethodID IntBuffer$limitI;
+jmethodID IntBuffer$position;
+jmethodID IntBuffer$positionI;
 
 jmethodID CompletionHandler$completed;
 jmethodID CompletionHandler$failed;
@@ -80,13 +80,13 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 			env->FindClass("java/util/function/DoublePredicate"), "test",
 			"(D)Z");
 
-	jclass ByteBuffer = env->FindClass("java/nio/ByteBuffer");
-	ByteBuffer$limit = env->GetMethodID(ByteBuffer, "limit", "()I");
-	ByteBuffer$limitI = env->GetMethodID(ByteBuffer, "limit",
-			"(I)Ljava/nio/ByteBuffer;");
-	ByteBuffer$position = env->GetMethodID(ByteBuffer, "position", "()I");
-	ByteBuffer$positionI = env->GetMethodID(ByteBuffer, "position",
-			"(I)Ljava/nio/ByteBuffer;");
+	jclass IntBuffer = env->FindClass("java/nio/IntBuffer");
+	IntBuffer$limit = env->GetMethodID(IntBuffer, "limit", "()I");
+	IntBuffer$limitI = env->GetMethodID(IntBuffer, "limit",
+			"(I)Ljava/nio/IntBuffer;");
+	IntBuffer$position = env->GetMethodID(IntBuffer, "position", "()I");
+	IntBuffer$positionI = env->GetMethodID(IntBuffer, "position",
+			"(I)Ljava/nio/IntBuffer;");
 
 	// EXCEPTIONS
 	IllegalStateException = env->FindClass("java/lang/IllegalStateException");

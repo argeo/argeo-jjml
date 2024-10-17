@@ -111,16 +111,19 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 	if (inputBuffersCount == 1) { // common prompt to all sequences
 
 		jobject inputBuf = env->GetObjectArrayElement(inputBuffers, 0);
-		void *input = env->GetDirectBufferAddress(inputBuf);
-		int inputCapacity = env->GetDirectBufferCapacity(inputBuf);
+//		void *input = env->GetDirectBufferAddress(inputBuf);
+//		int inputCapacity = env->GetDirectBufferCapacity(inputBuf);
 //	int inputLimit = env->CallIntMethod(inputBuf, ByteBuffer$limit);
 //	assert(env->CallIntMethod(inputBuf, ByteBuffer$position) == 0);
 
 		PERF_BEGIN();
 
-		assert(inputCapacity % sizeof(llama_token) == 0);
-		int input_tokens_size = inputCapacity / sizeof(llama_token);
-		llama_token *input_tokens = static_cast<llama_token*>(input);
+//		assert(inputCapacity % sizeof(llama_token) == 0);
+//		int input_tokens_size = inputCapacity / sizeof(llama_token);
+//		llama_token *input_tokens = static_cast<llama_token*>(input);
+		int input_tokens_size = env->GetDirectBufferCapacity(inputBuf);
+		llama_token *input_tokens =
+				static_cast<llama_token*>(env->GetDirectBufferAddress(inputBuf));
 
 		llama_batch batch = llama_batch_init(
 				std::max((size_t) input_tokens_size, (size_t) n_parallel), 0,
@@ -130,17 +133,18 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 
 		// evaluate the initial prompt
 		// !! we use the Java direct buffer as source for the input tokens
-		batch.token = input_tokens;
+//		free(batch.token);
+//		free(batch.seq_id);
+//		batch.token = input_tokens;
 		for (size_t i = 0; i < input_tokens_size; i++) {
 //			jjml_llama_batch_add(batch, input_tokens[i], i, seq_ids, false);
-
-//			batch.token[batch.n_tokens] = input_tokens[i];
-			batch.pos[batch.n_tokens] = i;
+			batch.token[batch.n_tokens] = input_tokens[i];
+			batch.pos[batch.n_tokens] = cur_pos + i;
 			batch.n_seq_id[batch.n_tokens] = n_parallel;
-//			for (size_t i = 0; i < seq_ids.size(); ++i) {
-//				batch.seq_id[batch.n_tokens][i] = seq_ids[i];
-//			}
-			batch.seq_id[batch.n_tokens] = sequence_ids;
+			for (size_t i = 0; i < n_parallel; ++i) {
+				batch.seq_id[batch.n_tokens][i] = sequence_ids[i];
+			}
+//			batch.seq_id[batch.n_tokens] = sequence_ids;
 			batch.logits[batch.n_tokens] = false;
 
 			batch.n_tokens++;
@@ -162,10 +166,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 //		curr_batch_pos = batch.pos[batch.n_tokens - 1];
 
 		// !! dereference what Java owns before batch is freed
-		batch.token = nullptr;
-		for (size_t i = 0; i < input_tokens_size; i++) {
-			batch.seq_id[i] = nullptr;
-		}
+//		batch.token = nullptr;
+//		for (size_t i = 0; i < input_tokens_size; i++) {
+//			batch.seq_id[i] = nullptr;
+//		}
 		llama_batch_free(batch);
 
 		PERF_END(__func__);
@@ -210,8 +214,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 //	int outputLimit = env->CallIntMethod(outputBuf, ByteBuffer$limit);
 //	assert(env->CallIntMethod(outputBuf, ByteBuffer$position) == 0);
 
-		assert(outputCapacity % sizeof(llama_token) == 0);
-		int out_tokens_size = outputCapacity / sizeof(llama_token);
+//		assert(outputCapacity % sizeof(llama_token) == 0);
+//		int out_tokens_size = outputCapacity / sizeof(llama_token);
+//		llama_token *output_tokens = static_cast<llama_token*>(output);
+		int out_tokens_size = outputCapacity;
 		llama_token *output_tokens = static_cast<llama_token*>(output);
 
 		seq_tokens[i] = output_tokens;
@@ -238,7 +244,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	llama_batch batch = llama_batch_init(n_parallel, 0, n_parallel);
 
 	// FIXME deal more precisely with the upper limit
-	assert(max_decodes % sizeof(llama_token) == 0);
+	//assert(max_decodes % sizeof(llama_token) == 0);
 	int n_predict = cur_pos + max_decodes;
 	while (cur_pos <= n_predict) {
 //		while (true) {
@@ -268,18 +274,18 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 
 					jobject outputBuf = env->GetObjectArrayElement(
 							outputBuffers, i);
-					int byte_idx = next_idx * sizeof(llama_token);
+//					int byte_idx = next_idx; // * sizeof(llama_token);
 
 					// set output buffer in a proper state
-					env->CallVoidMethod(outputBuf, ByteBuffer$limitI, byte_idx);
-					env->CallVoidMethod(outputBuf, ByteBuffer$positionI,
-							byte_idx);
+					env->CallVoidMethod(outputBuf, IntBuffer$limitI, next_idx);
+					env->CallVoidMethod(outputBuf, IntBuffer$positionI,
+							next_idx);
 
 					// call completion handler
 					jclass Integer = env->FindClass("java/lang/Integer");
 					jobject completionHandlerResult =
 							env->CallStaticObjectMethod(Integer,
-									Integer$valueOf, byte_idx);
+									Integer$valueOf, next_idx);
 					jobject completionHandlerAttachment =
 							env->CallStaticObjectMethod(Integer,
 									Integer$valueOf, i);
@@ -320,13 +326,15 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	}
 
 	// !! dereference what Java owns before batch is freed
-	for (size_t i = 0; i < n_parallel; i++) {
-		batch.seq_id[i] = nullptr;
-	}
+//	for (size_t i = 0; i < n_parallel; i++) {
+//		batch.seq_id[i] = nullptr;
+//	}
 	llama_batch_free(batch);
 	PERF_END(__func__);
 
 	// clean up
+	delete[] seq_tokens;
+	delete[] seq_tokens_size;
 	env->ReleaseIntArrayElements(sequenceIds, sequence_ids, 0);
 
 	// TODO assert consistency of context position with regard to the output buffers sizes
@@ -353,7 +361,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 		PERF_BEGIN();
 
 		assert(inputCapacity % sizeof(llama_token) == 0);
-		int input_tokens_size = inputCapacity / sizeof(llama_token);
+		int input_tokens_size = inputCapacity; // / sizeof(llama_token);
 		llama_token *input_tokens = static_cast<llama_token*>(input);
 
 		llama_batch batch = llama_batch_init(
@@ -409,8 +417,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 
 	{
 		PERF_BEGIN();
-		assert(outputCapacity % sizeof(llama_token) == 0);
-		int out_tokens_size = outputCapacity / sizeof(llama_token);
+//		assert(outputCapacity % sizeof(llama_token) == 0);
+//		int out_tokens_size = outputCapacity / sizeof(llama_token);
+//		llama_token *output_tokens = static_cast<llama_token*>(output);
+		int out_tokens_size = outputCapacity;
 		llama_token *output_tokens = static_cast<llama_token*>(output);
 
 		// sampling
@@ -456,10 +466,13 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 							|| cur_pos == n_predict) {
 						i_batch[i] = -1;
 
-						env->CallVoidMethod(outputBuf, ByteBuffer$limitI,
-								next_idx * sizeof(llama_token));
-						env->CallVoidMethod(outputBuf, ByteBuffer$positionI,
-								next_idx * sizeof(llama_token));
+						env->CallVoidMethod(outputBuf, IntBuffer$limitI, next_idx);
+						env->CallVoidMethod(outputBuf, IntBuffer$positionI,
+								next_idx);
+//						env->CallVoidMethod(outputBuf, ByteBuffer$limitI,
+//								next_idx * sizeof(llama_token));
+//						env->CallVoidMethod(outputBuf, ByteBuffer$positionI,
+//								next_idx * sizeof(llama_token));
 
 //					result[i].clear();
 						continue;
