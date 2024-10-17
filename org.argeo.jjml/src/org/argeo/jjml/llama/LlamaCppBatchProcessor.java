@@ -36,8 +36,9 @@ public class LlamaCppBatchProcessor {
 	public String processSingleBatch(String systemPrompt, int predictMax) {
 		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
 
-//		int[] sequenceIds = { 579, 258, 123 };
-		int[] sequenceIds = { 756 };
+		//int[] sequenceIds = { 579, 258, 123, 78, 12 };
+		int[] sequenceIds = { 579, 258, 123 };
+//		int[] sequenceIds = { 756 };
 
 		int parallelCount = sequenceIds.length;
 		int outputMax = predictMax - systemPromptTL.size();
@@ -89,7 +90,7 @@ public class LlamaCppBatchProcessor {
 					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
 							+ " available. Reduce parallel or increase context size.");
 
-		StringJoiner res = new StringJoiner("\n---------------------------------------\n");
+		StringJoiner res = new StringJoiner("\n\n\n---------------------------------------------------------------\n\n\n");
 
 //		buf.position(0);
 //		buf.limit(input.capacity());

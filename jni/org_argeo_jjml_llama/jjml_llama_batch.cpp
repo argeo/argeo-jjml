@@ -129,7 +129,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 //		seq_ids[0] = sequenceId;
 
 		// evaluate the initial prompt
-		// TODO memcopy?
+		// !! we use the Java direct buffer as source for the input tokens
 		batch.token = input_tokens;
 		for (size_t i = 0; i < input_tokens_size; i++) {
 //			jjml_llama_batch_add(batch, input_tokens[i], i, seq_ids, false);
@@ -161,7 +161,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 		cur_pos = cur_pos + batch.n_tokens;
 //		curr_batch_pos = batch.pos[batch.n_tokens - 1];
 
-		// dereference tokens since we own them
+		// !! dereference what Java owns before batch is freed
 		batch.token = nullptr;
 		for (size_t i = 0; i < input_tokens_size; i++) {
 			batch.seq_id[i] = nullptr;
@@ -204,6 +204,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	for (int i = 0; i < n_parallel; i++) {
 		jobject outputBuf = env->GetObjectArrayElement(outputBuffers, i);
 		void *output = env->GetDirectBufferAddress(outputBuf);
+//		std::cerr << (jlong) output << std::endl;
 		int outputCapacity = env->GetDirectBufferCapacity(outputBuf);
 		assert(outputCapacity > 0 && "Output buffer capacity");
 //	int outputLimit = env->CallIntMethod(outputBuf, ByteBuffer$limit);
@@ -289,8 +290,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 					continue;
 				}
 
-				std::cerr << next_idx << "\t" << i << "\t" << new_token_id
-						<< std::endl;
+//				std::cerr << next_idx << "\t" << i << "\t" << new_token_id
+//						<< std::endl;
 				assert(next_idx < seq_tokens_size[i] && "No overflow");
 				seq_tokens[i][next_idx] = new_token_id;
 
@@ -318,6 +319,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 		}
 	}
 
+	// !! dereference what Java owns before batch is freed
+	for (size_t i = 0; i < n_parallel; i++) {
+		batch.seq_id[i] = nullptr;
+	}
 	llama_batch_free(batch);
 	PERF_END(__func__);
 
