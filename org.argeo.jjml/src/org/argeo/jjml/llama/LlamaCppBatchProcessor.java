@@ -16,8 +16,6 @@ public class LlamaCppBatchProcessor {
 	private LlamaCppModel model;
 	private LlamaCppContext context;
 
-	// private int contextPosition = 0;
-
 	/*
 	 * NATIVE METHODS
 	 */
@@ -62,31 +60,17 @@ public class LlamaCppBatchProcessor {
 //			System.out.println("Allocated buffer in    " + (end - begin) / 10 + " ns.");
 			buf = directBuf.asIntBuffer();
 		}
-//		buf.order(ByteOrder.nativeOrder());
-
-//		int newDirectBufPosition = predictMax * Integer.BYTES;
 		IntBuffer input = buf.slice(buf.position(), systemPromptTL.size());
-//		input.order(ByteOrder.nativeOrder());
 		buf.position(buf.position() + input.capacity());
+		input.put(systemPromptTL.getTokens());
 
 		IntBuffer[] outputs = new IntBuffer[parallelCount];
 		for (int i = 0; i < parallelCount; i++) {
 			IntBuffer output = buf.slice(buf.position(), outputMax);
-//			output.order(ByteOrder.nativeOrder());
-
 			outputs[i] = output;
 			buf.position(buf.position() + output.capacity());
 		}
 
-//		int[] tokens = systemPromptTL.getTokens();
-//		IntBuffer inputI = input.asIntBuffer();
-//		inputI.put(tokens);
-		input.put(systemPromptTL.getTokens());
-//		input.limit(systemPromptTL.size() * Integer.BYTES);
-//		buf.position(tokens.length * Integer.BYTES);
-//		buf.flip();
-
-//		int maxKvSize = systemPromptTL.size() + (predictMax - systemPromptTL.size());
 
 		LlamaCppContext contextToUse;
 		if (context == null) {
@@ -109,9 +93,6 @@ public class LlamaCppBatchProcessor {
 
 		StringJoiner res = new StringJoiner(
 				"\n\n\n---------------------------------------------------------------\n\n\n");
-
-//		buf.position(0);
-//		buf.limit(input.capacity());
 
 		boolean singleBatch = false;
 		if (singleBatch) {
@@ -157,17 +138,9 @@ public class LlamaCppBatchProcessor {
 			System.out.println("Processed batch in    " + (end - begin) / 1 + " ns.");
 		}
 
-//		int newPosition = buf.position();
-//		int newLimit = buf.limit();
-//		System.out.println("newPosition=" + newPosition + ", newLimit=" + newLimit);
-//		intBuf.limit(newLimit / Integer.BYTES);
-//		intBuf.position(newPosition / Integer.BYTES);
-
 		for (int i = 0; i < outputs.length; i++) {
 			IntBuffer output = outputs[i];
 			output.flip();
-//			IntBuffer outputI = output.asIntBuffer();
-//			outputI.limit(output.limit() / Integer.BYTES);
 			int[] newTokens = new int[output.limit() - output.position()];
 			output.get(newTokens);
 			LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
