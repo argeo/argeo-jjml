@@ -16,8 +16,6 @@ public class LlamaCppBatchProcessor {
 	final private LlamaCppModel model;
 	final private LlamaCppContext context;
 
-	private ByteBuffer directBuf;
-
 	private int contextPosition = 0;
 
 	public LlamaCppBatchProcessor(LlamaCppContext context) {
@@ -44,7 +42,7 @@ public class LlamaCppBatchProcessor {
 	private native void doProcessBatch(CompletableFuture<?>[] callbacks, LlamaCppContext context, int[] systemPrompt,
 			int[][] sequencePrompts, int predictMax);
 
-	private native int doProcessSingleBatch(long contextPointer, IntBuffer input, IntBuffer output);
+//	private native int doProcessSingleBatch(long contextPointer, IntBuffer input, IntBuffer output);
 
 	private static native int doWriteBatch(long contextPointer, int contextPosition, IntBuffer[] input,
 			int[] sequenceIds, boolean lastLogit);
@@ -55,22 +53,36 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * LOW-LEVEL ACCESS
 	 */
-	void writeBatch(ByteBuffer[] input, int[] sequenceIds, boolean lastLogit) {
+	void writeBatch(IntBuffer input, int sequenceId, boolean lastLogit) {
+		// TODO optimize natively?
+		writeBatch(new IntBuffer[] { input }, new int[] { sequenceId }, lastLogit);
+	}
+
+	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, boolean lastLogit) {
 		// doWriteBatch(context.getPointer(), 0, input, sequenceIds, lastLogit);
+		if (inputs.length > 1)
+			throw new UnsupportedOperationException("Multiple inputs is not yet supported");
+		contextPosition = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, contextPosition > 0);
+	}
+
+	synchronized void readBatch(IntBuffer[] outputs, int[] sequenceIds,
+			CompletionHandler<Integer, Integer> completionHandler) {
+		assert outputs.length == sequenceIds.length;
+		contextPosition = doReadBatch(context.getPointer(), contextPosition, outputs, sequenceIds, completionHandler);
 	}
 
 	/*
 	 * USABLE METHODS
 	 */
-	public String processSingleBatch(String systemPrompt) {
+	public String processSingleBatch(String systemPrompt, int sequenceId) {
 		// int[] sequenceIds = { 579, 258, 123, 78, 12 };
 		// int[] sequenceIds = { 579, 258, 123 };
 		// int[] sequenceIds = { 579, 258 };
-		int[] sequenceIds = { 0 };
+		int[] sequenceIds = { sequenceId };
 		return processBatch(systemPrompt, sequenceIds);
 	}
 
-	protected synchronized String processBatch(String systemPrompt, int[] sequenceIds) {
+	protected String processBatch(String systemPrompt, int[] sequenceIds) {
 		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
 
 		int predictMax = context.getBatchSize();
@@ -81,7 +93,7 @@ public class LlamaCppBatchProcessor {
 		{
 //			ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);// warmup
 //			long begin = System.nanoTime();
-			directBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
+			ByteBuffer directBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
 			directBuf.order(ByteOrder.nativeOrder());// IMPORTANT!
 //			long end = System.nanoTime();
 //			System.out.println("Allocated buffer in    " + (end - begin) / 10 + " ns.");
@@ -120,20 +132,20 @@ public class LlamaCppBatchProcessor {
 		StringJoiner res = new StringJoiner(
 				"\n\n\n---------------------------------------------------------------\n\n\n");
 
-		boolean singleBatch = false;
-		if (singleBatch) {
-			doProcessSingleBatch(contextToUse.getPointer(), input, outputs[0]);
-		} else {
-			long begin = System.nanoTime();
-			CompletionHandler<Integer, Integer> completionHandler = new CompletionHandler<Integer, Integer>() {
+//		boolean singleBatch = false;
+//		if (singleBatch) {
+//			doProcessSingleBatch(contextToUse.getPointer(), input, outputs[0]);
+//		} else {
+		long begin = System.nanoTime();
+		CompletionHandler<Integer, Integer> completionHandler = new CompletionHandler<Integer, Integer>() {
 
-				@Override
-				public void failed(Throwable exc, Integer attachment) {
-				}
+			@Override
+			public void failed(Throwable exc, Integer attachment) {
+			}
 
-				@Override
-				public void completed(Integer result, Integer sequenceId) {
-					System.out.println("Sequence " + sequenceId + " completed.");
+			@Override
+			public void completed(Integer result, Integer sequenceId) {
+				System.out.println("Sequence " + sequenceId + " completed.");
 //
 //					Integer idx = null;
 //					for (int i = 0; i < sequenceIds.length; i++) {
@@ -143,24 +155,26 @@ public class LlamaCppBatchProcessor {
 //						}
 //					}
 //					Objects.requireNonNull(idx);// assert?
-				}
-			};
+			}
+		};
 
-			CompletableFuture<Integer> doIt = CompletableFuture.supplyAsync( //
-					() -> doWriteBatch(contextToUse.getPointer(), contextPosition, new IntBuffer[] { input },
-							sequenceIds, true) //
-			).thenApplyAsync(//
-					(pos) -> doReadBatch(contextToUse.getPointer(), pos, outputs, sequenceIds, completionHandler));
+//		CompletableFuture<Void> doIt = CompletableFuture.runAsync( //
+//				() -> writeBatch(new IntBuffer[] { input }, sequenceIds, true) //
+//		).thenRunAsync(//
+//				() -> readBatch(outputs, sequenceIds, completionHandler));
+//		doIt.join();
 
-			contextPosition = doIt.join();
-			// System.out.println("newContextPosition=" + newContextPosition);
+		writeBatch(new IntBuffer[] { input }, sequenceIds, true);
+		readBatch(outputs, sequenceIds, completionHandler);
+
+		// System.out.println("newContextPosition=" + newContextPosition);
 
 //			contextPosition = doWriteBatch(contextToUse.getPointer(), contextPosition, new IntBuffer[] { input },
 //					sequenceIds, true);
 //			doReadBatch(contextToUse.getPointer(), contextPosition, outputs, sequenceIds, completionHandler);
-			long end = System.nanoTime();
-			System.out.println("Processed batch in    " + (end - begin) / 1 + " ns.");
-		}
+		long end = System.nanoTime();
+		System.out.println("Processed batch in    " + (end - begin) / 1 + " ns.");
+//		}
 
 		for (int i = 0; i < outputs.length; i++) {
 			IntBuffer output = outputs[i];
