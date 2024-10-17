@@ -16,6 +16,7 @@ public class LlamaCppContext extends NativeReference {
 	// Effective parameters
 	private LlamaCppPoolingType poolingType;
 	private int contextSize;
+	private int batchSize;
 
 	/*
 	 * NATIVE
@@ -28,6 +29,8 @@ public class LlamaCppContext extends NativeReference {
 	private native int doGetPoolingType(long pointer);
 
 	private native int doGetContextSize(long pointer);
+
+	private native int doGetBatchSize(long pointer);
 
 	/*
 	 * LIFECYCLE
@@ -44,6 +47,7 @@ public class LlamaCppContext extends NativeReference {
 		int poolingTypeCode = doGetPoolingType(getPointer());
 		poolingType = LlamaCppPoolingType.byCode(poolingTypeCode);
 		contextSize = doGetContextSize(getPointer());
+		batchSize = doGetBatchSize(getPointer());
 	}
 
 	/*
@@ -71,6 +75,10 @@ public class LlamaCppContext extends NativeReference {
 
 	public int getContextSize() {
 		return contextSize;
+	}
+
+	public int getBatchSize() {
+		return batchSize;
 	}
 
 }

@@ -139,3 +139,9 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetContextSiz
 	auto *ctx = argeo::jni::getPointer<llama_context*>(pointer);
 	return llama_n_ctx(ctx);
 }
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetBatchSize(
+		JNIEnv*, jobject, jlong pointer) {
+	auto *ctx = argeo::jni::getPointer<llama_context*>(pointer);
+	return llama_n_batch(ctx);
+}

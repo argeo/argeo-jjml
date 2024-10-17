@@ -13,10 +13,31 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 public class LlamaCppBatchProcessor {
-	private LlamaCppModel model;
-	private LlamaCppContext context;
+	final private LlamaCppModel model;
+	final private LlamaCppContext context;
 
-	ByteBuffer directBuf ;
+	private ByteBuffer directBuf;
+
+	private int contextPosition = 0;
+
+	public LlamaCppBatchProcessor(LlamaCppContext context) {
+		Objects.requireNonNull(context);
+		this.context = context;
+		this.model = context.getModel();
+	}
+
+	public LlamaCppBatchProcessor(LlamaCppModel model, int requiredContextSize, int maxBatchSize) {
+		LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
+		contextParams.setContextSize(requiredContextSize);
+		contextParams.setMaxBatchSize(maxBatchSize);
+//			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
+		LlamaCppContext contextToUse = new LlamaCppContext();
+		contextToUse.setModel(model);
+		contextToUse.init(contextParams);
+		this.context = contextToUse;
+		this.model = this.context.getModel();
+	}
+
 	/*
 	 * NATIVE METHODS
 	 */
@@ -41,14 +62,18 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * USABLE METHODS
 	 */
-	public String processSingleBatch(String systemPrompt, int predictMax) {
+	public String processSingleBatch(String systemPrompt) {
+		// int[] sequenceIds = { 579, 258, 123, 78, 12 };
+		// int[] sequenceIds = { 579, 258, 123 };
+		// int[] sequenceIds = { 579, 258 };
+		int[] sequenceIds = { 0 };
+		return processBatch(systemPrompt, sequenceIds);
+	}
+
+	protected synchronized String processBatch(String systemPrompt, int[] sequenceIds) {
 		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
 
-		 int[] sequenceIds = { 579, 258, 123, 78, 12 };
-		// int[] sequenceIds = { 579, 258, 123 };
-		//int[] sequenceIds = { 579, 258 };
-//		int[] sequenceIds = { 756 };
-
+		int predictMax = context.getBatchSize();
 		int parallelCount = sequenceIds.length;
 		int outputMax = predictMax - systemPromptTL.size();
 		int requiredContextSize = systemPromptTL.size() + outputMax * parallelCount;
@@ -73,17 +98,17 @@ public class LlamaCppBatchProcessor {
 			buf.position(buf.position() + output.capacity());
 		}
 
-		LlamaCppContext contextToUse;
-		if (context == null) {
-			LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
-			contextToUse = new LlamaCppContext();
-			contextToUse.setModel(model);
-			contextParams.setContextSize(requiredContextSize);
-			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
-			contextToUse.init(contextParams);
-		} else {
-			contextToUse = context;
-		}
+		LlamaCppContext contextToUse = context;
+//		if (context == null) {
+//			LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
+//			contextToUse = new LlamaCppContext();
+//			contextToUse.setModel(model);
+//			contextParams.setContextSize(requiredContextSize);
+//			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
+//			contextToUse.init(contextParams);
+//		} else {
+//			contextToUse = context;
+//		}
 
 		int contextSize = contextToUse.getContextSize();
 //		System.out.println("Context size: " + contextSize);
@@ -121,39 +146,29 @@ public class LlamaCppBatchProcessor {
 				}
 			};
 
-			int contextPosition = 0;
+			CompletableFuture<Integer> doIt = CompletableFuture.supplyAsync( //
+					() -> doWriteBatch(contextToUse.getPointer(), contextPosition, new IntBuffer[] { input },
+							sequenceIds, true) //
+			).thenApplyAsync(//
+					(pos) -> doReadBatch(contextToUse.getPointer(), pos, outputs, sequenceIds, completionHandler));
 
-//			CompletableFuture<Integer> doIt = CompletableFuture.supplyAsync( //
-//					() -> doWriteBatch(contextToUse.getPointer(), contextPosition, new IntBuffer[] { input },
-//							sequenceIds, true) //
-//			).thenApplyAsync(//
-//					(pos) -> doReadBatch(contextToUse.getPointer(), pos, outputs, sequenceIds, completionHandler));
-//
-//			int newContextPosition = doIt.join();
+			contextPosition = doIt.join();
 			// System.out.println("newContextPosition=" + newContextPosition);
 
-			contextPosition = doWriteBatch(contextToUse.getPointer(), contextPosition, new IntBuffer[] { input },
-					sequenceIds, true);
-			doReadBatch(contextToUse.getPointer(), contextPosition, outputs, sequenceIds, completionHandler);
+//			contextPosition = doWriteBatch(contextToUse.getPointer(), contextPosition, new IntBuffer[] { input },
+//					sequenceIds, true);
+//			doReadBatch(contextToUse.getPointer(), contextPosition, outputs, sequenceIds, completionHandler);
 			long end = System.nanoTime();
 			System.out.println("Processed batch in    " + (end - begin) / 1 + " ns.");
-
-			buf.flip();
-			for (int i = 0; i < buf.capacity(); i++) {
-				int value = buf.get();
-				if (value != 0)
-					System.out.println(i + "\t" + value);
-			}
-			System.out.println("capacity=" + buf.capacity());
 		}
 
 		for (int i = 0; i < outputs.length; i++) {
 			IntBuffer output = outputs[i];
 //			output.limit(output.capacity());
 			output.flip();
-			if (i == outputs.length - 1) {
-				System.out.println("LAST");
-			}
+//			if (i == outputs.length - 1) {
+//				System.out.println("LAST");
+//			}
 			int[] newTokens = new int[output.limit() - output.position()];
 //			System.err.println("Before get");
 //			System.err.flush();
@@ -202,17 +217,17 @@ public class LlamaCppBatchProcessor {
 			callbacks.add(callbackCF);
 		}
 
-		LlamaCppContext contextToUse;
-		if (context == null) {
-			LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
-			contextToUse = new LlamaCppContext();
-			contextToUse.setModel(model);
-			contextParams.setContextSize(maxKvSize);
-			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
-			contextToUse.init();
-		} else {
-			contextToUse = context;
-		}
+		LlamaCppContext contextToUse = context;
+//		if (context == null) {
+//			LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
+//			contextToUse = new LlamaCppContext();
+//			contextToUse.setModel(model);
+//			contextParams.setContextSize(maxKvSize);
+//			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
+//			contextToUse.init();
+//		} else {
+//			contextToUse = context;
+//		}
 
 		doProcessBatch(callbacks.toArray(new CompletableFuture<?>[callbacks.size()]), contextToUse,
 				systemPromptTL.getTokens(), null, predictMax);
@@ -222,14 +237,14 @@ public class LlamaCppBatchProcessor {
 		return res;
 	}
 
-	public void setModel(LlamaCppModel model) {
-		this.model = model;
-	}
-
-	public void setContext(LlamaCppContext context) {
-		// TODO check consistency with model
-		this.context = context;
-	}
+//	public void setModel(LlamaCppModel model) {
+//		this.model = model;
+//	}
+//
+//	public void setContext(LlamaCppContext context) {
+//		// TODO check consistency with model
+//		this.context = context;
+//	}
 
 	/*
 	 * Static utilities

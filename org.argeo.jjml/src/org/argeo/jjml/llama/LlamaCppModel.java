@@ -69,9 +69,9 @@ public class LlamaCppModel extends NativeReference {
 	}
 
 	public String deTokenize(LlamaCppTokenList tokenList, boolean removeSpecial, boolean unparseSpecial) {
-		byte[] str = doDeTokenizeAsUtf8Array(tokenList.getTokens(), removeSpecial, unparseSpecial);
-		return new String(str, UTF_8);
-//		return doDeTokenizeAsString(tokenList.getTokens(), removeSpecial, unparseSpecial);
+//		byte[] str = doDeTokenizeAsUtf8Array(tokenList.getTokens(), removeSpecial, unparseSpecial);
+//		return new String(str, UTF_8);
+		return doDeTokenizeAsString(tokenList.getTokens(), removeSpecial, unparseSpecial);
 	}
 
 	public LlamaCppTokenList tokenize(String str, boolean addSpecial) {
@@ -79,8 +79,8 @@ public class LlamaCppModel extends NativeReference {
 	}
 
 	public LlamaCppTokenList tokenize(String str, boolean addSpecial, boolean parseSpecial) {
-		int[] tokens = doTokenizeUtf8Array(str.getBytes(UTF_8), addSpecial, parseSpecial);
-//		int[] tokens = doTokenizeString(str, addSpecial, parseSpecial);
+//		int[] tokens = doTokenizeUtf8Array(str.getBytes(UTF_8), addSpecial, parseSpecial);
+		int[] tokens = doTokenizeString(str, addSpecial, parseSpecial);
 		return new LlamaCppTokenList(this, tokens);
 	}
 

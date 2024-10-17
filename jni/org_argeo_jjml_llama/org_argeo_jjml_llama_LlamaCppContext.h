@@ -39,6 +39,14 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetPoolingTyp
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetContextSize
   (JNIEnv *, jobject, jlong);
 
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppContext
+ * Method:    doGetBatchSize
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetBatchSize
+  (JNIEnv *, jobject, jlong);
+
 #ifdef __cplusplus
 }
 #endif

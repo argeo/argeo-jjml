@@ -18,7 +18,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
  * Method:    doProcessSingleBatch
- * Signature: (JLjava/nio/ByteBuffer;Ljava/nio/ByteBuffer;)I
+ * Signature: (JLjava/nio/IntBuffer;Ljava/nio/IntBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProcessSingleBatch
   (JNIEnv *, jobject, jlong, jobject, jobject);
@@ -26,7 +26,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProces
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
  * Method:    doWriteBatch
- * Signature: (JI[Ljava/nio/ByteBuffer;[IZ)I
+ * Signature: (JI[Ljava/nio/IntBuffer;[IZ)I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteBatch
   (JNIEnv *, jclass, jlong, jint, jobjectArray, jintArray, jboolean);
@@ -34,7 +34,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
  * Method:    doReadBatch
- * Signature: (JI[Ljava/nio/ByteBuffer;[ILjava/nio/channels/CompletionHandler;)I
+ * Signature: (JI[Ljava/nio/IntBuffer;[ILjava/nio/channels/CompletionHandler;)I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBatch
   (JNIEnv *, jclass, jlong, jint, jobjectArray, jintArray, jobject);

@@ -131,8 +131,8 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeUt
 	auto *model = getPointer<llama_model*>(env, obj);
 
 	int text_length = env->GetArrayLength(str);
-	char *text_chars = static_cast<char*>(env->GetPrimitiveArrayCritical(str,
-	NULL));
+	void *arr = env->GetPrimitiveArrayCritical(str, NULL);
+	char *text_chars = static_cast<char*>(arr);
 
 	std::string text(text_chars);
 
@@ -140,7 +140,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeUt
 			addSpecial, parseSpecial);
 
 	// clean up
-	env->ReleasePrimitiveArrayCritical(str, text_chars, 0);
+	env->ReleasePrimitiveArrayCritical(str, arr, 0);
 
 	jintArray res = env->NewIntArray(tokens.size());
 	env->SetIntArrayRegion(res, 0, tokens.size(), tokens.data());
@@ -153,16 +153,18 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokeniz
 	auto *model = getPointer<llama_model*>(env, modelObj);
 
 	int32_t n_tokens = env->GetArrayLength(tokenList);
-	jboolean *is_copy;
-	llama_token *tokens =
-			static_cast<llama_token*>(env->GetPrimitiveArrayCritical(tokenList,
-					is_copy));
+	llama_token tokens[n_tokens];
+	env->GetIntArrayRegion(tokenList, 0, n_tokens, tokens);
+//	jboolean *is_copy;
+//	llama_token *tokens =
+//			static_cast<llama_token*>(env->GetPrimitiveArrayCritical(tokenList,
+//					is_copy));
 
 	std::string text = jjml_tokens_to_cpp_string(model, tokens, n_tokens,
 			removeSpecial, unparseSpecial);
 
 	// clean up
-	env->ReleasePrimitiveArrayCritical(tokenList, tokens, 0);
+//	env->ReleasePrimitiveArrayCritical(tokenList, tokens, 0);
 
 	jbyteArray res = env->NewByteArray(text.size());
 	env->SetByteArrayRegion(res, 0, text.size(),
@@ -196,15 +198,18 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAs
 	auto *model = getPointer<llama_model*>(env, modelObj);
 
 	int32_t n_tokens = env->GetArrayLength(tokenList);
-	jboolean *is_copy;
-	jint *arr = env->GetIntArrayElements(tokenList, is_copy);
-	llama_token *tokens = static_cast<llama_token*>(arr);
+	llama_token tokens[n_tokens];
+	env->GetIntArrayRegion(tokenList, 0, n_tokens, tokens);
+//	int32_t n_tokens = env->GetArrayLength(tokenList);
+//	jboolean *is_copy;
+//	jint *arr = env->GetIntArrayElements(tokenList, is_copy);
+//	llama_token *tokens = static_cast<llama_token*>(arr);
 
 	std::string text = jjml_tokens_to_cpp_string(model, tokens, n_tokens,
 			removeSpecial, unparseSpecial);
 
 	// clean up
-	env->ReleaseIntArrayElements(tokenList, arr, 0);
+//	env->ReleaseIntArrayElements(tokenList, arr, 0);
 
 	std::u16string u16text = utf16_converter.from_bytes(text);
 	return argeo::jni::utf16ToJstring(env, u16text);
