@@ -16,6 +16,7 @@ public class LlamaCppBatchProcessor {
 	private LlamaCppModel model;
 	private LlamaCppContext context;
 
+	ByteBuffer directBuf ;
 	/*
 	 * NATIVE METHODS
 	 */
@@ -43,9 +44,10 @@ public class LlamaCppBatchProcessor {
 	public String processSingleBatch(String systemPrompt, int predictMax) {
 		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
 
-		// int[] sequenceIds = { 579, 258, 123, 78, 12 };
-//		int[] sequenceIds = { 579, 258, 123 };
-		int[] sequenceIds = { 756 };
+		 int[] sequenceIds = { 579, 258, 123, 78, 12 };
+		// int[] sequenceIds = { 579, 258, 123 };
+		//int[] sequenceIds = { 579, 258 };
+//		int[] sequenceIds = { 756 };
 
 		int parallelCount = sequenceIds.length;
 		int outputMax = predictMax - systemPromptTL.size();
@@ -54,7 +56,7 @@ public class LlamaCppBatchProcessor {
 		{
 //			ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);// warmup
 //			long begin = System.nanoTime();
-			ByteBuffer directBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
+			directBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
 			directBuf.order(ByteOrder.nativeOrder());// IMPORTANT!
 //			long end = System.nanoTime();
 //			System.out.println("Allocated buffer in    " + (end - begin) / 10 + " ns.");
@@ -70,7 +72,6 @@ public class LlamaCppBatchProcessor {
 			outputs[i] = output;
 			buf.position(buf.position() + output.capacity());
 		}
-
 
 		LlamaCppContext contextToUse;
 		if (context == null) {
@@ -136,15 +137,37 @@ public class LlamaCppBatchProcessor {
 			doReadBatch(contextToUse.getPointer(), contextPosition, outputs, sequenceIds, completionHandler);
 			long end = System.nanoTime();
 			System.out.println("Processed batch in    " + (end - begin) / 1 + " ns.");
+
+			buf.flip();
+			for (int i = 0; i < buf.capacity(); i++) {
+				int value = buf.get();
+				if (value != 0)
+					System.out.println(i + "\t" + value);
+			}
+			System.out.println("capacity=" + buf.capacity());
 		}
 
 		for (int i = 0; i < outputs.length; i++) {
 			IntBuffer output = outputs[i];
+//			output.limit(output.capacity());
 			output.flip();
+			if (i == outputs.length - 1) {
+				System.out.println("LAST");
+			}
 			int[] newTokens = new int[output.limit() - output.position()];
+//			System.err.println("Before get");
+//			System.err.flush();
 			output.get(newTokens);
 			LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
 
+//			System.err.println("Before detoken");
+//			System.err.flush();
+//			try {
+//				Thread.sleep(100);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 			String outputStr = newTL.getAsText();
 			res.add(outputStr);
 		}

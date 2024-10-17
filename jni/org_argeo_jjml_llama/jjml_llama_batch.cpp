@@ -184,8 +184,14 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 
 	const int n_parallel = env->GetArrayLength(sequenceIds);
 	assert(n_parallel > 0 && "Sequence count");
-	auto *sequence_ids = static_cast<llama_seq_id*>(env->GetIntArrayElements(
-			sequenceIds, nullptr));
+//	auto *sequence_ids = static_cast<llama_seq_id*>(env->GetIntArrayElements(
+//			sequenceIds, nullptr));
+	jint *arr =env->GetIntArrayElements(sequenceIds, nullptr);
+	llama_seq_id sequence_ids[n_parallel];
+	for(int i=0;i<n_parallel;i++){
+		sequence_ids[i] = static_cast<llama_seq_id>(arr[i]);
+	}
+	env->ReleaseIntArrayElements(sequenceIds, arr, 0);
 
 	const int outBuffersCount = env->GetArrayLength(outputBuffers);
 	assert(outBuffersCount == n_parallel && "As many buffers as sequences");
@@ -215,8 +221,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	// sampling
 	auto sparams = llama_sampler_chain_default_params();
 	llama_sampler *smpl = llama_sampler_chain_init(sparams);
-	//jjml_populate_default_samplers(model, smpl);
-	jjml_populate_default_samplers(model, smpl, 0); // deterministic
+	jjml_populate_default_samplers(model, smpl);
+	//jjml_populate_default_samplers(model, smpl, 0); // deterministic
 
 	// remember the batch index of the last token for each parallel sequence
 	// we need this to determine which logits to sample from
@@ -312,7 +318,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	PERF_END(__func__);
 
 	// clean up
-	env->ReleaseIntArrayElements(sequenceIds, sequence_ids, 0);
+//	env->ReleaseIntArrayElements(sequenceIds, sequence_ids, 0);
 
 	// TODO assert consistency of context position with regard to the output buffers sizes
 	return cur_pos;

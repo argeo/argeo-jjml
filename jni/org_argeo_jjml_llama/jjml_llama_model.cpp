@@ -197,15 +197,14 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAs
 
 	int32_t n_tokens = env->GetArrayLength(tokenList);
 	jboolean *is_copy;
-	llama_token *tokens =
-			static_cast<llama_token*>(env->GetPrimitiveArrayCritical(tokenList,
-					is_copy));
+	jint *arr = env->GetIntArrayElements(tokenList, is_copy);
+	llama_token *tokens = static_cast<llama_token*>(arr);
 
 	std::string text = jjml_tokens_to_cpp_string(model, tokens, n_tokens,
 			removeSpecial, unparseSpecial);
 
 	// clean up
-	env->ReleasePrimitiveArrayCritical(tokenList, tokens, 0);
+	env->ReleaseIntArrayElements(tokenList, arr, 0);
 
 	std::u16string u16text = utf16_converter.from_bytes(text);
 	return argeo::jni::utf16ToJstring(env, u16text);
