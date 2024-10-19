@@ -246,8 +246,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 // sampling
 	auto sparams = llama_sampler_chain_default_params();
 	llama_sampler *smpl = llama_sampler_chain_init(sparams);
-	jjml_populate_default_samplers(model, smpl);
-//jjml_populate_default_samplers(model, smpl, 0); // deterministic
+	//jjml_populate_default_samplers(model, smpl);
+	jjml_populate_default_samplers(model, smpl, 0); // deterministic
 
 // remember the batch index of the last token for each parallel sequence
 // we need this to determine which logits to sample from
