@@ -24,7 +24,8 @@ static argeo::jni::utf16_convert utf16_converter;
  * CHAT
  */
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMessages(
-		JNIEnv *env, jobject obj, jobjectArray roles, jobjectArray contents) {
+		JNIEnv *env, jobject obj, jobjectArray roles, jobjectArray contents,
+		jboolean addAssistantTokens) {
 	auto *model = getPointer<llama_model*>(env, obj);
 
 	const jsize messages_size = env->GetArrayLength(roles);
@@ -48,8 +49,8 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 	const char *ptr_tmpl = nullptr; // TODO custom template
 	std::vector<char> buf(alloc_size);
 	int32_t res = llama_chat_apply_template(model, ptr_tmpl,
-			chat_messages.data(), chat_messages.size(), true, buf.data(),
-			buf.size());
+			chat_messages.data(), chat_messages.size(), addAssistantTokens,
+			buf.data(), buf.size());
 
 	// error: chat template is not supported
 	if (res < 0) {
@@ -67,7 +68,8 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 	if ((size_t) res > buf.size()) {
 		buf.resize(res);
 		res = llama_chat_apply_template(model, ptr_tmpl, chat_messages.data(),
-				chat_messages.size(), true, buf.data(), buf.size());
+				chat_messages.size(), addAssistantTokens, buf.data(),
+				buf.size());
 	}
 
 	// we clean up, since we don't need the messages anymore

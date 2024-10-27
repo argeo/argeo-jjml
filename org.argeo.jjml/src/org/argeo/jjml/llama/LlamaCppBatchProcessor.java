@@ -17,6 +17,7 @@ public class LlamaCppBatchProcessor {
 	final private LlamaCppContext context;
 
 	private int contextPosition = 0;
+	private int nextRead = -1;
 
 	public LlamaCppBatchProcessor(LlamaCppContext context) {
 		Objects.requireNonNull(context);
@@ -62,13 +63,17 @@ public class LlamaCppBatchProcessor {
 		// doWriteBatch(context.getPointer(), 0, input, sequenceIds, lastLogit);
 		if (inputs.length > 1)
 			throw new UnsupportedOperationException("Multiple inputs is not yet supported");
-		contextPosition = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, contextPosition > 0);
+		int written = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, contextPosition > 0);
+//		contextPosition = contextPosition + written;
+		contextPosition =  written;
+		nextRead = written;
 	}
 
 	synchronized void readBatch(IntBuffer[] outputs, int[] sequenceIds,
 			CompletionHandler<Integer, Integer> completionHandler) {
 		assert outputs.length == sequenceIds.length;
-		contextPosition = doReadBatch(context.getPointer(), contextPosition, outputs, sequenceIds, completionHandler);
+		int nextWrite = doReadBatch(context.getPointer(), nextRead, outputs, sequenceIds, completionHandler);
+		contextPosition = contextPosition + (nextWrite - nextRead);
 	}
 
 	/*
@@ -82,7 +87,7 @@ public class LlamaCppBatchProcessor {
 		return processBatch(systemPrompt, sequenceIds);
 	}
 
-	protected String processBatch(String systemPrompt, int[] sequenceIds) {
+	public String processBatch(String systemPrompt, int[] sequenceIds) {
 		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
 
 		int predictMax = context.getBatchSize();

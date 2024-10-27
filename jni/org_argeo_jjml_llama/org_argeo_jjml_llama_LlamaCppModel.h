@@ -58,10 +58,10 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAs
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel
  * Method:    doFormatChatMessages
- * Signature: ([Ljava/lang/String;[Ljava/lang/String;)Ljava/lang/String;
+ * Signature: ([Ljava/lang/String;[Ljava/lang/String;Z)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMessages
-  (JNIEnv *, jobject, jobjectArray, jobjectArray);
+  (JNIEnv *, jobject, jobjectArray, jobjectArray, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel

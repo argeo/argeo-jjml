@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.DoublePredicate;
 
+import org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole;
+
 /**
  * Access to a llama.cpp model
  * 
@@ -57,7 +59,7 @@ public class LlamaCppModel extends NativeReference {
 	native String doDeTokenizeAsString(int[] tokens, boolean removeSpecial, boolean unparseSpecial);
 
 	// Chat
-	native String doFormatChatMessages(String[] roles, String[] contents);
+	native String doFormatChatMessages(String[] roles, String[] contents, boolean addAssistantTokens);
 
 	native int doGetEmbeddingSize();
 
@@ -75,7 +77,7 @@ public class LlamaCppModel extends NativeReference {
 	}
 
 	public LlamaCppTokenList tokenize(String str, boolean addSpecial) {
-		return tokenize(str, addSpecial, false);
+		return tokenize(str, addSpecial, true);
 	}
 
 	public LlamaCppTokenList tokenize(String str, boolean addSpecial, boolean parseSpecial) {
@@ -88,13 +90,15 @@ public class LlamaCppModel extends NativeReference {
 		String[] roles = new String[messages.size()];
 		String[] contents = new String[messages.size()];
 
+		boolean currIsUserRole = false;
 		for (int i = 0; i < messages.size(); i++) {
 			LlamaCppChatMessage message = messages.get(i);
 			roles[i] = message.role();
+			currIsUserRole = message.role().equals(StandardRole.USER.get());
 			contents[i] = message.content();
 		}
 
-		String res = doFormatChatMessages(roles, contents);
+		String res = doFormatChatMessages(roles, contents, currIsUserRole);
 		return res;
 	}
 
