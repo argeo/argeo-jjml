@@ -1,8 +1,5 @@
 package org.argeo.jjml.llama;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -93,9 +90,9 @@ public class LlamaCppModel extends NativeReference {
 		boolean currIsUserRole = false;
 		for (int i = 0; i < messages.size(); i++) {
 			LlamaCppChatMessage message = messages.get(i);
-			roles[i] = message.role();
-			currIsUserRole = message.role().equals(StandardRole.USER.get());
-			contents[i] = message.content();
+			roles[i] = message.getRole();
+			currIsUserRole = message.getRole().equals(StandardRole.USER.get());
+			contents[i] = message.getContent();
 		}
 
 		String res = doFormatChatMessages(roles, contents, currIsUserRole);
