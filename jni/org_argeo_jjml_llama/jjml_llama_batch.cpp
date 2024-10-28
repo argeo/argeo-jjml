@@ -64,34 +64,6 @@ static void jjml_populate_default_samplers(const llama_model *model,
 
 }
 
-//static void jjml_evaluate_inital_tokens(JNIEnv *env, llama_context *ctx,
-//		llama_batch &batch, std::vector<llama_seq_id> &seq_ids) {
-//	const llama_model *model = llama_get_model(ctx);
-//	if (llama_model_has_encoder(model)) {
-//		if (llama_encode(ctx, batch)) {
-//			env->ThrowNew(IllegalStateException, "Failed to encode");
-//			return;
-//		}
-//
-//		llama_token decoder_start_token_id = llama_model_decoder_start_token(
-//				model);
-//		if (decoder_start_token_id == -1) {
-//			decoder_start_token_id = llama_token_bos(model);
-//		}
-//
-//		jjml_llama_batch_clear(batch);
-//		jjml_llama_batch_add(batch, decoder_start_token_id, 0, seq_ids, false);
-//	}
-//
-//	// llama_decode will output logits only for the last token of the prompt
-//	batch.logits[batch.n_tokens - 1] = true;
-//
-//	if (llama_decode(ctx, batch) != 0) {
-//		env->ThrowNew(IllegalStateException, "Decode failed");
-//	}
-//
-//}
-
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteBatch(
 		JNIEnv *env, jclass, jlong contextPointer, jint contextPosition,
 		jobjectArray inputBuffers, jintArray sequenceIds, jboolean lastLogits) {
@@ -308,14 +280,16 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 					env->CallVoidMethod(outputBuf, IntBuffer$positionI,
 							next_idx);
 
-					// call completion handler
+					// TODO find out while call to static method is failing with centralized class
 					jclass Integer = env->FindClass("java/lang/Integer");
+
 					jobject completionHandlerResult =
 							env->CallStaticObjectMethod(Integer,
 									Integer$valueOf, next_idx);
 					jobject completionHandlerAttachment =
 							env->CallStaticObjectMethod(Integer,
 									Integer$valueOf, i);
+					// call completion handler
 					env->CallVoidMethod(completionHandler,
 							CompletionHandler$completed,
 							completionHandlerResult,
