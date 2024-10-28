@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.channels.CompletionHandler;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -19,12 +20,17 @@ public class LlamaCppBatchProcessor {
 	final private LlamaCppModel model;
 	final private LlamaCppContext context;
 
+	final private int NO_OUTPUT_ID;
+
 	private int contextPosition = 0;
 
 	public LlamaCppBatchProcessor(LlamaCppContext context) {
 		Objects.requireNonNull(context);
 		this.context = context;
 		this.model = context.getModel();
+
+		// there will never be an output id >= batch size
+		this.NO_OUTPUT_ID = this.context.getBatchSize();
 	}
 
 	public LlamaCppBatchProcessor(LlamaCppModel model, int requiredContextSize, int maxBatchSize) {
@@ -37,31 +43,36 @@ public class LlamaCppBatchProcessor {
 		contextToUse.init(contextParams);
 		this.context = contextToUse;
 		this.model = this.context.getModel();
+		
+		// there will never be an output id >= batch size
+		this.NO_OUTPUT_ID = this.context.getBatchSize();		
 	}
 
 	/*
 	 * NATIVE METHODS
 	 */
 	private static native int doWriteBatch(long contextPointer, int contextPosition, IntBuffer[] input,
-			int[] sequenceIds, boolean lastLogit);
+			int[] sequenceIds, int[] outputIds, boolean lastLogit);
 
 	private static native int doReadBatch(long contextPointer, int contextPosition, IntBuffer[] output,
-			int[] sequenceIds, CompletionHandler<Integer, Integer> completionHandler);
+			int[] sequenceIds, int[] outputIds, CompletionHandler<Integer, Integer> completionHandler);
 
 	/*
 	 * LOW-LEVEL ACCESS
 	 */
-	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, boolean lastLogits) {
+	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, int[] outputIds, boolean lastLogits) {
 		// doWriteBatch(context.getPointer(), 0, input, sequenceIds, lastLogit);
 		if (inputs.length > 1)
 			throw new UnsupportedOperationException("Multiple inputs is not yet supported");
-		contextPosition= doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, lastLogits);
+		contextPosition = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, outputIds,
+				lastLogits);
 	}
 
-	synchronized void readBatch(IntBuffer[] outputs, int[] sequenceIds,
+	synchronized void readBatch(IntBuffer[] outputs, int[] sequenceIds, int[] outputIds,
 			CompletionHandler<Integer, Integer> completionHandler) {
 		assert outputs.length == sequenceIds.length;
-		contextPosition = doReadBatch(context.getPointer(), contextPosition, outputs, sequenceIds, completionHandler);
+		contextPosition = doReadBatch(context.getPointer(), contextPosition, outputs, sequenceIds, outputIds,
+				completionHandler);
 	}
 
 	/*
@@ -81,6 +92,9 @@ public class LlamaCppBatchProcessor {
 		int outputMax = context.getBatchSize();
 		int requiredContextSize = systemPromptTL.size() + outputMax * parallelCount;
 
+		int[] outputIds = new int[sequenceIds.length];
+		Arrays.fill(outputIds, NO_OUTPUT_ID);
+
 		// direct buffer area
 		IntBuffer buf;
 		{
@@ -95,7 +109,7 @@ public class LlamaCppBatchProcessor {
 
 		int tokenCount = systemPromptTL.size();
 		int batchSize = context.getBatchSize();
-		
+
 		int batchCount = tokenCount / batchSize;
 		if (tokenCount % batchSize != 0)
 			batchCount = batchCount + 1;
@@ -115,7 +129,7 @@ public class LlamaCppBatchProcessor {
 			input.put(systemPromptTL.getTokens(), i * batchSize, input.limit());
 			input.flip();
 
-			writeBatch(new IntBuffer[] { input }, sequenceIds, lastLogits);
+			writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, lastLogits);
 		}
 //		IntBuffer input = buf.slice(buf.position(), systemPromptTL.size()); // Java 17
 //		IntBuffer input = buf.slice();
@@ -156,17 +170,8 @@ public class LlamaCppBatchProcessor {
 			}
 
 			@Override
-			public void completed(Integer result, Integer sequenceId) {
-				System.out.println("Sequence " + sequenceId + " completed.");
-//
-//					Integer idx = null;
-//					for (int i = 0; i < sequenceIds.length; i++) {
-//						if (sequenceIds[i] == sequenceId) {
-//							idx = i;
-//							break;
-//						}
-//					}
-//					Objects.requireNonNull(idx);// assert?
+			public void completed(Integer result, Integer sequenceIndex) {
+				System.out.println("Sequence with index " + sequenceIndex + " completed.");
 			}
 		};
 
@@ -177,7 +182,7 @@ public class LlamaCppBatchProcessor {
 //		doIt.join();
 
 //		writeBatch(new IntBuffer[] { input }, sequenceIds, true);
-		readBatch(outputs, sequenceIds, completionHandler);
+		readBatch(outputs, sequenceIds, outputIds, completionHandler);
 
 		// System.out.println("newContextPosition=" + newContextPosition);
 

@@ -9,27 +9,19 @@ extern "C" {
 #endif
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
- * Method:    doProcessBatch
- * Signature: ([Ljava/util/concurrent/CompletableFuture;Lorg/argeo/jjml/llama/LlamaCppContext;[I[[II)V
- */
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doProcessBatch
-  (JNIEnv *, jobject, jobjectArray, jobject, jintArray, jobjectArray, jint);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
  * Method:    doWriteBatch
- * Signature: (JI[Ljava/nio/IntBuffer;[IZ)I
+ * Signature: (JI[Ljava/nio/IntBuffer;[I[IZ)I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteBatch
-  (JNIEnv *, jclass, jlong, jint, jobjectArray, jintArray, jboolean);
+  (JNIEnv *, jclass, jlong, jint, jobjectArray, jintArray, jintArray, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
  * Method:    doReadBatch
- * Signature: (JI[Ljava/nio/IntBuffer;[ILjava/nio/channels/CompletionHandler;)I
+ * Signature: (JI[Ljava/nio/IntBuffer;[I[ILjava/nio/channels/CompletionHandler;)I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBatch
-  (JNIEnv *, jclass, jlong, jint, jobjectArray, jintArray, jobject);
+  (JNIEnv *, jclass, jlong, jint, jobjectArray, jintArray, jintArray, jobject);
 
 #ifdef __cplusplus
 }
