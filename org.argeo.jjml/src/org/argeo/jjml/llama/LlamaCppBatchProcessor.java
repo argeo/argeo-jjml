@@ -20,7 +20,6 @@ public class LlamaCppBatchProcessor {
 	final private LlamaCppContext context;
 
 	private int contextPosition = 0;
-	private int nextRead = -1;
 
 	public LlamaCppBatchProcessor(LlamaCppContext context) {
 		Objects.requireNonNull(context);
@@ -52,26 +51,17 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * LOW-LEVEL ACCESS
 	 */
-//	void writeBatch(IntBuffer input, int sequenceId) {
-//		// TODO optimize natively?
-//		writeBatch(new IntBuffer[] { input }, new int[] { sequenceId });
-//	}
-
 	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, boolean lastLogits) {
 		// doWriteBatch(context.getPointer(), 0, input, sequenceIds, lastLogit);
 		if (inputs.length > 1)
 			throw new UnsupportedOperationException("Multiple inputs is not yet supported");
-		int written = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, lastLogits);
-//		contextPosition = contextPosition + written;
-		contextPosition = written;
-		nextRead = written;
+		contextPosition= doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, lastLogits);
 	}
 
 	synchronized void readBatch(IntBuffer[] outputs, int[] sequenceIds,
 			CompletionHandler<Integer, Integer> completionHandler) {
 		assert outputs.length == sequenceIds.length;
-		int nextWrite = doReadBatch(context.getPointer(), nextRead, outputs, sequenceIds, completionHandler);
-		contextPosition = contextPosition + (nextWrite - nextRead);
+		contextPosition = doReadBatch(context.getPointer(), contextPosition, outputs, sequenceIds, completionHandler);
 	}
 
 	/*
