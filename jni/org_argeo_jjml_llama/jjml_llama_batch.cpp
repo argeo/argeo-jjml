@@ -113,7 +113,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 
 		PERF_BEGIN();
 
-		int input_tokens_size = env->GetDirectBufferCapacity(inputBuf);
+//		int input_tokens_size = env->GetDirectBufferCapacity(inputBuf);
+		int input_tokens_size = env->CallIntMethod(inputBuf, IntBuffer$limit);
 		llama_token *tokens =
 				static_cast<llama_token*>(env->GetDirectBufferAddress(inputBuf));
 
@@ -233,10 +234,11 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 		jobject outputBuf = env->GetObjectArrayElement(outputBuffers, i);
 		void *output = env->GetDirectBufferAddress(outputBuf);
 //		std::cerr << (jlong) output << std::endl;
-		int outputCapacity = env->GetDirectBufferCapacity(outputBuf);
-		assert(outputCapacity > 0 && "Output buffer capacity");
+//		int outputCapacity = env->GetDirectBufferCapacity(outputBuf);
+		int out_tokens_size = env->CallIntMethod(outputBuf, IntBuffer$limit);
+		assert(out_tokens_size > 0 && "Output buffer capacity");
 
-		int out_tokens_size = outputCapacity;
+//		int out_tokens_size = outputCapacity;
 		llama_token *output_tokens = static_cast<llama_token*>(output);
 
 		seq_tokens[i] = output_tokens;

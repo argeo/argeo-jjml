@@ -99,28 +99,22 @@ public class LlamaCppBatchProcessor {
 //			System.out.println("Allocated buffer in    " + (end - begin) / 10 + " ns.");
 			buf = directBuf.asIntBuffer();
 		}
-		IntBuffer input = buf.slice(buf.position(), systemPromptTL.size());
-		buf.position(buf.position() + input.capacity());
+//		IntBuffer input = buf.slice(buf.position(), systemPromptTL.size()); // Java 17
+		IntBuffer input = buf.slice();
+		input.limit(systemPromptTL.size());
+		buf.position(buf.position() + input.limit());
 		input.put(systemPromptTL.getTokens());
 
 		IntBuffer[] outputs = new IntBuffer[parallelCount];
 		for (int i = 0; i < parallelCount; i++) {
-			IntBuffer output = buf.slice(buf.position(), outputMax);
+//			IntBuffer output = buf.slice(buf.position(), outputMax); // Java 17
+			IntBuffer output = buf.slice();
+			output.limit(outputMax);
 			outputs[i] = output;
-			buf.position(buf.position() + output.capacity());
+			buf.position(buf.position() + output.limit());
 		}
 
 		LlamaCppContext contextToUse = context;
-//		if (context == null) {
-//			LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
-//			contextToUse = new LlamaCppContext();
-//			contextToUse.setModel(model);
-//			contextParams.setContextSize(requiredContextSize);
-//			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
-//			contextToUse.init(contextParams);
-//		} else {
-//			contextToUse = context;
-//		}
 
 		int contextSize = contextToUse.getContextSize();
 //		System.out.println("Context size: " + contextSize);
