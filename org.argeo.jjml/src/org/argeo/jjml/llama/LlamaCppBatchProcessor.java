@@ -52,16 +52,16 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * LOW-LEVEL ACCESS
 	 */
-	void writeBatch(IntBuffer input, int sequenceId) {
-		// TODO optimize natively?
-		writeBatch(new IntBuffer[] { input }, new int[] { sequenceId });
-	}
+//	void writeBatch(IntBuffer input, int sequenceId) {
+//		// TODO optimize natively?
+//		writeBatch(new IntBuffer[] { input }, new int[] { sequenceId });
+//	}
 
-	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds) {
+	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, boolean lastLogits) {
 		// doWriteBatch(context.getPointer(), 0, input, sequenceIds, lastLogit);
 		if (inputs.length > 1)
 			throw new UnsupportedOperationException("Multiple inputs is not yet supported");
-		int written = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, true);
+		int written = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, lastLogits);
 //		contextPosition = contextPosition + written;
 		contextPosition = written;
 		nextRead = written;
@@ -85,13 +85,16 @@ public class LlamaCppBatchProcessor {
 	public String processBatch(String systemPrompt, int[] sequenceIds) {
 		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
 
-		int predictMax = context.getBatchSize();
+//		int predictMax = context.getBatchSize();
 		int parallelCount = sequenceIds.length;
-		int outputMax = predictMax - systemPromptTL.size();
+//		int outputMax = predictMax - systemPromptTL.size();
+		int outputMax = context.getBatchSize();
 		int requiredContextSize = systemPromptTL.size() + outputMax * parallelCount;
+
+		// direct buffer area
 		IntBuffer buf;
 		{
-//			ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);// warmup
+//			ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);// warm up
 //			long begin = System.nanoTime();
 			ByteBuffer directBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
 			directBuf.order(ByteOrder.nativeOrder());// IMPORTANT!
@@ -99,11 +102,36 @@ public class LlamaCppBatchProcessor {
 //			System.out.println("Allocated buffer in    " + (end - begin) / 10 + " ns.");
 			buf = directBuf.asIntBuffer();
 		}
+
+		int tokenCount = systemPromptTL.size();
+		int batchSize = context.getBatchSize();
+		
+		int batchCount = tokenCount / batchSize;
+		if (tokenCount % batchSize != 0)
+			batchCount = batchCount + 1;
+		for (int i = 0; i < batchCount; i++) {
+			IntBuffer input = buf.slice();
+			boolean lastLogits;
+			if (i == batchCount - 1) {
+				input.limit(tokenCount % batchSize == 0 ? batchSize : tokenCount % batchSize);
+				lastLogits = true;
+			} else {
+				input.limit(batchSize);
+				lastLogits = false;
+			}
+			buf.position(buf.position() + input.limit());
+
+			// copy data
+			input.put(systemPromptTL.getTokens(), i * batchSize, input.limit());
+			input.flip();
+
+			writeBatch(new IntBuffer[] { input }, sequenceIds, lastLogits);
+		}
 //		IntBuffer input = buf.slice(buf.position(), systemPromptTL.size()); // Java 17
-		IntBuffer input = buf.slice();
-		input.limit(systemPromptTL.size());
-		buf.position(buf.position() + input.limit());
-		input.put(systemPromptTL.getTokens());
+//		IntBuffer input = buf.slice();
+//		input.limit(systemPromptTL.size());
+//		buf.position(buf.position() + input.limit());
+//		input.put(systemPromptTL.getTokens());
 
 		IntBuffer[] outputs = new IntBuffer[parallelCount];
 		for (int i = 0; i < parallelCount; i++) {
@@ -158,7 +186,7 @@ public class LlamaCppBatchProcessor {
 //				() -> readBatch(outputs, sequenceIds, completionHandler));
 //		doIt.join();
 
-		writeBatch(new IntBuffer[] { input }, sequenceIds);
+//		writeBatch(new IntBuffer[] { input }, sequenceIds, true);
 		readBatch(outputs, sequenceIds, completionHandler);
 
 		// System.out.println("newContextPosition=" + newContextPosition);
