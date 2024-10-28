@@ -217,19 +217,21 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 
 	for (int i = 0; i < n_parallel; i++) {
 		jobject outputBuf = env->GetObjectArrayElement(outputBuffers, i);
-		void *output = env->GetDirectBufferAddress(outputBuf);
-//		std::cerr << (jlong) output << std::endl;
+		if (outputBuf != nullptr) {
+			void *output = env->GetDirectBufferAddress(outputBuf);
 //		int outputCapacity = env->GetDirectBufferCapacity(outputBuf);
-		int out_tokens_size = env->CallIntMethod(outputBuf, IntBuffer$limit);
-		assert(out_tokens_size > 0 && "Output buffer capacity");
+			int out_tokens_size = env->CallIntMethod(outputBuf,
+					IntBuffer$limit);
+			assert(out_tokens_size > 0 && "Output buffer capacity");
 
 //		int out_tokens_size = outputCapacity;
-		llama_token *output_tokens = static_cast<llama_token*>(output);
+			llama_token *output_tokens = static_cast<llama_token*>(output);
 
-		seq_tokens[i] = output_tokens;
-		seq_tokens_size[i] = out_tokens_size;
-		if (out_tokens_size > max_decodes)
-			max_decodes = out_tokens_size;
+			seq_tokens[i] = output_tokens;
+			seq_tokens_size[i] = out_tokens_size;
+			if (out_tokens_size > max_decodes)
+				max_decodes = out_tokens_size;
+		}
 	}
 
 	PERF_BEGIN();
@@ -270,6 +272,12 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 					continue;
 				}
 
+//				if (next_idx == seq_tokens_size[i] || cur_pos == n_predict) {
+//					// output is full
+//					// TODO notify callback
+//					continue;
+//				}
+
 				//PERF_BEGIN();
 //				const llama_token new_token_id = llama_sampler_sample(smpl, ctx,
 //						i_batch[i]);
@@ -289,7 +297,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 						) {
 					// TODO find a better way to stop
 //					i_batch[i] = -n_parallel - 1;
-					output_ids[i] = NO_OUTPUT_ID;
+					if (is_eog)
+						output_ids[i] = NO_OUTPUT_ID;
 
 					jobject outputBuf = env->GetObjectArrayElement(
 							outputBuffers, i);
