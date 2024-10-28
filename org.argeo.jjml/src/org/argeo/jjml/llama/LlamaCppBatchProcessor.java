@@ -4,13 +4,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.channels.CompletionHandler;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Function;
 
 public class LlamaCppBatchProcessor {
 	final private LlamaCppModel model;
@@ -40,11 +38,6 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * NATIVE METHODS
 	 */
-	private native void doProcessBatch(CompletableFuture<?>[] callbacks, LlamaCppContext context, int[] systemPrompt,
-			int[][] sequencePrompts, int predictMax);
-
-//	private native int doProcessSingleBatch(long contextPointer, IntBuffer input, IntBuffer output);
-
 	private static native int doWriteBatch(long contextPointer, int contextPosition, IntBuffer[] input,
 			int[] sequenceIds, boolean lastLogit);
 
@@ -65,7 +58,7 @@ public class LlamaCppBatchProcessor {
 			throw new UnsupportedOperationException("Multiple inputs is not yet supported");
 		int written = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, contextPosition > 0);
 //		contextPosition = contextPosition + written;
-		contextPosition =  written;
+		contextPosition = written;
 		nextRead = written;
 	}
 
@@ -207,63 +200,6 @@ public class LlamaCppBatchProcessor {
 		}
 		return res.toString();
 	}
-
-	public List<CompletionStage<LlamaCppTokenList>> processBatch(String systemPrompt, List<String> sequencePrompt,
-			int predictMax) {
-		Objects.requireNonNull(systemPrompt, "System prompt must be provided.");
-
-		List<CompletionStage<LlamaCppTokenList>> res = new ArrayList<>(sequencePrompt.size());
-
-		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
-
-//		System.out.println(Arrays.toString(systemPrompt.toCharArray()));
-//		System.out.println(Arrays.toString(systemPromptTL.toString().toCharArray()));
-//		assert systemPrompt.equals(systemPromptTL.toString());
-
-		// TODO process sequence-specific prompts
-		int parallelCount = sequencePrompt.size();
-		int maxKvSize = systemPromptTL.size() + (predictMax - systemPromptTL.size()) * parallelCount;
-
-		List<CompletableFuture<int[]>> callbacks = new ArrayList<>();
-		for (int i = 0; i < sequencePrompt.size(); i++) {
-			CompletableFuture<int[]> callbackCF = new CompletableFuture<>();
-			CompletionStage<LlamaCppTokenList> resCS = callbackCF
-					.thenApplyAsync((Function<int[], LlamaCppTokenList>) (arr) -> {
-						LlamaCppTokenList tokenList = new LlamaCppTokenList(model, arr);
-						return tokenList;
-					});
-			res.add(resCS);
-			callbacks.add(callbackCF);
-		}
-
-		LlamaCppContext contextToUse = context;
-//		if (context == null) {
-//			LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
-//			contextToUse = new LlamaCppContext();
-//			contextToUse.setModel(model);
-//			contextParams.setContextSize(maxKvSize);
-//			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
-//			contextToUse.init();
-//		} else {
-//			contextToUse = context;
-//		}
-
-		doProcessBatch(callbacks.toArray(new CompletableFuture<?>[callbacks.size()]), contextToUse,
-				systemPromptTL.getTokens(), null, predictMax);
-
-		if (context == null)
-			contextToUse.destroy();
-		return res;
-	}
-
-//	public void setModel(LlamaCppModel model) {
-//		this.model = model;
-//	}
-//
-//	public void setContext(LlamaCppContext context) {
-//		// TODO check consistency with model
-//		this.context = context;
-//	}
 
 	/*
 	 * Static utilities
