@@ -10,6 +10,11 @@ import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+/**
+ * Processing capabilities based on llama.cpp's batch API.
+ * 
+ * @see llama.h -- llama_batch
+ */
 public class LlamaCppBatchProcessor {
 	final private LlamaCppModel model;
 	final private LlamaCppContext context;
@@ -47,16 +52,16 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * LOW-LEVEL ACCESS
 	 */
-	void writeBatch(IntBuffer input, int sequenceId, boolean lastLogit) {
+	void writeBatch(IntBuffer input, int sequenceId) {
 		// TODO optimize natively?
-		writeBatch(new IntBuffer[] { input }, new int[] { sequenceId }, lastLogit);
+		writeBatch(new IntBuffer[] { input }, new int[] { sequenceId });
 	}
 
-	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, boolean lastLogit) {
+	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds) {
 		// doWriteBatch(context.getPointer(), 0, input, sequenceIds, lastLogit);
 		if (inputs.length > 1)
 			throw new UnsupportedOperationException("Multiple inputs is not yet supported");
-		int written = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, contextPosition > 0);
+		int written = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, true);
 //		contextPosition = contextPosition + written;
 		contextPosition = written;
 		nextRead = written;
@@ -73,9 +78,6 @@ public class LlamaCppBatchProcessor {
 	 * USABLE METHODS
 	 */
 	public String processSingleBatch(String systemPrompt, int sequenceId) {
-		// int[] sequenceIds = { 579, 258, 123, 78, 12 };
-		// int[] sequenceIds = { 579, 258, 123 };
-		// int[] sequenceIds = { 579, 258 };
 		int[] sequenceIds = { sequenceId };
 		return processBatch(systemPrompt, sequenceIds);
 	}
@@ -162,7 +164,7 @@ public class LlamaCppBatchProcessor {
 //				() -> readBatch(outputs, sequenceIds, completionHandler));
 //		doIt.join();
 
-		writeBatch(new IntBuffer[] { input }, sequenceIds, true);
+		writeBatch(new IntBuffer[] { input }, sequenceIds);
 		readBatch(outputs, sequenceIds, completionHandler);
 
 		// System.out.println("newContextPosition=" + newContextPosition);
