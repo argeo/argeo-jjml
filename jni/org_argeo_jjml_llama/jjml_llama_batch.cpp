@@ -103,12 +103,11 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 //		free(batch.seq_id);
 //		batch.token = input_tokens;
 		for (size_t i = 0; i < input_tokens_size; i++) {
-//			jjml_llama_batch_add(batch, input_tokens[i], i, seq_ids, false);
 			batch.token[batch.n_tokens] = tokens[i];
 			batch.pos[batch.n_tokens] = cur_pos + i;
 			batch.n_seq_id[batch.n_tokens] = n_parallel;
-			for (size_t i = 0; i < n_parallel; ++i) {
-				batch.seq_id[batch.n_tokens][i] = sequence_ids[i];
+			for (size_t j = 0; j < n_parallel; j++) {
+				batch.seq_id[batch.n_tokens][j] = sequence_ids[j];
 			}
 //			batch.seq_id[batch.n_tokens] = sequence_ids;
 			batch.logits[batch.n_tokens] = false;
@@ -198,26 +197,18 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 
 		llama_batch batch = llama_batch_init(total_tokens, 0, n_parallel);
 
-		// Interlace inputs
-		// TODO is it really useful, or should we just use them sequentially?
-		for (size_t i = 0; i < max_decodes; i++) {
-			for (size_t j = 0; j < n_parallel; j++) {
-				if (i < seq_tokens_size[j]) {
-					batch.token[batch.n_tokens] = seq_tokens[j][i];
-					batch.pos[batch.n_tokens] = cur_pos;
-					// TODO check equal tokens?
-					batch.n_seq_id[batch.n_tokens] = 1;
-					batch.seq_id[batch.n_tokens][0] = sequence_ids[j];
-					if (lastLogits && i == seq_tokens_size[j] - 1) {
-						batch.logits[batch.n_tokens] = true;
-						output_ids[j] = batch.n_tokens;
-					} else {
-						batch.logits[batch.n_tokens] = false;
-					}
-					batch.n_tokens++;
-					cur_pos++;
-				}
+		for (size_t j = 0; j < n_parallel; j++) {
+			for (size_t i = 0; i < seq_tokens_size[j]; i++) {
+				batch.token[batch.n_tokens] = seq_tokens[j][i];
+				batch.pos[batch.n_tokens] = cur_pos;
+				batch.n_seq_id[batch.n_tokens] = 1;
+				batch.seq_id[batch.n_tokens][0] = sequence_ids[j];
+				batch.logits[batch.n_tokens] = false;
+				batch.n_tokens++;
+				cur_pos++;
 			}
+			batch.logits[batch.n_tokens - 1] = true;
+			output_ids[j] = batch.n_tokens - 1;
 		}
 
 		// TODO deal with encoder models?

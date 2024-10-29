@@ -83,10 +83,10 @@ public class LlamaCppBatchProcessor {
 	}
 
 	public String processBatch(String prompt, int[] sequenceIds) {
-		return processBatch(prompt, sequenceIds, null);
+		return processBatch(prompt, sequenceIds, null, null);
 	}
 
-	public String processBatch(String prompt, int[] sequenceIds, String[] parameters) {
+	public String processBatch(String prompt, int[] sequenceIds, String[] parameters, String postPrompt) {
 		LlamaCppTokenList promptTL = model.tokenize(prompt, true);
 
 //		int predictMax = context.getBatchSize();
@@ -152,7 +152,7 @@ public class LlamaCppBatchProcessor {
 			for (int i = 0; i < parallelCount; i++) {
 				LlamaCppTokenList parameterTL = model.tokenize(parameters[i], true);
 				if (parameterTL.size() * parallelCount > batchSize)// TODO be more precise / robust
-					throw new IllegalArgumentException("Parameter " + parameters[i] + " is too long.");
+					throw new IllegalArgumentException("Parameter '" + parameters[i] + "' is too long.");
 				inputs[i] = buf.slice();
 				inputs[i].limit(parameterTL.size());
 				buf.position(buf.position() + inputs[i].limit());
@@ -161,7 +161,22 @@ public class LlamaCppBatchProcessor {
 				inputs[i].put(parameterTL.getTokens(), 0, inputs[i].limit());
 				inputs[i].flip();
 			}
-			writeBatch(inputs, sequenceIds, outputIds, true);
+			writeBatch(inputs, sequenceIds, outputIds, postPrompt == null);
+		}
+
+		if (postPrompt != null) {
+			LlamaCppTokenList postPromptTL = model.tokenize(postPrompt, true);
+			if (postPromptTL.size() > batchSize)// TODO be more precise / robust
+				throw new IllegalArgumentException("Post prompt '" + postPrompt + "' is too long.");
+			IntBuffer input = buf.slice();
+			input.limit(postPromptTL.size());
+			buf.position(buf.position() + input.limit());
+
+			// copy data
+			input.put(postPromptTL.getTokens(), 0, input.limit());
+			input.flip();
+
+			writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, true);
 		}
 
 		StringBuffer[] outputStrings = new StringBuffer[parallelCount];
