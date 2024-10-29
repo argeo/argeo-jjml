@@ -207,8 +207,11 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 				batch.n_tokens++;
 				cur_pos++;
 			}
-			batch.logits[batch.n_tokens - 1] = true;
-			output_ids[j] = batch.n_tokens - 1;
+
+			if (lastLogits) {
+				batch.logits[batch.n_tokens - 1] = true;
+				output_ids[j] = batch.n_tokens - 1;
+			}
 		}
 
 		// TODO deal with encoder models?
