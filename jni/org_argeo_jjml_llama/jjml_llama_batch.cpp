@@ -154,15 +154,11 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 			}
 		}
 
-		// encode input
 		if (llama_decode(ctx, batch) != 0) {
 			env->ThrowNew(IllegalStateException, "Decode failed");
 		}
 
-//		jjml_evaluate_inital_tokens(env, ctx, batch, seq_ids);
-
 		cur_pos = cur_pos + batch.n_tokens;
-//		curr_batch_pos = batch.pos[batch.n_tokens - 1];
 
 		// !! dereference what Java owns before batch is freed
 //		batch.token = nullptr;
@@ -173,7 +169,64 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 
 		PERF_END(__func__);
 	} else {
-		// not yet supported
+		assert(
+				inputBuffersCount == n_parallel
+						&& "As many buffers as sequences");
+
+		llama_token *seq_tokens[n_parallel];
+		int seq_tokens_size[n_parallel];
+		int total_tokens = 0;
+		int max_decodes = 0;
+
+		for (int i = 0; i < n_parallel; i++) {
+			jobject inputBuf = env->GetObjectArrayElement(inputBuffers, i);
+			if (inputBuf != nullptr) {
+				void *input = env->GetDirectBufferAddress(inputBuf);
+				int input_tokens_size = env->CallIntMethod(inputBuf,
+						IntBuffer$limit);
+				assert(input_tokens_size > 0 && "Input buffer capacity");
+
+				llama_token *input_tokens = static_cast<llama_token*>(input);
+
+				seq_tokens[i] = input_tokens;
+				seq_tokens_size[i] = input_tokens_size;
+				total_tokens = total_tokens + input_tokens_size;
+				if (input_tokens_size > max_decodes)
+					max_decodes = input_tokens_size;
+			}
+		}
+
+		llama_batch batch = llama_batch_init(total_tokens, 0, n_parallel);
+
+		// Interlace inputs
+		// TODO is it really useful, or should we just use them sequentially?
+		for (size_t i = 0; i < max_decodes; i++) {
+			for (size_t j = 0; j < n_parallel; j++) {
+				if (i < seq_tokens_size[j]) {
+					batch.token[batch.n_tokens] = seq_tokens[j][i];
+					batch.pos[batch.n_tokens] = cur_pos;
+					// TODO check equal tokens?
+					batch.n_seq_id[batch.n_tokens] = 1;
+					batch.seq_id[batch.n_tokens][0] = sequence_ids[j];
+					if (lastLogits && i == seq_tokens_size[j] - 1) {
+						batch.logits[batch.n_tokens] = true;
+						output_ids[j] = batch.n_tokens;
+					} else {
+						batch.logits[batch.n_tokens] = false;
+					}
+					batch.n_tokens++;
+					cur_pos++;
+				}
+			}
+		}
+
+		// TODO deal with encoder models?
+
+		if (llama_decode(ctx, batch) != 0) {
+			env->ThrowNew(IllegalStateException, "Decode failed");
+		}
+
+		llama_batch_free(batch);
 	}
 	// clean up
 	env->ReleaseIntArrayElements(sequenceIds, sequence_ids, 0);
@@ -212,19 +265,16 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 
 	llama_token *seq_tokens[n_parallel];
 	int seq_tokens_size[n_parallel];
-//	int total_output_capacity = 0;
 	int max_decodes = 0;
 
 	for (int i = 0; i < n_parallel; i++) {
 		jobject outputBuf = env->GetObjectArrayElement(outputBuffers, i);
 		if (outputBuf != nullptr) {
 			void *output = env->GetDirectBufferAddress(outputBuf);
-//		int outputCapacity = env->GetDirectBufferCapacity(outputBuf);
 			int out_tokens_size = env->CallIntMethod(outputBuf,
 					IntBuffer$limit);
 			assert(out_tokens_size > 0 && "Output buffer capacity");
 
-//		int out_tokens_size = outputCapacity;
 			llama_token *output_tokens = static_cast<llama_token*>(output);
 
 			seq_tokens[i] = output_tokens;
@@ -238,7 +288,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 // sampling
 	auto sparams = llama_sampler_chain_default_params();
 	llama_sampler *smpl = llama_sampler_chain_init(sparams);
-	//jjml_populate_default_samplers(model, smpl);
+	jjml_populate_default_samplers(model, smpl);
 	jjml_populate_default_samplers(model, smpl, 0); // deterministic
 
 // remember the batch index of the last token for each parallel sequence

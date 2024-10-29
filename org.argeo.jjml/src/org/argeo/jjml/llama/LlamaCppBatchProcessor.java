@@ -61,9 +61,8 @@ public class LlamaCppBatchProcessor {
 	 * LOW-LEVEL ACCESS
 	 */
 	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, int[] outputIds, boolean lastLogits) {
-		// doWriteBatch(context.getPointer(), 0, input, sequenceIds, lastLogit);
-		if (inputs.length > 1)
-			throw new UnsupportedOperationException("Multiple inputs is not yet supported");
+//		if (inputs.length > 1)
+//			throw new UnsupportedOperationException("Multiple inputs is not yet supported");
 		contextPosition = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, outputIds,
 				lastLogits);
 	}
@@ -83,14 +82,18 @@ public class LlamaCppBatchProcessor {
 		return processBatch(systemPrompt, sequenceIds);
 	}
 
-	public String processBatch(String systemPrompt, int[] sequenceIds) {
-		LlamaCppTokenList systemPromptTL = model.tokenize(systemPrompt, true);
+	public String processBatch(String prompt, int[] sequenceIds) {
+		return processBatch(prompt, sequenceIds, null);
+	}
+
+	public String processBatch(String prompt, int[] sequenceIds, String[] parameters) {
+		LlamaCppTokenList promptTL = model.tokenize(prompt, true);
 
 //		int predictMax = context.getBatchSize();
 		int parallelCount = sequenceIds.length;
 //		int outputMax = predictMax - systemPromptTL.size();
 		int outputMax = context.getBatchSize();
-		int requiredContextSize = systemPromptTL.size() + outputMax * parallelCount * 10;
+		int requiredContextSize = promptTL.size() + outputMax * parallelCount * 10;
 
 		LlamaCppContext contextToUse = context;
 
@@ -116,7 +119,7 @@ public class LlamaCppBatchProcessor {
 			buf = directBuf.asIntBuffer();
 		}
 
-		int tokenCount = systemPromptTL.size();
+		int tokenCount = promptTL.size();
 		int batchSize = context.getBatchSize();
 
 		int batchCount = tokenCount / batchSize;
@@ -127,7 +130,7 @@ public class LlamaCppBatchProcessor {
 			boolean lastLogits;
 			if (i == batchCount - 1) {
 				input.limit(tokenCount % batchSize == 0 ? batchSize : tokenCount % batchSize);
-				lastLogits = true;
+				lastLogits = parameters == null;
 			} else {
 				input.limit(batchSize);
 				lastLogits = false;
@@ -135,16 +138,31 @@ public class LlamaCppBatchProcessor {
 			buf.position(buf.position() + input.limit());
 
 			// copy data
-			input.put(systemPromptTL.getTokens(), i * batchSize, input.limit());
+			input.put(promptTL.getTokens(), i * batchSize, input.limit());
 			input.flip();
 
 			writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, lastLogits);
 		}
-//		IntBuffer input = buf.slice(buf.position(), systemPromptTL.size()); // Java 17
-//		IntBuffer input = buf.slice();
-//		input.limit(systemPromptTL.size());
-//		buf.position(buf.position() + input.limit());
-//		input.put(systemPromptTL.getTokens());
+
+		if (parameters != null) {
+			if (parameters.length != parallelCount)
+				throw new IllegalArgumentException("Parameters count different from sequence count");
+
+			IntBuffer[] inputs = new IntBuffer[parallelCount];
+			for (int i = 0; i < parallelCount; i++) {
+				LlamaCppTokenList parameterTL = model.tokenize(parameters[i], true);
+				if (parameterTL.size() * parallelCount > batchSize)// TODO be more precise / robust
+					throw new IllegalArgumentException("Parameter " + parameters[i] + " is too long.");
+				inputs[i] = buf.slice();
+				inputs[i].limit(parameterTL.size());
+				buf.position(buf.position() + inputs[i].limit());
+
+				// copy data
+				inputs[i].put(parameterTL.getTokens(), 0, inputs[i].limit());
+				inputs[i].flip();
+			}
+			writeBatch(inputs, sequenceIds, outputIds, true);
+		}
 
 		StringBuffer[] outputStrings = new StringBuffer[parallelCount];
 		for (int i = 0; i < outputStrings.length; i++)
