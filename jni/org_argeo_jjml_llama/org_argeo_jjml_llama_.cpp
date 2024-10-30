@@ -34,13 +34,13 @@ jclass IllegalArgumentException;
 /*
  * LlamaCppModelParams
  */
-jclass LlamaCppModelParams;
-// FIELDS
-jfieldID LlamaCppModelParams$gpuLayerCount;
-jfieldID LlamaCppModelParams$vocabOnly;
-jfieldID LlamaCppModelParams$useMlock;
-// CONSTRUCTORS
-jmethodID LlamaCppModelParams$LlamaCppModelParams;
+//jclass LlamaCppModelParams;
+//// FIELDS
+//jfieldID LlamaCppModelParams$gpuLayerCount;
+//jfieldID LlamaCppModelParams$vocabOnly;
+//jfieldID LlamaCppModelParams$useMlock;
+//// CONSTRUCTORS
+//jmethodID LlamaCppModelParams$LlamaCppModelParams;
 
 /*
  * LlamaCppContextParams
@@ -103,19 +103,19 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	 * LlamaCppModelParams
 	 */
 	// Note: jclass are apparently local references (TODO check it in details)
-	LlamaCppModelParams = static_cast<jclass>(env->NewWeakGlobalRef(
-			env->FindClass("org/argeo/jjml/llama/LlamaCppModelParams")));
-
-	// FIELDS
-	LlamaCppModelParams$gpuLayerCount = env->GetFieldID(LlamaCppModelParams,
-			"gpuLayersCount", "I");
-	LlamaCppModelParams$vocabOnly = env->GetFieldID(LlamaCppModelParams,
-			"vocabOnly", "Z");
-	LlamaCppModelParams$useMlock = env->GetFieldID(LlamaCppModelParams,
-			"useMlock", "Z");
-	// CONSTRUCTORS
-	LlamaCppModelParams$LlamaCppModelParams = env->GetMethodID(
-			LlamaCppModelParams, "<init>", "()V");
+//	LlamaCppModelParams = static_cast<jclass>(env->NewWeakGlobalRef(
+//			env->FindClass("org/argeo/jjml/llama/LlamaCppModelParams")));
+//
+//	// FIELDS
+//	LlamaCppModelParams$gpuLayerCount = env->GetFieldID(LlamaCppModelParams,
+//			"gpuLayersCount", "I");
+//	LlamaCppModelParams$vocabOnly = env->GetFieldID(LlamaCppModelParams,
+//			"vocabOnly", "Z");
+//	LlamaCppModelParams$useMlock = env->GetFieldID(LlamaCppModelParams,
+//			"useMlock", "Z");
+//	// CONSTRUCTORS
+//	LlamaCppModelParams$LlamaCppModelParams = env->GetMethodID(
+//			LlamaCppModelParams, "<init>", "()V");
 
 	/*
 	 * LlamaCppContextParams

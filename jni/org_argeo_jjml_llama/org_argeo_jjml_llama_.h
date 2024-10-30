@@ -1,3 +1,5 @@
+#include <string>
+
 #include <jni.h>
 #include <jni_md.h>
 
@@ -8,6 +10,9 @@
  */
 #ifndef org_argeo_jjml_llama_h
 #define org_argeo_jjml_llama_h
+
+/** To be concatenated with Java class names.*/
+const std::string JNI_PKG = "org/argeo/jjml/llama/";
 
 // NOTE: Only standard Java or this package's classes should be cached,
 // as the class loader may change in a dynamic environment (such as OSGi)
@@ -35,13 +40,13 @@ extern jclass IllegalArgumentException;
 /*
  * LlamaCppModelParams
  */
-extern jclass LlamaCppModelParams;
-// FIELDS
-extern jfieldID LlamaCppModelParams$gpuLayerCount;
-extern jfieldID LlamaCppModelParams$vocabOnly;
-extern jfieldID LlamaCppModelParams$useMlock;
-// CONSTRUCTORS
-extern jmethodID LlamaCppModelParams$LlamaCppModelParams;
+//extern jclass LlamaCppModelParams;
+//// FIELDS
+//extern jfieldID LlamaCppModelParams$gpuLayerCount;
+//extern jfieldID LlamaCppModelParams$vocabOnly;
+//extern jfieldID LlamaCppModelParams$useMlock;
+//// CONSTRUCTORS
+//extern jmethodID LlamaCppModelParams$LlamaCppModelParams;
 
 /*
  * LlamaCppContextParams

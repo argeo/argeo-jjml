@@ -41,7 +41,7 @@ public class LlamaCppNative {
 	/*
 	 * NATIVE METHODS
 	 */
-	static native LlamaCppModelParams newModelParams();
+	static native LlamaCppModel.Params newModelParams();
 
 	static native LlamaCppContextParams newContextParams();
 

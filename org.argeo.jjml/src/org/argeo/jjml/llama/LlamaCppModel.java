@@ -1,10 +1,17 @@
 package org.argeo.jjml.llama;
 
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+
+import java.lang.reflect.RecordComponent;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.DoublePredicate;
+import java.util.stream.Collectors;
 
 import org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole;
 
@@ -14,9 +21,16 @@ import org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole;
  * @see llama.h - llama_model
  */
 public class LlamaCppModel extends NativeReference {
+	public final static Params DEFAULT_PARAMS;
+
+	static {
+		assert Params.assertParamNames();
+		DEFAULT_PARAMS = Params.defaultModelParams();
+	}
+
 	private Path localPath;
 
-	private LlamaCppModelParams initParams;
+	private Params initParams;
 
 	private int embeddingSize;
 
@@ -29,7 +43,7 @@ public class LlamaCppModel extends NativeReference {
 	 */
 	// Lifcycle
 
-	native long doInit(String localPathStr, LlamaCppModelParams params, DoublePredicate progressCallback);
+	native long doInit(String localPathStr, Params params, DoublePredicate progressCallback);
 
 	@Override
 	native void doDestroy(long pointer);
@@ -104,10 +118,25 @@ public class LlamaCppModel extends NativeReference {
 	 */
 	/** Init model with defaults. */
 	public void init() {
-		init(LlamaCppModelParams.defaultModelParams(), null);
+		init(Params.defaultModelParams(), null);
 	}
 
-	public void init(LlamaCppModelParams modelParams, DoublePredicate progressCallback) {
+	public void init(Map<String, Object> properties) {
+		Map<ParamName, String> map = properties.entrySet().stream().filter((entry) -> {
+			try {
+				ParamName.valueOf(entry.getKey());
+			} catch (IllegalArgumentException e) {
+				return false;
+			}
+			return true;
+		}).collect(Collectors.toMap( //
+				e -> ParamName.valueOf(e.getKey()), //
+				e -> e.getValue().toString() //
+		));
+		init(DEFAULT_PARAMS.with(map), null);
+	}
+
+	public void init(Params modelParams, DoublePredicate progressCallback) {
 		checkNotInitialized();
 		Objects.requireNonNull(localPath, "Local path to the model must be set");
 		if (!Files.exists(localPath))
@@ -116,9 +145,6 @@ public class LlamaCppModel extends NativeReference {
 		setPointer(pointer);
 		this.initParams = modelParams;
 		embeddingSize = doGetEmbeddingSize();
-
-//		String str = doDeTokenizeAsString(null, false, false);
-//		System.out.println(str);
 	}
 
 	/*
@@ -129,20 +155,70 @@ public class LlamaCppModel extends NativeReference {
 		return localPath;
 	}
 
-//	String getLocalPathAsString() {
-//		Objects.requireNonNull(localPath);
-//		return localPath.toString();
-//	}
-
 	public void setLocalPath(Path localPath) {
 		this.localPath = localPath;
 	}
 
-	public LlamaCppModelParams getInitParams() {
+	public Params getInitParams() {
 		return initParams;
 	}
 
 	public int getEmbeddingSize() {
 		return embeddingSize;
 	}
+
+	/*
+	 * CLASSES
+	 */
+	public static enum ParamName {
+		n_gpu_layers, //
+		vocab_only, //
+		use_mlock, //
+		;
+	}
+
+	/**
+	 * Initialization parameters of a model. New instance should be created by using
+	 * the {@link #with(Map)} methods on {@link LlamaCppModel#DEFAULT_PARAMS}, with
+	 * the default values populated by the shared library.
+	 * 
+	 * @see llama.h - llama_model_params
+	 */
+	public static record Params(int n_gpu_layers, boolean vocab_only, boolean use_mlock) {
+		public Params with(ParamName key, Object value) {
+			Objects.requireNonNull(key);
+			Objects.requireNonNull(value);
+			return with(Collections.singletonMap(key, value.toString()));
+		}
+
+		public Params with(Map<ParamName, String> p) {
+			return new Params( //
+					parseInt(p.getOrDefault(ParamName.n_gpu_layers, Integer.toString(this.n_gpu_layers))), //
+					parseBoolean(p.getOrDefault(ParamName.vocab_only, Boolean.toString(this.vocab_only))), //
+					parseBoolean(p.getOrDefault(ParamName.use_mlock, Boolean.toString(this.use_mlock))) //
+			);
+		}
+
+		/**
+		 * The default model parameters.
+		 * 
+		 * @see llama.h - llama_model_default_params()
+		 */
+		private static Params defaultModelParams() {
+			LlamaCppNative.ensureLibrariesLoaded();
+			return LlamaCppNative.newModelParams();
+		}
+
+		/** Ensure that components and enum are perfectly in line. */
+		private static boolean assertParamNames() {
+			RecordComponent[] components = Params.class.getRecordComponents();
+			ParamName[] names = ParamName.values();
+			assert components.length == names.length;
+			for (int i = 0; i < components.length; i++) {
+				assert components[i].getName().equals(names[i].name());
+			}
+			return true;
+		}
+	}
+
 }

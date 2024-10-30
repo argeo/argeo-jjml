@@ -231,33 +231,46 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSiz
  */
 
 /** @brief Set model parameters from native to Java.*/
-static void set_model_params(JNIEnv *env, jobject modelParams,
-		llama_model_params mparams) {
-	env->SetIntField(modelParams, LlamaCppModelParams$gpuLayerCount,
-			mparams.n_gpu_layers);
-	env->SetBooleanField(modelParams, LlamaCppModelParams$vocabOnly,
-			mparams.vocab_only);
-	env->SetBooleanField(modelParams, LlamaCppModelParams$useMlock,
-			mparams.use_mlock);
-}
+//static void set_model_params(JNIEnv *env, jobject modelParams,
+//		llama_model_params mparams) {
+//	env->SetIntField(modelParams, LlamaCppModelParams$gpuLayerCount,
+//			mparams.n_gpu_layers);
+//	env->SetBooleanField(modelParams, LlamaCppModelParams$vocabOnly,
+//			mparams.vocab_only);
+//	env->SetBooleanField(modelParams, LlamaCppModelParams$useMlock,
+//			mparams.use_mlock);
+//}
 
 /** @brief Get model parameters from Java to native.*/
 static void get_model_params(JNIEnv *env, jobject modelParams,
 		llama_model_params *mparams) {
-	mparams->n_gpu_layers = env->GetIntField(modelParams,
-			LlamaCppModelParams$gpuLayerCount);
-	mparams->vocab_only = env->GetBooleanField(modelParams,
-			LlamaCppModelParams$vocabOnly);
-	mparams->use_mlock = env->GetBooleanField(modelParams,
-			LlamaCppModelParams$useMlock);
+	jclass clss = env->FindClass((JNI_PKG + "LlamaCppModel$Params").c_str());
+	mparams->n_gpu_layers = env->CallIntMethod(modelParams,
+			env->GetMethodID(clss, "n_gpu_layers", "()I"));
+	mparams->vocab_only = env->CallIntMethod(modelParams,
+			env->GetMethodID(clss, "vocab_only", "()Z"));
+	mparams->use_mlock = env->CallIntMethod(modelParams,
+			env->GetMethodID(clss, "use_mlock", "()Z"));
+//	mparams->n_gpu_layers = env->GetIntField(modelParams,
+//			LlamaCppModelParams$gpuLayerCount);
+//	mparams->vocab_only = env->GetBooleanField(modelParams,
+//			LlamaCppModelParams$vocabOnly);
+//	mparams->use_mlock = env->GetBooleanField(modelParams,
+//			LlamaCppModelParams$useMlock);
 }
 
 JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParams(
 		JNIEnv *env, jclass) {
-	jobject res = env->NewObject(LlamaCppModelParams,
-			LlamaCppModelParams$LlamaCppModelParams);
-	llama_model_params default_mparams = llama_model_default_params();
-	set_model_params(env, res, default_mparams);
+	llama_model_params mparams = llama_model_default_params();
+
+	jclass clss = env->FindClass((JNI_PKG + "LlamaCppModel$Params").c_str());
+	jmethodID constructor = env->GetMethodID(clss, "<init>", "(IZZ)V");
+	jobject res = env->NewObject(clss, constructor, //
+			mparams.n_gpu_layers, //
+			mparams.vocab_only, //
+			mparams.use_mlock //
+			);
+	//set_model_params(env, res, default_mparams);
 	return res;
 }
 
