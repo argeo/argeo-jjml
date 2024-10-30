@@ -1,5 +1,8 @@
 package org.argeo.jjml.llama;
 
+import static org.argeo.jjml.llama.LlamaCppContext.ParamName.n_batch;
+import static org.argeo.jjml.llama.LlamaCppContext.ParamName.n_ctx;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -34,9 +37,9 @@ public class LlamaCppBatchProcessor {
 	}
 
 	public LlamaCppBatchProcessor(LlamaCppModel model, int requiredContextSize, int maxBatchSize) {
-		LlamaCppContextParams contextParams = LlamaCppContextParams.defaultContextParams();
-		contextParams.setContextSize(requiredContextSize);
-		contextParams.setMaxBatchSize(maxBatchSize);
+		LlamaCppContext.Params contextParams = LlamaCppContext.DEFAULT_PARAMS //
+				.with(n_ctx, requiredContextSize) //
+				.with(n_batch, maxBatchSize);
 //			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
 		LlamaCppContext contextToUse = new LlamaCppContext();
 		contextToUse.setModel(model);

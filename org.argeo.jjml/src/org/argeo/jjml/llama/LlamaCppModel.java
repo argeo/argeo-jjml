@@ -170,6 +170,7 @@ public class LlamaCppModel extends NativeReference {
 	/*
 	 * CLASSES
 	 */
+	/** Names of the supported model parameters. */
 	public static enum ParamName {
 		n_gpu_layers, //
 		vocab_only, //

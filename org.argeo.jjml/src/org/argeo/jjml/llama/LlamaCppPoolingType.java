@@ -1,11 +1,13 @@
 package org.argeo.jjml.llama;
 
+import java.util.function.IntSupplier;
+
 /**
  * Pooling type.
  * 
  * @see llama.h - enum llama_pooling_type
  */
-public enum LlamaCppPoolingType {
+public enum LlamaCppPoolingType implements IntSupplier {
 	LLAMA_POOLING_TYPE_UNSPECIFIED(-1), //
 	LLAMA_POOLING_TYPE_NONE(0), //
 	LLAMA_POOLING_TYPE_MEAN(1), //
@@ -19,7 +21,8 @@ public enum LlamaCppPoolingType {
 		this.code = code;
 	}
 
-	public int getCode() {
+	@Override
+	public int getAsInt() {
 		return code;
 	}
 

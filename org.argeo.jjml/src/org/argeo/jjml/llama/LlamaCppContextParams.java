@@ -25,10 +25,10 @@ public class LlamaCppContextParams {
 	 * 
 	 * @see llama.h - llama_context_default_params()
 	 */
-	public static LlamaCppContextParams defaultContextParams() {
-		LlamaCppNative.ensureLibrariesLoaded();
-		return LlamaCppNative.newContextParams();
-	}
+//	public static LlamaCppContextParams defaultContextParams() {
+//		LlamaCppNative.ensureLibrariesLoaded();
+//		return LlamaCppNative.newContextParams();
+//	}
 
 	/**
 	 * When used for embeddings, physical batch size must be the same as logical
@@ -96,7 +96,7 @@ public class LlamaCppContextParams {
 	}
 
 	public void setPoolingType(LlamaCppPoolingType poolingType) {
-		this.poolingTypeCode = poolingType.getCode();
+		this.poolingTypeCode = poolingType.getAsInt();
 	}
 
 	public boolean isEmbeddings() {

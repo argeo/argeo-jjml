@@ -45,21 +45,21 @@ jclass IllegalArgumentException;
 /*
  * LlamaCppContextParams
  */
-jclass LlamaCppContextParams;
-// FIELDS
-// integers
-jfieldID LlamaCppContextParams$contextSize;
-jfieldID LlamaCppContextParams$maxBatchSize;
-jfieldID LlamaCppContextParams$physicalMaxBatchSize;
-jfieldID LlamaCppContextParams$maxSequencesCount;
-jfieldID LlamaCppContextParams$generationThreadCount;
-jfieldID LlamaCppContextParams$batchThreadCount;
-// enums
-jfieldID LlamaCppContextParams$poolingTypeCode;
-// booleans
-jfieldID LlamaCppContextParams$embeddings;
-// CONSTRUCTORS
-jmethodID LlamaCppContextParams$LlamaCppContextParams;
+//jclass LlamaCppContextParams;
+//// FIELDS
+//// integers
+//jfieldID LlamaCppContextParams$contextSize;
+//jfieldID LlamaCppContextParams$maxBatchSize;
+//jfieldID LlamaCppContextParams$physicalMaxBatchSize;
+//jfieldID LlamaCppContextParams$maxSequencesCount;
+//jfieldID LlamaCppContextParams$generationThreadCount;
+//jfieldID LlamaCppContextParams$batchThreadCount;
+//// enums
+//jfieldID LlamaCppContextParams$poolingTypeCode;
+//// booleans
+//jfieldID LlamaCppContextParams$embeddings;
+//// CONSTRUCTORS
+//jmethodID LlamaCppContextParams$LlamaCppContextParams;
 
 /*
  * NativeReference
@@ -120,31 +120,31 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	/*
 	 * LlamaCppContextParams
 	 */
-	LlamaCppContextParams = static_cast<jclass>(env->NewWeakGlobalRef(
-			env->FindClass("org/argeo/jjml/llama/LlamaCppContextParams")));
-	// FIELDS
-	// integers
-	LlamaCppContextParams$contextSize = env->GetFieldID(LlamaCppContextParams,
-			"contextSize", "I");
-	LlamaCppContextParams$maxBatchSize = env->GetFieldID(LlamaCppContextParams,
-			"maxBatchSize", "I");
-	LlamaCppContextParams$physicalMaxBatchSize = env->GetFieldID(
-			LlamaCppContextParams, "physicalMaxBatchSize", "I");
-	LlamaCppContextParams$maxSequencesCount = env->GetFieldID(
-			LlamaCppContextParams, "maxSequencesCount", "I");
-	LlamaCppContextParams$generationThreadCount = env->GetFieldID(
-			LlamaCppContextParams, "generationThreadCount", "I");
-	LlamaCppContextParams$batchThreadCount = env->GetFieldID(
-			LlamaCppContextParams, "batchThreadCount", "I");
-	// enums
-	LlamaCppContextParams$poolingTypeCode = env->GetFieldID(
-			LlamaCppContextParams, "poolingTypeCode", "I");
-	// booleans
-	LlamaCppContextParams$embeddings = env->GetFieldID(LlamaCppContextParams,
-			"embeddings", "Z");
-	// CONSTRUCTORS
-	LlamaCppContextParams$LlamaCppContextParams = env->GetMethodID(
-			LlamaCppContextParams, "<init>", "()V");
+//	LlamaCppContextParams = static_cast<jclass>(env->NewWeakGlobalRef(
+//			env->FindClass("org/argeo/jjml/llama/LlamaCppContextParams")));
+//	// FIELDS
+//	// integers
+//	LlamaCppContextParams$contextSize = env->GetFieldID(LlamaCppContextParams,
+//			"contextSize", "I");
+//	LlamaCppContextParams$maxBatchSize = env->GetFieldID(LlamaCppContextParams,
+//			"maxBatchSize", "I");
+//	LlamaCppContextParams$physicalMaxBatchSize = env->GetFieldID(
+//			LlamaCppContextParams, "physicalMaxBatchSize", "I");
+//	LlamaCppContextParams$maxSequencesCount = env->GetFieldID(
+//			LlamaCppContextParams, "maxSequencesCount", "I");
+//	LlamaCppContextParams$generationThreadCount = env->GetFieldID(
+//			LlamaCppContextParams, "generationThreadCount", "I");
+//	LlamaCppContextParams$batchThreadCount = env->GetFieldID(
+//			LlamaCppContextParams, "batchThreadCount", "I");
+//	// enums
+//	LlamaCppContextParams$poolingTypeCode = env->GetFieldID(
+//			LlamaCppContextParams, "poolingTypeCode", "I");
+//	// booleans
+//	LlamaCppContextParams$embeddings = env->GetFieldID(LlamaCppContextParams,
+//			"embeddings", "Z");
+//	// CONSTRUCTORS
+//	LlamaCppContextParams$LlamaCppContextParams = env->GetMethodID(
+//			LlamaCppContextParams, "<init>", "()V");
 
 	/*
 	 * NativeReference

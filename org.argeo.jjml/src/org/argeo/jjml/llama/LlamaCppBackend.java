@@ -55,7 +55,7 @@ public class LlamaCppBackend {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> destroy(), "Destroy llama.cpp backend"));
 
 		if (numaStrategy != null)
-			doNumaInit(numaStrategy.getCode());
+			doNumaInit(numaStrategy.getAsInt());
 	}
 
 	/** Ensure that the backend has been initialized. */

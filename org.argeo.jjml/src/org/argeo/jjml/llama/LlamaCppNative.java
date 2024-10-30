@@ -43,7 +43,7 @@ public class LlamaCppNative {
 	 */
 	static native LlamaCppModel.Params newModelParams();
 
-	static native LlamaCppContextParams newContextParams();
+	static native LlamaCppContext.Params newContextParams();
 
 	static void ensureLibrariesLoaded() {
 		if (librariesLoaded)

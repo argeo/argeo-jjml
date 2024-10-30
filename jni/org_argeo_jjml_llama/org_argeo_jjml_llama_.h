@@ -51,21 +51,21 @@ extern jclass IllegalArgumentException;
 /*
  * LlamaCppContextParams
  */
-extern jclass LlamaCppContextParams;
-// FIELDS
-// integers
-extern jfieldID LlamaCppContextParams$contextSize;
-extern jfieldID LlamaCppContextParams$maxBatchSize;
-extern jfieldID LlamaCppContextParams$physicalMaxBatchSize;
-extern jfieldID LlamaCppContextParams$maxSequencesCount;
-extern jfieldID LlamaCppContextParams$generationThreadCount;
-extern jfieldID LlamaCppContextParams$batchThreadCount;
-// enums
-extern jfieldID LlamaCppContextParams$poolingTypeCode;
-// booleans
-extern jfieldID LlamaCppContextParams$embeddings;
-// CONSTRUCTORS
-extern jmethodID LlamaCppContextParams$LlamaCppContextParams;
+//extern jclass LlamaCppContextParams;
+//// FIELDS
+//// integers
+//extern jfieldID LlamaCppContextParams$contextSize;
+//extern jfieldID LlamaCppContextParams$maxBatchSize;
+//extern jfieldID LlamaCppContextParams$physicalMaxBatchSize;
+//extern jfieldID LlamaCppContextParams$maxSequencesCount;
+//extern jfieldID LlamaCppContextParams$generationThreadCount;
+//extern jfieldID LlamaCppContextParams$batchThreadCount;
+//// enums
+//extern jfieldID LlamaCppContextParams$poolingTypeCode;
+//// booleans
+//extern jfieldID LlamaCppContextParams$embeddings;
+//// CONSTRUCTORS
+//extern jmethodID LlamaCppContextParams$LlamaCppContextParams;
 
 /*
  * NativeReference
