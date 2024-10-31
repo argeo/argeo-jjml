@@ -306,10 +306,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 					continue;
 				}
 
-				//PERF_BEGIN();
+				PERF_BEGIN();
 				const llama_token new_token_id = llama_sampler_sample(smpl, ctx,
 						output_ids[i]);
-				//PERF_END("sampling");
+				PERF_END("sampling");
 
 				bool is_eog = llama_token_is_eog(model, new_token_id);
 

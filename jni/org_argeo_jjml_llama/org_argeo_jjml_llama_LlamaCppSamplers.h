@@ -63,6 +63,14 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitDist__
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitDist__I
   (JNIEnv *, jclass, jint);
 
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppSamplers
+ * Method:    doInitJavaSampler
+ * Signature: (Lorg/argeo/jjml/llama/LlamaCppJavaSampler;)J
+ */
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitJavaSampler
+  (JNIEnv *, jclass, jobject);
+
 #ifdef __cplusplus
 }
 #endif

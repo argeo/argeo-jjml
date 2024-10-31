@@ -28,6 +28,8 @@ public class LlamaCppSamplers {
 
 	private static native long doInitDist(int seed);
 
+	private static native long doInitJavaSampler(LlamaCppJavaSampler javaSampler);
+
 	/*
 	 * DEFAULT CHAINS
 	 */
@@ -51,6 +53,7 @@ public class LlamaCppSamplers {
 			chain.addSampler(LlamaCppSamplers.newSamplerDist());
 		} else {
 			chain.addSampler(LlamaCppSamplers.newSamplerGreedy());
+//			chain.addSampler(LlamaCppSamplers.newJavaSampler(new LlamaCppJavaSampler.SimpleGreedy()));
 		}
 		return chain;
 	}
@@ -98,6 +101,11 @@ public class LlamaCppSamplers {
 
 	public static LlamaCppNativeSampler newSamplerDist() {
 		return new LlamaCppNativeSampler(doInitDist());
+	}
+
+	public static LlamaCppNativeSampler newJavaSampler(LlamaCppJavaSampler javaSampler) {
+
+		return new LlamaCppNativeSampler(doInitJavaSampler(javaSampler));
 	}
 
 	/** singleton */
