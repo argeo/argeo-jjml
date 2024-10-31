@@ -230,10 +230,11 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 }
 
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBatch(
-		JNIEnv *env, jclass, jlong contextPointer, jint contextPosition,
-		jobjectArray outputBuffers, jintArray sequenceIds, jintArray outputIds,
-		jobject completionHandler) {
+		JNIEnv *env, jclass, jlong contextPointer, jlong samplerPointer,
+		jint contextPosition, jobjectArray outputBuffers, jintArray sequenceIds,
+		jintArray outputIds, jobject completionHandler) {
 	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
+	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerPointer);
 	const llama_model *model = llama_get_model(ctx);
 
 	const uint32_t NO_OUTPUT_ID = llama_n_batch(ctx);
@@ -280,10 +281,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 
 	PERF_BEGIN();
 // sampling
-	auto sparams = llama_sampler_chain_default_params();
-	llama_sampler *smpl = llama_sampler_chain_init(sparams);
-	jjml_populate_default_samplers(model, smpl);
-	jjml_populate_default_samplers(model, smpl, 0); // deterministic
+//	auto sparams = llama_sampler_chain_default_params();
+//	llama_sampler *smpl = llama_sampler_chain_init(sparams);
+//	jjml_populate_default_samplers(model, smpl);
+//	jjml_populate_default_samplers(model, smpl, 0); // deterministic
 
 	int next_idx = 0;
 

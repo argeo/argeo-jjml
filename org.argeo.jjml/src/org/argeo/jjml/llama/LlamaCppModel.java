@@ -32,7 +32,7 @@ import org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole;
 public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private final static Logger logger = System.getLogger(LlamaCppModel.class.getName());
 
-	public final static Params DEFAULT_PARAMS;
+	private final static Params DEFAULT_PARAMS;
 
 	static {
 		assert Params.assertParamNames();
@@ -159,8 +159,13 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	/*
 	 * STATIC UTILITIES
 	 */
+
 	public static LlamaCppModel load(Path localPath) throws IOException {
 		return load(localPath, DEFAULT_PARAMS);
+	}
+
+	public static Params defaultModelParams() {
+		return DEFAULT_PARAMS;
 	}
 
 	/**

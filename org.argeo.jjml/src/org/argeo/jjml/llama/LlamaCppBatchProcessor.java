@@ -23,31 +23,39 @@ public class LlamaCppBatchProcessor {
 	final private LlamaCppModel model;
 	final private LlamaCppContext context;
 
+	private LlamaCppSamplerChain samplerChain;
+
 	final private int NO_OUTPUT_ID;
 
 	private int contextPosition = 0;
 
-	public LlamaCppBatchProcessor(LlamaCppContext context) {
+	public LlamaCppBatchProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
 		Objects.requireNonNull(context);
 		this.context = context;
 		this.model = context.getModel();
+		this.samplerChain = samplerChain;
 
 		// there will never be an output id >= batch size
 		this.NO_OUTPUT_ID = this.context.getBatchSize();
 	}
 
-	public LlamaCppBatchProcessor(LlamaCppModel model, int requiredContextSize, int maxBatchSize) {
-		LlamaCppContext.Params contextParams = LlamaCppContext.DEFAULT_PARAMS //
-				.with(n_ctx, requiredContextSize) //
-				.with(n_batch, maxBatchSize);
-//			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
-		LlamaCppContext contextToUse = new LlamaCppContext(model, contextParams);
-		this.context = contextToUse;
-		this.model = this.context.getModel();
-
-		// there will never be an output id >= batch size
-		this.NO_OUTPUT_ID = this.context.getBatchSize();
-	}
+//	public LlamaCppBatchProcessor(LlamaCppModel model, boolean withTemp, int requiredContextSize, int maxBatchSize) {
+////		LlamaCppContext.Params contextParams = LlamaCppContext.DEFAULT_PARAMS //
+////				.with(n_ctx, requiredContextSize) //
+////				.with(n_batch, maxBatchSize);
+////			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
+//		this(new LlamaCppContext(model, LlamaCppContext.defaultContextParams() //
+//				.with(n_ctx, requiredContextSize) //
+//				.with(n_batch, maxBatchSize)) //
+//				, LlamaCppSamplers.newDefaultSampler(model, withTemp));
+////		this.context = contextToUse;
+////		this.model = this.context.getModel();
+////
+////		// there will never be an output id >= batch size
+////		this.NO_OUTPUT_ID = this.context.getBatchSize();
+////
+////		float temp = 0.8f;
+//	}
 
 	/*
 	 * NATIVE METHODS
@@ -55,8 +63,9 @@ public class LlamaCppBatchProcessor {
 	private static native int doWriteBatch(long contextPointer, int contextPosition, IntBuffer[] input,
 			int[] sequenceIds, int[] outputIds, boolean lastLogit);
 
-	private static native int doReadBatch(long contextPointer, int contextPosition, IntBuffer[] output,
-			int[] sequenceIds, int[] outputIds, CompletionHandler<Integer, Integer> completionHandler);
+	private static native int doReadBatch(long contextPointer, long samplerChainPointer, int contextPosition,
+			IntBuffer[] output, int[] sequenceIds, int[] outputIds,
+			CompletionHandler<Integer, Integer> completionHandler);
 
 	/*
 	 * LOW-LEVEL ACCESS
@@ -69,8 +78,8 @@ public class LlamaCppBatchProcessor {
 	synchronized void readBatch(IntBuffer[] outputs, int[] sequenceIds, int[] outputIds,
 			CompletionHandler<Integer, Integer> completionHandler) {
 		assert outputs.length == sequenceIds.length;
-		contextPosition = doReadBatch(context.getAsLong(), contextPosition, outputs, sequenceIds, outputIds,
-				completionHandler);
+		contextPosition = doReadBatch(context.getAsLong(), samplerChain.getAsLong(), contextPosition, outputs,
+				sequenceIds, outputIds, completionHandler);
 	}
 
 	/*

@@ -16,7 +16,7 @@ import java.util.function.LongSupplier;
  * @see llama.h - llama_context
  */
 public class LlamaCppContext implements LongSupplier, AutoCloseable {
-	public final static Params DEFAULT_PARAMS;
+	private final static Params DEFAULT_PARAMS;
 
 	static {
 		// TODO implement missing parameters
@@ -97,6 +97,14 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 
 	public int getBatchSize() {
 		return batchSize;
+	}
+
+	/*
+	 * STATIC UTILTIES
+	 */
+
+	public static Params defaultContextParams() {
+		return DEFAULT_PARAMS;
 	}
 
 	/*

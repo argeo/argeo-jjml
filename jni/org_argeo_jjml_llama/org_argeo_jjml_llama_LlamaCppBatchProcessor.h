@@ -18,10 +18,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
  * Method:    doReadBatch
- * Signature: (JI[Ljava/nio/IntBuffer;[I[ILjava/nio/channels/CompletionHandler;)I
+ * Signature: (JJI[Ljava/nio/IntBuffer;[I[ILjava/nio/channels/CompletionHandler;)I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBatch
-  (JNIEnv *, jclass, jlong, jint, jobjectArray, jintArray, jintArray, jobject);
+  (JNIEnv *, jclass, jlong, jlong, jint, jobjectArray, jintArray, jintArray, jobject);
 
 #ifdef __cplusplus
 }
