@@ -45,6 +45,10 @@ public class LlamaCppNative {
 
 	static native LlamaCppContext.Params newContextParams();
 
+	/*
+	 * STATIC UTILITIES
+	 */
+
 	static void ensureLibrariesLoaded() {
 		if (librariesLoaded)
 			return;

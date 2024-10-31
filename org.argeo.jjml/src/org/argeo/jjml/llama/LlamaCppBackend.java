@@ -4,7 +4,15 @@ import java.lang.System.Logger;
 
 import org.argeo.jjml.ggml.GgmlNumaStrategy;
 
-/** Wrapper to the llama.cpp backend. There can be only one instance. */
+/**
+ * Wrapper to the llama.cpp backend. Only static methods as this is a singleton
+ * on the native side.
+ * <p>
+ * All other objects in this package are guaranteed to check that the backend
+ * has been initialized, and {@link #destroy()} is called by JVM shutdown. For
+ * simple use cases, there should therefore be no need to use this class.
+ * </p>
+ */
 public class LlamaCppBackend {
 
 	private final static Logger logger = System.getLogger(LlamaCppBackend.class.getName());
