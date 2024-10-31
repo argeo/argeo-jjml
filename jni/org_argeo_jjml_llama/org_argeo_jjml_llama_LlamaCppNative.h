@@ -18,7 +18,7 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParam
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppNative
  * Method:    newContextParams
- * Signature: ()Lorg/argeo/jjml/llama/LlamaCppContextParams;
+ * Signature: ()Lorg/argeo/jjml/llama/LlamaCppContext/Params;
  */
 JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newContextParams
   (JNIEnv *, jclass);

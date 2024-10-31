@@ -25,6 +25,13 @@
 #define PERF_END(msg) std::cout << PERF_NS(_begin_, msg)
 #endif
 
+/*
+ * NAMESPACE INDEPENDENT
+ */
+#define LongSupplier$getAsLong(env) env->GetMethodID( \
+		env->FindClass("java/util/function/LongSupplier"), "getAsLong", "()J")
+extern jmethodID LongSupplier$getAsLong;
+
 namespace argeo::jni {
 /*
  * EXCEPTION HANDLING
@@ -102,6 +109,18 @@ inline T getPointer(jlong pointer) {
 	// TODO provide alternative mechanism, such as a registry?
 	static_assert(sizeof(T) <= sizeof(jlong));
 	return reinterpret_cast<T>(pointer);
+}
+
+/** Cast a java.util.function.LongSupplier to a native pointer.
+ *
+ * @param env the JNI environment
+ * @param reference the Java object implementing java.util.function.LongSupplier
+ * @return the native pointer
+ */
+template<typename T>
+inline T getPointer(JNIEnv *env, jobject reference) {
+	jlong pointer = env->CallLongMethod(reference, LongSupplier$getAsLong);
+	return getPointer<T>(pointer);
 }
 
 /*

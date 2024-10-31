@@ -34,7 +34,7 @@ public class LlamaCppTokenList {
 
 	@Override
 	public String toString() {
-		return "TokenList model=" + model.getPointer() + ", " + tokens.length + " tokens";
+		return "TokenList model=" + model.getAsLong() + ", " + tokens.length + " tokens";
 	}
 
 }

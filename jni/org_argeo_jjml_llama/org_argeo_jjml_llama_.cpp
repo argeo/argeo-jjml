@@ -4,8 +4,6 @@
 
 #include "org_argeo_jjml_llama_.h"
 
-#include "/usr/lib/jvm/java-17-openjdk-amd64/include/linux/jni_md.h"
-
 /*
  * DEBUG & PERF
  */
@@ -18,6 +16,7 @@ jclass Integer;
 jmethodID Integer$valueOf;
 
 jmethodID DoublePredicate$test;
+jmethodID LongSupplier$getAsLong;
 
 jmethodID IntBuffer$limit;
 jmethodID IntBuffer$limitI;
@@ -65,7 +64,7 @@ jclass IllegalArgumentException;
  * NativeReference
  */
 // METHODS
-jmethodID NativeReference$getPointer;
+//jmethodID NativeReference$getPointer;
 
 static void org_argeo_jjml_llama_(JNIEnv *env) {
 	/*
@@ -79,6 +78,7 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	DoublePredicate$test = env->GetMethodID(
 			env->FindClass("java/util/function/DoublePredicate"), "test",
 			"(D)Z");
+	LongSupplier$getAsLong = LongSupplier$getAsLong(env);
 
 	jclass IntBuffer = env->FindClass("java/nio/IntBuffer");
 	IntBuffer$limit = env->GetMethodID(IntBuffer, "limit", "()I");
@@ -149,11 +149,11 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	/*
 	 * NativeReference
 	 */
-	jclass NativeReference = env->FindClass(
-			"org/argeo/jjml/llama/NativeReference");
-	// METHODS
-	NativeReference$getPointer = env->GetMethodID(NativeReference, "getPointer",
-			"()J");
+//	jclass NativeReference = env->FindClass(
+//			"org/argeo/jjml/llama/NativeReference");
+//	// METHODS
+//	NativeReference$getPointer = env->GetMethodID(NativeReference, "getPointer",
+//			"()J");
 }
 
 /*

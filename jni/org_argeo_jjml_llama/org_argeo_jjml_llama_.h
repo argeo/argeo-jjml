@@ -71,7 +71,7 @@ extern jclass IllegalArgumentException;
  * NativeReference
  */
 // METHODS
-extern jmethodID NativeReference$getPointer;
+//extern jmethodID NativeReference$getPointer;
 
 /*
  * FUNCTIONS
@@ -83,10 +83,10 @@ extern jmethodID NativeReference$getPointer;
  * @param obj the Java object
  * @return the native pointer
  */
-template<typename T>
-inline T getPointer(JNIEnv *env, jobject obj) {
-	jlong pointer = env->CallLongMethod(obj, NativeReference$getPointer);
-	return argeo::jni::getPointer<T>(pointer);
-}
-
+//template<typename T>
+//inline T getPointer(JNIEnv *env, jobject obj) {
+//	jlong pointer = env->CallLongMethod(obj, NativeReference$getPointer);
+//	return argeo::jni::getPointer<T>(pointer);
+//}
+//
 #endif

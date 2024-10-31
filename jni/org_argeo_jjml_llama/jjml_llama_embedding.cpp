@@ -101,7 +101,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppEmbeddingProcessor_doPr
 	// TODO deal with normalization
 	int embd_normalize = -1;
 
-	auto *ctx = getPointer<llama_context*>(env, contextObj);
+	auto *ctx = argeo::jni::getPointer<llama_context*>(env, contextObj);
 
 	int n_embd = llama_n_embd(llama_get_model(ctx));
 	int n_batch = llama_n_batch(ctx);

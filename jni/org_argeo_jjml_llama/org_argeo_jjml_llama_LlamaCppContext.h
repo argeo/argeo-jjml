@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppContext
  * Method:    doInit
- * Signature: (JLorg/argeo/jjml/llama/LlamaCppContextParams;)J
+ * Signature: (JLorg/argeo/jjml/llama/LlamaCppContext/Params;)J
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit
-  (JNIEnv *, jobject, jlong, jobject);
+  (JNIEnv *, jclass, jlong, jobject);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppContext

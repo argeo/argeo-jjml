@@ -41,9 +41,9 @@ public class LlamaCppBatchProcessor {
 				.with(n_ctx, requiredContextSize) //
 				.with(n_batch, maxBatchSize);
 //			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
-		LlamaCppContext contextToUse = new LlamaCppContext();
-		contextToUse.setModel(model);
-		contextToUse.init(contextParams);
+		LlamaCppContext contextToUse = new LlamaCppContext(model, contextParams);
+//		contextToUse.setModel(model);
+//		contextToUse.init(contextParams);
 		this.context = contextToUse;
 		this.model = this.context.getModel();
 
@@ -66,14 +66,14 @@ public class LlamaCppBatchProcessor {
 	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, int[] outputIds, boolean lastLogits) {
 //		if (inputs.length > 1)
 //			throw new UnsupportedOperationException("Multiple inputs is not yet supported");
-		contextPosition = doWriteBatch(context.getPointer(), contextPosition, inputs, sequenceIds, outputIds,
+		contextPosition = doWriteBatch(context.getAsLong(), contextPosition, inputs, sequenceIds, outputIds,
 				lastLogits);
 	}
 
 	synchronized void readBatch(IntBuffer[] outputs, int[] sequenceIds, int[] outputIds,
 			CompletionHandler<Integer, Integer> completionHandler) {
 		assert outputs.length == sequenceIds.length;
-		contextPosition = doReadBatch(context.getPointer(), contextPosition, outputs, sequenceIds, outputIds,
+		contextPosition = doReadBatch(context.getAsLong(), contextPosition, outputs, sequenceIds, outputIds,
 				completionHandler);
 	}
 

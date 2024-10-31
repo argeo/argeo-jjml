@@ -8,13 +8,14 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
 
 /**
  * Access to a llama.cpp context
  * 
  * @see llama.h - llama_context
  */
-public class LlamaCppContext extends NativeReference {
+public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	public final static Params DEFAULT_PARAMS;
 
 	static {
@@ -23,21 +24,37 @@ public class LlamaCppContext extends NativeReference {
 		DEFAULT_PARAMS = Params.defaultContextParams();
 	}
 
-	private LlamaCppModel model;
+	private final long pointer;
+	private final LlamaCppModel model;
 
-	private LlamaCppContext.Params initParams;
+	private final LlamaCppContext.Params initParams;
 
 	// Effective parameters
-	private LlamaCppPoolingType poolingType;
-	private int contextSize;
-	private int batchSize;
+	private final LlamaCppPoolingType poolingType;
+	private final int contextSize;
+	private final int batchSize;
+
+	public LlamaCppContext(LlamaCppModel model) {
+		this(model, DEFAULT_PARAMS);
+	}
+
+	public LlamaCppContext(LlamaCppModel model, LlamaCppContext.Params initParams) {
+		Objects.requireNonNull(model);
+		Objects.requireNonNull(initParams);
+		this.pointer = doInit(model.getAsLong(), initParams);
+		this.model = model;
+		this.initParams = initParams;
+		int poolingTypeCode = doGetPoolingType(getAsLong());
+		poolingType = LlamaCppPoolingType.byCode(poolingTypeCode);
+		contextSize = doGetContextSize(getAsLong());
+		batchSize = doGetBatchSize(getAsLong());
+	}
 
 	/*
 	 * NATIVE
 	 */
-	private native long doInit(long modelPointer, LlamaCppContext.Params params);
+	private static native long doInit(long modelPointer, LlamaCppContext.Params params);
 
-	@Override
 	native void doDestroy(long pointer);
 
 	private native int doGetPoolingType(long pointer);
@@ -49,41 +66,50 @@ public class LlamaCppContext extends NativeReference {
 	/*
 	 * LIFECYCLE
 	 */
-	public void init() {
-		init(DEFAULT_PARAMS);
-	}
+//	public void init() {
+//		init(DEFAULT_PARAMS);
+//	}
 
-	public void init(LlamaCppContext.Params params) {
-		Objects.requireNonNull(model, "Model must be set");
-		long pointer = doInit(model.getPointer(), params);
-		setPointer(pointer);
-		this.initParams = params;
-		int poolingTypeCode = doGetPoolingType(getPointer());
-		poolingType = LlamaCppPoolingType.byCode(poolingTypeCode);
-		contextSize = doGetContextSize(getPointer());
-		batchSize = doGetBatchSize(getPointer());
+//	private void init(LlamaCppContext.Params params) {
+//		Objects.requireNonNull(model, "Model must be set");
+//		long pointer = doInit(model.getPointer(), params);
+//		setPointer(pointer);
+//		this.initParams = params;
+//		int poolingTypeCode = doGetPoolingType(getPointer());
+//		poolingType = LlamaCppPoolingType.byCode(poolingTypeCode);
+//		contextSize = doGetContextSize(getPointer());
+//		batchSize = doGetBatchSize(getPointer());
+//	}
+
+	@Override
+	public void close() throws RuntimeException {
+		doDestroy(pointer);
 	}
 
 	/*
 	 * ACCESSORS
 	 */
+	@Override
+	public long getAsLong() {
+		return pointer;
+	}
 
 	public LlamaCppModel getModel() {
 		return model;
 	}
 
-	public void setModel(LlamaCppModel model) {
-		checkNotInitialized();
-		this.model = model;
-	}
+//	public void setModel(LlamaCppModel model) {
+//		checkNotInitialized();
+//		this.model = model;
+//	}
 
 	public LlamaCppContext.Params getInitParams() {
-		checkInitialized();
+//		checkInitialized();
 		return initParams;
 	}
 
 	public LlamaCppPoolingType getPoolingType() {
-		checkInitialized();
+//		checkInitialized();
 		return poolingType;
 	}
 

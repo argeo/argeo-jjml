@@ -9,6 +9,9 @@ public class LlamaCppBackend {
 
 	private final static Logger logger = System.getLogger(LlamaCppBackend.class.getName());
 
+	/** Default executor to use for asynchronous IO operations. */
+//	private static ExecutorService ioExecutor = null;
+
 	private static boolean initialized = false;
 
 	/** Cannot be instantiated. */
@@ -46,16 +49,18 @@ public class LlamaCppBackend {
 		if (initialized)
 			throw new IllegalStateException("llama.cpp backend is already initialized.");
 
+		// Make sure that we will destroy the backend properly on JVM shutdown.
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> destroy(), "Destroy llama.cpp backend"));
+
 		LlamaCppNative.ensureLibrariesLoaded();
 
 		doInit();
 		initialized = true;
 
-		// Make sure that we will destroy the backend properly on JVM shutdown.
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> destroy(), "Destroy llama.cpp backend"));
-
 		if (numaStrategy != null)
 			doNumaInit(numaStrategy.getAsInt());
+
+//		ioExecutor = Executors.newCachedThreadPool();
 	}
 
 	/** Ensure that the backend has been initialized. */
@@ -73,9 +78,18 @@ public class LlamaCppBackend {
 	public static void destroy() {
 		if (!initialized)
 			return; // ignore silently
+
+		// complete blocking operations
+//		if (ioExecutor != null)
+//			ioExecutor.shutdown();
+
 		doDestroy();
 		initialized = false;
 		// TODO classloading so that libraries can be unloaded by garbage collection
 	}
 
+	/** Executor for IO operations (file system, network). */
+//	static Executor getIoExecutor() {
+//		return ioExecutor;
+//	}
 }
