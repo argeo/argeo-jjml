@@ -9,9 +9,6 @@ public class LlamaCppBackend {
 
 	private final static Logger logger = System.getLogger(LlamaCppBackend.class.getName());
 
-	/** Default executor to use for asynchronous IO operations. */
-//	private static ExecutorService ioExecutor = null;
-
 	private static boolean initialized = false;
 
 	/** Cannot be instantiated. */
@@ -59,8 +56,6 @@ public class LlamaCppBackend {
 
 		if (numaStrategy != null)
 			doNumaInit(numaStrategy.getAsInt());
-
-//		ioExecutor = Executors.newCachedThreadPool();
 	}
 
 	/** Ensure that the backend has been initialized. */
@@ -79,17 +74,8 @@ public class LlamaCppBackend {
 		if (!initialized)
 			return; // ignore silently
 
-		// complete blocking operations
-//		if (ioExecutor != null)
-//			ioExecutor.shutdown();
-
 		doDestroy();
 		initialized = false;
 		// TODO classloading so that libraries can be unloaded by garbage collection
 	}
-
-	/** Executor for IO operations (file system, network). */
-//	static Executor getIoExecutor() {
-//		return ioExecutor;
-//	}
 }

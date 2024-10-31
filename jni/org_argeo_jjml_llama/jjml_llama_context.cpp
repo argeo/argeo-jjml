@@ -12,31 +12,6 @@
 /*
  * PARAMETERS
  */
-/** @brief Set context parameters from native to Java.*/
-//static void set_context_params(JNIEnv *env, jobject contextParams,
-//		llama_context_params ctx_params) {
-//	// integers
-//	env->SetIntField(contextParams, LlamaCppContextParams$contextSize,
-//			ctx_params.n_ctx);
-//	env->SetIntField(contextParams, LlamaCppContextParams$maxBatchSize,
-//			ctx_params.n_batch);
-//	env->SetIntField(contextParams, LlamaCppContextParams$physicalMaxBatchSize,
-//			ctx_params.n_ubatch);
-//	env->SetIntField(contextParams, LlamaCppContextParams$maxSequencesCount,
-//			ctx_params.n_seq_max);
-//	env->SetIntField(contextParams, LlamaCppContextParams$generationThreadCount,
-//			ctx_params.n_threads);
-//	env->SetIntField(contextParams, LlamaCppContextParams$batchThreadCount,
-//			ctx_params.n_threads_batch);
-//
-//	// enums
-//	env->SetIntField(contextParams, LlamaCppContextParams$poolingTypeCode,
-//			ctx_params.pooling_type);
-//
-//	// booleans
-//	env->SetBooleanField(contextParams, LlamaCppContextParams$embeddings,
-//			ctx_params.embeddings);
-//}
 /** @brief Get context parameters from Java to native.*/
 static void get_context_params(JNIEnv *env, jobject params,
 		llama_context_params *ctx_params) {
@@ -54,16 +29,6 @@ static void get_context_params(JNIEnv *env, jobject params,
 			env->GetMethodID(clss, "n_threads", "()I"));
 	ctx_params->n_threads_batch = env->CallIntMethod(params,
 			env->GetMethodID(clss, "n_threads_batch", "()I"));
-//	ctx_params->n_batch = env->GetIntField(params,
-//			LlamaCppContextParams$maxBatchSize);
-//	ctx_params->n_ubatch = env->GetIntField(params,
-//			LlamaCppContextParams$physicalMaxBatchSize);
-//	ctx_params->n_seq_max = env->GetIntField(params,
-//			LlamaCppContextParams$maxSequencesCount);
-//	ctx_params->n_threads = env->GetIntField(params,
-//			LlamaCppContextParams$generationThreadCount);
-//	ctx_params->n_threads_batch = env->GetIntField(params,
-//			LlamaCppContextParams$batchThreadCount);
 
 // enums
 	switch (env->CallIntMethod(params,
@@ -140,14 +105,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 	llama_context_params ctx_params = llama_context_default_params();
 	get_context_params(env, contextParams, &ctx_params);
 
-	// Embedding config
-	// FIXME make it configurable
-//	ctx_params.embeddings = true;
-//	ctx_params.n_batch = 2048;
-//	ctx_params.n_ubatch = ctx_params.n_batch;
-
 	llama_context *ctx = llama_new_context_with_model(model, ctx_params);
-
 	if (ctx == NULL) {
 		env->ThrowNew(IllegalStateException,
 				"Failed to create llama.cpp context");

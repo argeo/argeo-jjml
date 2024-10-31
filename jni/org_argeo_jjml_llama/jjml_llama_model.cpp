@@ -229,17 +229,6 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSiz
 /*
  * PARAMETERS
  */
-
-/** @brief Set model parameters from native to Java.*/
-//static void set_model_params(JNIEnv *env, jobject modelParams,
-//		llama_model_params mparams) {
-//	env->SetIntField(modelParams, LlamaCppModelParams$gpuLayerCount,
-//			mparams.n_gpu_layers);
-//	env->SetBooleanField(modelParams, LlamaCppModelParams$vocabOnly,
-//			mparams.vocab_only);
-//	env->SetBooleanField(modelParams, LlamaCppModelParams$useMlock,
-//			mparams.use_mlock);
-//}
 /** @brief Get model parameters from Java to native.*/
 static void get_model_params(JNIEnv *env, jobject params,
 		llama_model_params *mparams) {
@@ -250,12 +239,6 @@ static void get_model_params(JNIEnv *env, jobject params,
 			env->GetMethodID(clss, "vocab_only", "()Z"));
 	mparams->use_mlock = env->CallIntMethod(params,
 			env->GetMethodID(clss, "use_mlock", "()Z"));
-//	mparams->n_gpu_layers = env->GetIntField(modelParams,
-//			LlamaCppModelParams$gpuLayerCount);
-//	mparams->vocab_only = env->GetBooleanField(modelParams,
-//			LlamaCppModelParams$vocabOnly);
-//	mparams->use_mlock = env->GetBooleanField(modelParams,
-//			LlamaCppModelParams$useMlock);
 }
 
 JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParams(
@@ -294,15 +277,6 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
 
 		mparams.progress_callback = [](float progress,
 				void *user_data) -> bool {
-//			auto *cb = (argeo::jni::java_callback*) user_data;
-			// While the callback is called from the loading thread, this may change in the future,
-			// so we make sure that we have a valid JNIEnv for the calling thread.
-			// Note: we therefore currently don't bother detaching the thread later on.
-//			JNIEnv *threadEnv;
-//			cb->jvm->AttachCurrentThreadAsDaemon((void**) &threadEnv, nullptr);
-
-//			return threadEnv->CallBooleanMethod(cb->callback, cb->method,
-//					static_cast<double>(progress));
 			return argeo::jni::exec_boolean_callback(
 					static_cast<argeo::jni::java_callback*>(user_data),
 					static_cast<jdouble>(progress));

@@ -66,21 +66,6 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	/*
 	 * LIFECYCLE
 	 */
-//	public void init() {
-//		init(DEFAULT_PARAMS);
-//	}
-
-//	private void init(LlamaCppContext.Params params) {
-//		Objects.requireNonNull(model, "Model must be set");
-//		long pointer = doInit(model.getPointer(), params);
-//		setPointer(pointer);
-//		this.initParams = params;
-//		int poolingTypeCode = doGetPoolingType(getPointer());
-//		poolingType = LlamaCppPoolingType.byCode(poolingTypeCode);
-//		contextSize = doGetContextSize(getPointer());
-//		batchSize = doGetBatchSize(getPointer());
-//	}
-
 	@Override
 	public void close() throws RuntimeException {
 		doDestroy();
@@ -98,18 +83,11 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 		return model;
 	}
 
-//	public void setModel(LlamaCppModel model) {
-//		checkNotInitialized();
-//		this.model = model;
-//	}
-
 	public LlamaCppContext.Params getInitParams() {
-//		checkInitialized();
 		return initParams;
 	}
 
 	public LlamaCppPoolingType getPoolingType() {
-//		checkInitialized();
 		return poolingType;
 	}
 

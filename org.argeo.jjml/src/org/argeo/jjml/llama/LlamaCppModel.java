@@ -131,37 +131,6 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	/*
 	 * LIFECYCLE
 	 */
-	/** Init model with defaults. */
-//	public void init() {
-//		init(Params.defaultModelParams(), null);
-//	}
-//
-//	public void init(Map<String, Object> properties) {
-//		Map<ParamName, String> map = properties.entrySet().stream().filter((entry) -> {
-//			try {
-//				ParamName.valueOf(entry.getKey());
-//			} catch (IllegalArgumentException e) {
-//				return false;
-//			}
-//			return true;
-//		}).collect(Collectors.toMap( //
-//				e -> ParamName.valueOf(e.getKey()), //
-//				e -> e.getValue().toString() //
-//		));
-//		init(DEFAULT_PARAMS.with(map), null);
-//	}
-
-//	public void init(Params modelParams, DoublePredicate progressCallback) {
-//		checkNotInitialized();
-//		Objects.requireNonNull(localPath, "Local path to the model must be set");
-//		if (!Files.exists(localPath))
-//			throw new IllegalArgumentException("Model file does not exist: " + localPath);
-//		long pointer = doInit(localPath.toString(), modelParams, progressCallback);
-//		setPointer(pointer);
-//		this.initParams = modelParams;
-//		embeddingSize = doGetEmbeddingSize();
-//	}
-
 	@Override
 	public void close() throws RuntimeException {
 		doDestroy();
@@ -178,10 +147,6 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	public Path getLocalPath() {
 		return localPath;
 	}
-
-//	public void setLocalPath(Path localPath) {
-//		this.localPath = localPath;
-//	}
 
 	public Params getInitParams() {
 		return initParams;

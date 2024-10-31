@@ -42,8 +42,6 @@ public class LlamaCppBatchProcessor {
 				.with(n_batch, maxBatchSize);
 //			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
 		LlamaCppContext contextToUse = new LlamaCppContext(model, contextParams);
-//		contextToUse.setModel(model);
-//		contextToUse.init(contextParams);
 		this.context = contextToUse;
 		this.model = this.context.getModel();
 
@@ -64,8 +62,6 @@ public class LlamaCppBatchProcessor {
 	 * LOW-LEVEL ACCESS
 	 */
 	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, int[] outputIds, boolean lastLogits) {
-//		if (inputs.length > 1)
-//			throw new UnsupportedOperationException("Multiple inputs is not yet supported");
 		contextPosition = doWriteBatch(context.getAsLong(), contextPosition, inputs, sequenceIds, outputIds,
 				lastLogits);
 	}

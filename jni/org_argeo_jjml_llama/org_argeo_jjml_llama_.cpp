@@ -30,42 +30,6 @@ jmethodID CompletionHandler$failed;
 jclass IllegalStateException;
 jclass IllegalArgumentException;
 
-/*
- * LlamaCppModelParams
- */
-//jclass LlamaCppModelParams;
-//// FIELDS
-//jfieldID LlamaCppModelParams$gpuLayerCount;
-//jfieldID LlamaCppModelParams$vocabOnly;
-//jfieldID LlamaCppModelParams$useMlock;
-//// CONSTRUCTORS
-//jmethodID LlamaCppModelParams$LlamaCppModelParams;
-
-/*
- * LlamaCppContextParams
- */
-//jclass LlamaCppContextParams;
-//// FIELDS
-//// integers
-//jfieldID LlamaCppContextParams$contextSize;
-//jfieldID LlamaCppContextParams$maxBatchSize;
-//jfieldID LlamaCppContextParams$physicalMaxBatchSize;
-//jfieldID LlamaCppContextParams$maxSequencesCount;
-//jfieldID LlamaCppContextParams$generationThreadCount;
-//jfieldID LlamaCppContextParams$batchThreadCount;
-//// enums
-//jfieldID LlamaCppContextParams$poolingTypeCode;
-//// booleans
-//jfieldID LlamaCppContextParams$embeddings;
-//// CONSTRUCTORS
-//jmethodID LlamaCppContextParams$LlamaCppContextParams;
-
-/*
- * NativeReference
- */
-// METHODS
-//jmethodID NativeReference$getPointer;
-
 static void org_argeo_jjml_llama_(JNIEnv *env) {
 	/*
 	 * Standard Java
@@ -99,61 +63,6 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 			"completed", "(Ljava/lang/Object;Ljava/lang/Object;)V");
 	CompletionHandler$failed = env->GetMethodID(CompletionHandler, "failed",
 			"(Ljava/lang/Throwable;Ljava/lang/Object;)V");
-	/*
-	 * LlamaCppModelParams
-	 */
-	// Note: jclass are apparently local references (TODO check it in details)
-//	LlamaCppModelParams = static_cast<jclass>(env->NewWeakGlobalRef(
-//			env->FindClass("org/argeo/jjml/llama/LlamaCppModelParams")));
-//
-//	// FIELDS
-//	LlamaCppModelParams$gpuLayerCount = env->GetFieldID(LlamaCppModelParams,
-//			"gpuLayersCount", "I");
-//	LlamaCppModelParams$vocabOnly = env->GetFieldID(LlamaCppModelParams,
-//			"vocabOnly", "Z");
-//	LlamaCppModelParams$useMlock = env->GetFieldID(LlamaCppModelParams,
-//			"useMlock", "Z");
-//	// CONSTRUCTORS
-//	LlamaCppModelParams$LlamaCppModelParams = env->GetMethodID(
-//			LlamaCppModelParams, "<init>", "()V");
-
-	/*
-	 * LlamaCppContextParams
-	 */
-//	LlamaCppContextParams = static_cast<jclass>(env->NewWeakGlobalRef(
-//			env->FindClass("org/argeo/jjml/llama/LlamaCppContextParams")));
-//	// FIELDS
-//	// integers
-//	LlamaCppContextParams$contextSize = env->GetFieldID(LlamaCppContextParams,
-//			"contextSize", "I");
-//	LlamaCppContextParams$maxBatchSize = env->GetFieldID(LlamaCppContextParams,
-//			"maxBatchSize", "I");
-//	LlamaCppContextParams$physicalMaxBatchSize = env->GetFieldID(
-//			LlamaCppContextParams, "physicalMaxBatchSize", "I");
-//	LlamaCppContextParams$maxSequencesCount = env->GetFieldID(
-//			LlamaCppContextParams, "maxSequencesCount", "I");
-//	LlamaCppContextParams$generationThreadCount = env->GetFieldID(
-//			LlamaCppContextParams, "generationThreadCount", "I");
-//	LlamaCppContextParams$batchThreadCount = env->GetFieldID(
-//			LlamaCppContextParams, "batchThreadCount", "I");
-//	// enums
-//	LlamaCppContextParams$poolingTypeCode = env->GetFieldID(
-//			LlamaCppContextParams, "poolingTypeCode", "I");
-//	// booleans
-//	LlamaCppContextParams$embeddings = env->GetFieldID(LlamaCppContextParams,
-//			"embeddings", "Z");
-//	// CONSTRUCTORS
-//	LlamaCppContextParams$LlamaCppContextParams = env->GetMethodID(
-//			LlamaCppContextParams, "<init>", "()V");
-
-	/*
-	 * NativeReference
-	 */
-//	jclass NativeReference = env->FindClass(
-//			"org/argeo/jjml/llama/NativeReference");
-//	// METHODS
-//	NativeReference$getPointer = env->GetMethodID(NativeReference, "getPointer",
-//			"()J");
 }
 
 /*
