@@ -277,7 +277,7 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParam
  * LIFECYCLE
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
-		JNIEnv *env, jobject obj, jstring localPath, jobject modelParams,
+		JNIEnv *env, jclass, jstring localPath, jobject modelParams,
 		jobject progressCallback) {
 	const char *path_model = env->GetStringUTFChars(localPath, nullptr);
 
@@ -320,8 +320,8 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
 }
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy(
-		JNIEnv *env, jobject, jlong pointer) {
-	auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+		JNIEnv *env, jobject obj) {
+	auto *model = argeo::jni::getPointer<llama_model*>(env, obj);
 	llama_free_model(model);
 }
 

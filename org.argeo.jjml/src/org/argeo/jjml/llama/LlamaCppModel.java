@@ -61,7 +61,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	private static native long doInit(String localPathStr, Params params, DoublePredicate progressCallback);
 
-	native void doDestroy(long pointer);
+	native void doDestroy();
 
 	// Tokenization
 	/**
@@ -164,7 +164,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	@Override
 	public void close() throws RuntimeException {
-		doDestroy(pointer);
+		doDestroy();
 	}
 
 	/*

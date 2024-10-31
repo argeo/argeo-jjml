@@ -41,27 +41,27 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	public LlamaCppContext(LlamaCppModel model, LlamaCppContext.Params initParams) {
 		Objects.requireNonNull(model);
 		Objects.requireNonNull(initParams);
-		this.pointer = doInit(model.getAsLong(), initParams);
+		this.pointer = doInit(model, initParams);
 		this.model = model;
 		this.initParams = initParams;
-		int poolingTypeCode = doGetPoolingType(getAsLong());
+		int poolingTypeCode = doGetPoolingType();
 		poolingType = LlamaCppPoolingType.byCode(poolingTypeCode);
-		contextSize = doGetContextSize(getAsLong());
-		batchSize = doGetBatchSize(getAsLong());
+		contextSize = doGetContextSize();
+		batchSize = doGetBatchSize();
 	}
 
 	/*
 	 * NATIVE
 	 */
-	private static native long doInit(long modelPointer, LlamaCppContext.Params params);
+	private static native long doInit(LlamaCppModel model, LlamaCppContext.Params params);
 
-	native void doDestroy(long pointer);
+	native void doDestroy();
 
-	private native int doGetPoolingType(long pointer);
+	private native int doGetPoolingType();
 
-	private native int doGetContextSize(long pointer);
+	private native int doGetContextSize();
 
-	private native int doGetBatchSize(long pointer);
+	private native int doGetBatchSize();
 
 	/*
 	 * LIFECYCLE
@@ -83,7 +83,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 
 	@Override
 	public void close() throws RuntimeException {
-		doDestroy(pointer);
+		doDestroy();
 	}
 
 	/*

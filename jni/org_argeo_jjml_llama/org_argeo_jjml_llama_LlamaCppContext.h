@@ -10,42 +10,42 @@ extern "C" {
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppContext
  * Method:    doInit
- * Signature: (JLorg/argeo/jjml/llama/LlamaCppContext/Params;)J
+ * Signature: (Lorg/argeo/jjml/llama/LlamaCppModel;Lorg/argeo/jjml/llama/LlamaCppContext/Params;)J
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit
-  (JNIEnv *, jclass, jlong, jobject);
+  (JNIEnv *, jclass, jobject, jobject);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppContext
  * Method:    doDestroy
- * Signature: (J)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppContext
  * Method:    doGetPoolingType
- * Signature: (J)I
+ * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetPoolingType
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppContext
  * Method:    doGetContextSize
- * Signature: (J)I
+ * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetContextSize
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppContext
  * Method:    doGetBatchSize
- * Signature: (J)I
+ * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetBatchSize
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

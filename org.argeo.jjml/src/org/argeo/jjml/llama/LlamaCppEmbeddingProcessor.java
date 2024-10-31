@@ -7,7 +7,7 @@ import java.util.List;
 public class LlamaCppEmbeddingProcessor {
 	private LlamaCppContext context;
 
-	native void doProcessEmbeddings(float[] emb, LlamaCppContext context, int[][] tokens);
+	private static native void doProcessEmbeddings(long contextPointer, int[][] tokens, float[] emb);
 
 	public List<LlamaCppEmbedding> processEmbeddings(List<String> prompts) {
 		List<LlamaCppTokenList> tokenLists = new ArrayList<>(prompts.size());
@@ -36,7 +36,7 @@ public class LlamaCppEmbeddingProcessor {
 		for (int i = 0; i < tokenLists.size(); i++) {
 			tokens[i] = tokenLists.get(i).getTokens();
 		}
-		doProcessEmbeddings(emb, context, tokens);
+		doProcessEmbeddings(context.getAsLong(), tokens, emb);
 
 		// TODO optimise storage, returned values, and copy
 		List<LlamaCppEmbedding> res = new ArrayList<>(n_embd_count);

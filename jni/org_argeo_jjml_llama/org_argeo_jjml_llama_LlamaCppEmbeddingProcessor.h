@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppEmbeddingProcessor
  * Method:    doProcessEmbeddings
- * Signature: ([FLorg/argeo/jjml/llama/LlamaCppContext;[[I)V
+ * Signature: (J[[I[F)V
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppEmbeddingProcessor_doProcessEmbeddings
-  (JNIEnv *, jobject, jfloatArray, jobject, jobjectArray);
+  (JNIEnv *, jclass, jlong, jobjectArray, jfloatArray);
 
 #ifdef __cplusplus
 }

@@ -13,15 +13,15 @@ extern "C" {
  * Signature: (Ljava/lang/String;Lorg/argeo/jjml/llama/LlamaCppModel/Params;Ljava/util/function/DoublePredicate;)J
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit
-  (JNIEnv *, jobject, jstring, jobject, jobject);
+  (JNIEnv *, jclass, jstring, jobject, jobject);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel
  * Method:    doDestroy
- * Signature: (J)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel
