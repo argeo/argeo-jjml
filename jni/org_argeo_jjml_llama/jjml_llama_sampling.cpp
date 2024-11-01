@@ -235,6 +235,12 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplerChain_doGetSize(
 /*
  * GENERIC SAMPLER
  */
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppNativeSampler_doReset(
+		JNIEnv *env, jobject obj) {
+	auto *smpl = argeo::jni::getPointer<llama_sampler*>(env, obj);
+	llama_sampler_reset(smpl);
+}
+
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppNativeSampler_doDestroy(
 		JNIEnv *env, jobject obj) {
 	auto *smpl = argeo::jni::getPointer<llama_sampler*>(env, obj);

@@ -77,6 +77,11 @@ public class LlamaCppBatchProcessor {
 	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, int[] outputIds, boolean lastLogits) {
 		contextPosition = doWriteBatch(context.getAsLong(), samplerChain.getAsLong(), contextPosition, inputs,
 				sequenceIds, outputIds, lastLogits);
+		if (lastLogits && contextPosition > 0) {// end of user input
+			samplerChain.reset();
+			if (validatingSampler != null)
+				validatingSampler.reset();
+		}
 	}
 
 	synchronized void readBatch(IntBuffer[] outputs, int[] sequenceIds, int[] outputIds,

@@ -9,6 +9,14 @@ extern "C" {
 #endif
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppNativeSampler
+ * Method:    doReset
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppNativeSampler_doReset
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppNativeSampler
  * Method:    doDestroy
  * Signature: ()V
  */

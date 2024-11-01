@@ -11,6 +11,8 @@ public class LlamaCppNativeSampler implements LongSupplier, AutoCloseable, Clone
 		this.pointer = pointer;
 	}
 
+	private native void doReset();
+
 	private native void doDestroy();
 
 	private native long doClone();
@@ -32,6 +34,10 @@ public class LlamaCppNativeSampler implements LongSupplier, AutoCloseable, Clone
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
 		return new LlamaCppNativeSampler(doClone());
+	}
+
+	public void reset() {
+		doReset();
 	}
 
 	void setSamplerChain(LlamaCppSamplerChain currentChain) {
