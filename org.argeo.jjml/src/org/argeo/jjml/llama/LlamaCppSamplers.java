@@ -20,9 +20,19 @@ public class LlamaCppSamplers {
 
 	private static native long doInitTopK(int top_k);
 
-	private static native long doInitTopP(float top_p, float min_p);
+	private static native long doInitTopP(float top_p, long min_keep);
+
+	private static native long doInitMinP(float min_p, long min_keep);
+
+	private static native long doInitTailFree(float tfs_z, long min_keep);
+
+	private static native long doInitTypicalP(float typ_p, long min_keep);
+
+	private static native long doInitTempExt(float temp, float dynatemp_range, float dynatemp_exponent);
 
 	private static native long doInitTemp(float temp);
+
+	private static native long doInitSoftMax();
 
 	private static native long doInitDist();
 
@@ -38,20 +48,32 @@ public class LlamaCppSamplers {
 	}
 
 	public static LlamaCppSamplerChain newDefaultSampler(LlamaCppModel model, boolean withTemp) {
-		return newDefaultSampler(model, withTemp ? 0.8f : 0.0f);
+		return newDefaultSampler(model, withTemp ? new DefaultSamplerChainParams() : new DefaultSamplerChainParams(0));
 	}
 
-	public static LlamaCppSamplerChain newDefaultSampler(LlamaCppModel model, float temp) {
+	public static LlamaCppSamplerChain newDefaultSampler(LlamaCppModel model, DefaultSamplerChainParams params) {
+		// see gpt_sampler_init in sampling.cpp
+
 		LlamaCppSamplerChain chain = new LlamaCppSamplerChain();
-		chain.addSampler(LlamaCppSamplers.newSamplerPenalties(model));
-		if (temp > 0) {
-			chain.addSampler(LlamaCppSamplers.newSamplerTopK(40));
-			chain.addSampler(LlamaCppSamplers.newSamplerTopP(0.95f, 0.05f));
-			chain.addSampler(LlamaCppSamplers.newSamplerTemp(temp));
+		chain.addSampler(LlamaCppSamplers.newSamplerPenalties(model, params));
+		if (params.temp() > 0) {
+			chain.addSampler(LlamaCppSamplers.newSamplerTopK(params.top_k()));
+			long min_keep = params.min_keep();
+			chain.addSampler(LlamaCppSamplers.newSamplerTailFree(params.tfs_z(), min_keep));
+			chain.addSampler(LlamaCppSamplers.newSamplerTypicalP(params.typ_p(), min_keep));
+			chain.addSampler(LlamaCppSamplers.newSamplerTopP(params.top_p(), min_keep));
+			chain.addSampler(LlamaCppSamplers.newSamplerMinP(params.min_p(), min_keep));
+			chain.addSampler(LlamaCppSamplers.newSamplerTempExt(params.temp(), params.dynatemp_range(),
+					params.dynatemp_exponent()));
 
 			// final sampler
+			chain.addSampler(LlamaCppSamplers.newSamplerSoftMax());
 			chain.addSampler(LlamaCppSamplers.newSamplerDist());
 		} else {
+			if (params.n_probs() > 0) {
+				chain.addSampler(LlamaCppSamplers.newSamplerTopK(params.n_probs()));
+				chain.addSampler(LlamaCppSamplers.newSamplerSoftMax());
+			}
 			chain.addSampler(LlamaCppSamplers.newSamplerGreedy());
 //			chain.addSampler(LlamaCppSamplers.newJavaSampler(new LlamaCppJavaSampler.SimpleGreedy()));
 		}
@@ -78,8 +100,9 @@ public class LlamaCppSamplers {
 
 	}
 
-	public static LlamaCppNativeSampler newSamplerPenalties(LlamaCppModel model) {
-		return newSamplerPenalties(model, 64, 1, 0, 0, false, false);
+	public static LlamaCppNativeSampler newSamplerPenalties(LlamaCppModel model, DefaultSamplerChainParams params) {
+		return newSamplerPenalties(model, params.penalty_last_n(), params.penalty_repeat(), params.penalty_freq(),
+				params.penalty_freq(), params.penalize_nl(), params.ignore_eos());
 
 	}
 
@@ -87,12 +110,32 @@ public class LlamaCppSamplers {
 		return new LlamaCppNativeSampler(doInitTopK(top_k));
 	}
 
-	public static LlamaCppNativeSampler newSamplerTopP(float top_p, float min_p) {
-		return new LlamaCppNativeSampler(doInitTopP(top_p, min_p));
+	public static LlamaCppNativeSampler newSamplerTopP(float top_p, long min_keep) {
+		return new LlamaCppNativeSampler(doInitTopP(top_p, min_keep));
+	}
+
+	public static LlamaCppNativeSampler newSamplerMinP(float min_p, long min_keep) {
+		return new LlamaCppNativeSampler(doInitMinP(min_p, min_keep));
+	}
+
+	public static LlamaCppNativeSampler newSamplerTailFree(float tfs_z, long min_keep) {
+		return new LlamaCppNativeSampler(doInitTailFree(tfs_z, min_keep));
+	}
+
+	public static LlamaCppNativeSampler newSamplerTypicalP(float typ_p, long min_keep) {
+		return new LlamaCppNativeSampler(doInitTypicalP(typ_p, min_keep));
+	}
+
+	public static LlamaCppNativeSampler newSamplerTempExt(float temp, float dynatemp_range, float dynatemp_exponent) {
+		return new LlamaCppNativeSampler(doInitTempExt(temp, dynatemp_range, dynatemp_exponent));
 	}
 
 	public static LlamaCppNativeSampler newSamplerTemp(float temp) {
 		return new LlamaCppNativeSampler(doInitTemp(temp));
+	}
+
+	public static LlamaCppNativeSampler newSamplerSoftMax() {
+		return new LlamaCppNativeSampler(doInitSoftMax());
 	}
 
 	public static LlamaCppNativeSampler newSamplerDist(int seed) {
@@ -106,6 +149,49 @@ public class LlamaCppSamplers {
 	public static LlamaCppNativeSampler newJavaSampler(LlamaCppJavaSampler javaSampler) {
 
 		return new LlamaCppNativeSampler(doInitJavaSampler(javaSampler));
+	}
+
+	// TODO distinct params records per sampler
+	public static record DefaultSamplerChainParams(//
+			// see gpt_sampler_params in common.h
+			float temp, // temperature
+			int n_probs, // if greater than 0, output the probabilities of top n_probs tokens
+			long min_keep, // minimal number of tokens to keep
+			int top_k, // <= 0 to use vocab size
+			float top_p, // 1.0 = disabled
+			float min_p, // 0.0 = disabled
+			float tfs_z, // 1.0 = disabled
+			float typ_p, // typical_p, 1.0 = disabled
+			float dynatemp_range, // 0.0 = disabled
+			float dynatemp_exponent, // controls how entropy maps to temperature in dynamic temperature sampler
+			int penalty_last_n, // last n tokens to penalize (0 = disable penalty, -1 = context size)
+			float penalty_repeat, // 1.0 = disabled
+			float penalty_freq, // 0.0 = disabled
+			float penalty_present, // 0.0 = disabled
+			boolean penalize_nl, // consider newlines as a repeatable token
+			boolean ignore_eos //
+	)
+
+	{
+		public DefaultSamplerChainParams() {
+			this(0.80f);
+		}
+
+		/** Default non-deterministic. */
+		public DefaultSamplerChainParams(float temp) {
+			this(temp, 0);
+		}
+
+		/** Default deterministic. */
+		public DefaultSamplerChainParams(int n_probs) {
+			this(0, n_probs);
+		}
+
+		/** Defaults. */
+		public DefaultSamplerChainParams(float temp, int n_probs) {
+			this(temp, n_probs, 0l, 40, 0.95f, 0.05f, 1.00f, 1.00f, 0.00f, 1.00f, 64, 1.00f, 0.00f, 0.00f, false,
+					false);
+		}
 	}
 
 	/** singleton */

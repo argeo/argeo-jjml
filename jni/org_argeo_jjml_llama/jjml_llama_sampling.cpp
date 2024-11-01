@@ -34,13 +34,40 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTopK(
 }
 
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTopP(
-		JNIEnv*, jclass, jfloat top_p, jfloat min_p) {
-	return reinterpret_cast<jlong>(llama_sampler_init_top_p(top_p, min_p));
+		JNIEnv*, jclass, jfloat top_p, jlong min_keep) {
+	return reinterpret_cast<jlong>(llama_sampler_init_top_p(top_p, min_keep));
+}
+
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitMinP(
+		JNIEnv*, jclass, jfloat min_p, jlong min_keep) {
+	return reinterpret_cast<jlong>(llama_sampler_init_min_p(min_p, min_keep));
+}
+
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTailFree(
+		JNIEnv*, jclass, jfloat tfs_z, jlong min_keep) {
+	return reinterpret_cast<jlong>(llama_sampler_init_tail_free(tfs_z, min_keep));
+}
+
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTypicalP(
+		JNIEnv*, jclass, jfloat typ_p, jlong min_keep) {
+	return reinterpret_cast<jlong>(llama_sampler_init_typical(typ_p, min_keep));
+}
+
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTempExt(
+		JNIEnv*, jclass, jfloat temp, jfloat dynatemp_ext,
+		jfloat dynatemp_exponent) {
+	return reinterpret_cast<jlong>(llama_sampler_init_temp_ext(temp,
+			dynatemp_ext, dynatemp_exponent));
 }
 
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTemp(
 		JNIEnv*, jclass, jfloat temp) {
 	return reinterpret_cast<jlong>(llama_sampler_init_temp(temp));
+}
+
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitSoftMax(
+		JNIEnv*, jclass) {
+	return reinterpret_cast<jlong>(llama_sampler_init_softmax());
 }
 
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitDist__(

@@ -34,10 +34,42 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTopK
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppSamplers
  * Method:    doInitTopP
- * Signature: (FF)J
+ * Signature: (FJ)J
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTopP
-  (JNIEnv *, jclass, jfloat, jfloat);
+  (JNIEnv *, jclass, jfloat, jlong);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppSamplers
+ * Method:    doInitMinP
+ * Signature: (FJ)J
+ */
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitMinP
+  (JNIEnv *, jclass, jfloat, jlong);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppSamplers
+ * Method:    doInitTailFree
+ * Signature: (FJ)J
+ */
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTailFree
+  (JNIEnv *, jclass, jfloat, jlong);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppSamplers
+ * Method:    doInitTypicalP
+ * Signature: (FJ)J
+ */
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTypicalP
+  (JNIEnv *, jclass, jfloat, jlong);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppSamplers
+ * Method:    doInitTempExt
+ * Signature: (FFF)J
+ */
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTempExt
+  (JNIEnv *, jclass, jfloat, jfloat, jfloat);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppSamplers
@@ -46,6 +78,14 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTopP
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTemp
   (JNIEnv *, jclass, jfloat);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppSamplers
+ * Method:    doInitSoftMax
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitSoftMax
+  (JNIEnv *, jclass);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppSamplers
