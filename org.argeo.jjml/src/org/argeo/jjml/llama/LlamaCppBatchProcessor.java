@@ -1,8 +1,5 @@
 package org.argeo.jjml.llama;
 
-import static org.argeo.jjml.llama.LlamaCppContext.ParamName.n_batch;
-import static org.argeo.jjml.llama.LlamaCppContext.ParamName.n_ctx;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -24,16 +21,23 @@ public class LlamaCppBatchProcessor {
 	final private LlamaCppContext context;
 
 	private LlamaCppSamplerChain samplerChain;
+	private LlamaCppNativeSampler validatingSampler;
 
 	final private int NO_OUTPUT_ID;
 
 	private int contextPosition = 0;
 
 	public LlamaCppBatchProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
+		this(context, samplerChain, null);
+	}
+
+	public LlamaCppBatchProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain,
+			LlamaCppNativeSampler validatingSampler) {
 		Objects.requireNonNull(context);
 		this.context = context;
 		this.model = context.getModel();
 		this.samplerChain = samplerChain;
+		this.validatingSampler = validatingSampler;
 
 		// there will never be an output id >= batch size
 		this.NO_OUTPUT_ID = this.context.getBatchSize();
@@ -60,26 +64,27 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * NATIVE METHODS
 	 */
-	private static native int doWriteBatch(long contextPointer, int contextPosition, IntBuffer[] input,
-			int[] sequenceIds, int[] outputIds, boolean lastLogit);
+	private static native int doWriteBatch(long contextPointer, long samplerChainPointer, int contextPosition,
+			IntBuffer[] input, int[] sequenceIds, int[] outputIds, boolean lastLogit);
 
-	private static native int doReadBatch(long contextPointer, long samplerChainPointer, int contextPosition,
-			IntBuffer[] output, int[] sequenceIds, int[] outputIds,
+	private static native int doReadBatch(long contextPointer, long samplerChainPointer, long grammarSamplerPointer,
+			int contextPosition, IntBuffer[] output, int[] sequenceIds, int[] outputIds,
 			CompletionHandler<Integer, Integer> completionHandler);
 
 	/*
 	 * LOW-LEVEL ACCESS
 	 */
 	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, int[] outputIds, boolean lastLogits) {
-		contextPosition = doWriteBatch(context.getAsLong(), contextPosition, inputs, sequenceIds, outputIds,
-				lastLogits);
+		contextPosition = doWriteBatch(context.getAsLong(), samplerChain.getAsLong(), contextPosition, inputs,
+				sequenceIds, outputIds, lastLogits);
 	}
 
 	synchronized void readBatch(IntBuffer[] outputs, int[] sequenceIds, int[] outputIds,
 			CompletionHandler<Integer, Integer> completionHandler) {
 		assert outputs.length == sequenceIds.length;
-		contextPosition = doReadBatch(context.getAsLong(), samplerChain.getAsLong(), contextPosition, outputs,
-				sequenceIds, outputIds, completionHandler);
+		contextPosition = doReadBatch(context.getAsLong(), samplerChain.getAsLong(),
+				validatingSampler != null ? validatingSampler.getAsLong() : 0, contextPosition, outputs, sequenceIds,
+				outputIds, completionHandler);
 	}
 
 	/*

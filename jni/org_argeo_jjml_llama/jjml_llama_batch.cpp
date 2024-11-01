@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <algorithm>
 #include <vector>
+#include <math.h>
 #include <cassert>
 
 #include "jjml_llama.h"
@@ -20,56 +21,57 @@
 /*
  * BATCH
  */
-static void jjml_populate_default_samplers(const llama_model *model,
-		llama_sampler *chain, //
-		float temp = 0.80f, // <= 0.0 to sample greedily, 0.0 to not output probabilities
-		int32_t top_k = 40,    // <= 0 to use vocab size
-		float top_p = 0.95f, // 1.0 = disabled
-		float min_p = 0.05f, // 0.0 = disabled
-		float tfs_z = 1.00f, // 1.0 = disabled
-		float typ_p = 1.00f, // typical_p, 1.0 = disabled
-		float dynatemp_range = 0.00f, // 0.0 = disabled
-		float dynatemp_exponent = 1.00f, // controls how entropy maps to temperature in dynamic temperature sampler
-		int32_t penalty_last_n = 64, // last n tokens to penalize (0 = disable penalty, -1 = context size)
-		float penalty_repeat = 1.00f, // 1.0 = disabled
-		float penalty_freq = 0.00f, // 0.0 = disabled
-		float penalty_present = 0.00f, // 0.0 = disabled
-		bool penalize_nl = false, // consider newlines as a repeatable token
-		bool ignore_eos = false, int32_t mirostat = 0, // 0 = disabled, 1 = mirostat, 2 = mirostat 2.0
-		float mirostat_tau = 5.00f, // target entropy
-		float mirostat_eta = 0.10f // learning rate
-		) {
-//    llama_sampler_chain_add(chain,
-//            llama_sampler_init_logit_bias(
-//                llama_n_vocab(model),
-//                logit_bias.size(),
-//                logit_bias.data())),
-
-	llama_sampler_chain_add(chain,
-			llama_sampler_init_penalties(llama_n_vocab(model),
-					llama_token_eos(model), llama_token_nl(model),
-					penalty_last_n, penalty_repeat, penalty_freq,
-					penalty_present, penalize_nl, ignore_eos));
-	if (temp > 0) {
-		llama_sampler_chain_add(chain, llama_sampler_init_top_k(top_k));
-		llama_sampler_chain_add(chain, llama_sampler_init_top_p(top_p, min_p));
-		llama_sampler_chain_add(chain, llama_sampler_init_temp(temp));
-
-		// final sampler
-		llama_sampler_chain_add(chain,
-				llama_sampler_init_dist(LLAMA_DEFAULT_SEED)); // !! crashes if seed is not set
-	} else {
-		llama_sampler_chain_add(chain, llama_sampler_init_greedy());
-	}
-
-}
-
+//static void jjml_populate_default_samplers(const llama_model *model,
+//		llama_sampler *chain, //
+//		float temp = 0.80f, // <= 0.0 to sample greedily, 0.0 to not output probabilities
+//		int32_t top_k = 40,    // <= 0 to use vocab size
+//		float top_p = 0.95f, // 1.0 = disabled
+//		float min_p = 0.05f, // 0.0 = disabled
+//		float tfs_z = 1.00f, // 1.0 = disabled
+//		float typ_p = 1.00f, // typical_p, 1.0 = disabled
+//		float dynatemp_range = 0.00f, // 0.0 = disabled
+//		float dynatemp_exponent = 1.00f, // controls how entropy maps to temperature in dynamic temperature sampler
+//		int32_t penalty_last_n = 64, // last n tokens to penalize (0 = disable penalty, -1 = context size)
+//		float penalty_repeat = 1.00f, // 1.0 = disabled
+//		float penalty_freq = 0.00f, // 0.0 = disabled
+//		float penalty_present = 0.00f, // 0.0 = disabled
+//		bool penalize_nl = false, // consider newlines as a repeatable token
+//		bool ignore_eos = false, int32_t mirostat = 0, // 0 = disabled, 1 = mirostat, 2 = mirostat 2.0
+//		float mirostat_tau = 5.00f, // target entropy
+//		float mirostat_eta = 0.10f // learning rate
+//		) {
+////    llama_sampler_chain_add(chain,
+////            llama_sampler_init_logit_bias(
+////                llama_n_vocab(model),
+////                logit_bias.size(),
+////                logit_bias.data())),
+//
+//	llama_sampler_chain_add(chain,
+//			llama_sampler_init_penalties(llama_n_vocab(model),
+//					llama_token_eos(model), llama_token_nl(model),
+//					penalty_last_n, penalty_repeat, penalty_freq,
+//					penalty_present, penalize_nl, ignore_eos));
+//	if (temp > 0) {
+//		llama_sampler_chain_add(chain, llama_sampler_init_top_k(top_k));
+//		llama_sampler_chain_add(chain, llama_sampler_init_top_p(top_p, min_p));
+//		llama_sampler_chain_add(chain, llama_sampler_init_temp(temp));
+//
+//		// final sampler
+//		llama_sampler_chain_add(chain,
+//				llama_sampler_init_dist(LLAMA_DEFAULT_SEED)); // !! crashes if seed is not set
+//	} else {
+//		llama_sampler_chain_add(chain, llama_sampler_init_greedy());
+//	}
+//
+//}
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteBatch(
-		JNIEnv *env, jclass, jlong contextPointer, jint contextPosition,
-		jobjectArray inputBuffers, jintArray sequenceIds, jintArray outputIds,
-		jboolean lastLogits) {
+		JNIEnv *env, jclass, jlong contextPointer, jlong samplerChainPointer,
+		jint contextPosition, jobjectArray inputBuffers, jintArray sequenceIds,
+		jintArray outputIds, jboolean lastLogits) {
 	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
 	const llama_model *model = llama_get_model(ctx);
+
+	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerChainPointer);
 
 	int cur_pos = contextPosition;
 
@@ -157,6 +159,12 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 			env->ThrowNew(IllegalStateException, "Decode failed");
 		}
 
+		// sampler accept
+		for (int i = 0; i < batch.n_tokens; i++) {
+			llama_token token = batch.token[i];
+			llama_sampler_accept(smpl, token);
+		}
+
 		cur_pos = cur_pos + batch.n_tokens;
 
 		// !! dereference what Java owns before batch is freed
@@ -229,13 +237,67 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 	return cur_pos;
 }
 
+static std::vector<llama_token_data> jjml_get_logits(llama_context *ctx,
+		int idx) {
+	const auto *logits = llama_get_logits_ith(ctx, idx);
+
+	const int n_vocab = llama_n_vocab(llama_get_model(ctx));
+
+	std::vector<llama_token_data> cur;
+	cur.resize(n_vocab);
+
+	for (llama_token token_id = 0; token_id < n_vocab; token_id++) {
+		cur[token_id] = llama_token_data { token_id, logits[token_id], 0.0f };
+	}
+
+	return cur;
+}
+
+static llama_token jjml_check_grammar(llama_context *ctx, int idx,
+		llama_sampler *chain, llama_sampler *grmr, llama_token id) {
+	// check if it the sampled token fits the grammar
+	{
+		llama_token_data single_token_data = { id, 1.0f, 0.0f };
+		llama_token_data_array single_token_data_array = { &single_token_data,
+				1, -1, false };
+
+		llama_sampler_apply(grmr, &single_token_data_array);
+
+		const bool is_valid = single_token_data_array.data[0].logit != -INFINITY;
+		if (is_valid) {
+			return id;
+		}
+	}
+
+	// resampling:
+	// if the token is not valid, sample again, but first apply the grammar sampler and then the sampling chain
+	std::vector<llama_token_data> cur = jjml_get_logits(ctx, idx);
+	llama_token_data_array cur_p = { cur.data(), cur.size(), -1, false, };
+
+	llama_sampler_apply(grmr, &cur_p);
+	llama_sampler_apply(chain, &cur_p);
+
+	GGML_ASSERT(
+			cur_p.selected != -1
+					&& "no selected token during re-sampling - check your sampling configuration");
+
+	llama_token res = cur_p.data[cur_p.selected].id;
+	return res;
+}
+
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBatch(
-		JNIEnv *env, jclass, jlong contextPointer, jlong samplerPointer,
-		jint contextPosition, jobjectArray outputBuffers, jintArray sequenceIds,
-		jintArray outputIds, jobject completionHandler) {
+		JNIEnv *env, jclass, jlong contextPointer, jlong samplerPtr,
+		jlong grammarSamplerPtr, jint contextPosition,
+		jobjectArray outputBuffers, jintArray sequenceIds, jintArray outputIds,
+		jobject completionHandler) {
 	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
-	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerPointer);
 	const llama_model *model = llama_get_model(ctx);
+
+	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerPtr);
+	auto *grmr =
+			grammarSamplerPtr != 0 ?
+					argeo::jni::getPointer<llama_sampler*>(grammarSamplerPtr) :
+					nullptr;
 
 	const uint32_t NO_OUTPUT_ID = llama_n_batch(ctx);
 
@@ -280,11 +342,6 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	}
 
 	PERF_BEGIN();
-// sampling
-//	auto sparams = llama_sampler_chain_default_params();
-//	llama_sampler *smpl = llama_sampler_chain_init(sparams);
-//	jjml_populate_default_samplers(model, smpl);
-//	jjml_populate_default_samplers(model, smpl, 0); // deterministic
 
 	int next_idx = 0;
 
@@ -306,10 +363,28 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 					continue;
 				}
 
-				PERF_BEGIN();
-				const llama_token new_token_id = llama_sampler_sample(smpl, ctx,
-						output_ids[i]);
-				PERF_END("sampling");
+				//PERF_BEGIN();
+				llama_token new_token_id;
+				if (grmr == nullptr) {
+					new_token_id = llama_sampler_sample(smpl, ctx,
+							output_ids[i]);
+
+				} else {	// grammar handling require lower-level methods
+					std::vector<llama_token_data> cur = jjml_get_logits(ctx,
+							output_ids[i]);
+					llama_token_data_array cur_p = { cur.data(), cur.size(), -1,
+							false, };
+
+					llama_sampler_apply(smpl, &cur_p);
+					llama_token candidate = cur_p.data[cur_p.selected].id;
+					new_token_id = jjml_check_grammar(ctx, output_ids[i], smpl,
+							grmr, candidate);
+//					new_token_id = candidate;
+
+					llama_sampler_accept(grmr, new_token_id);
+					llama_sampler_accept(smpl, new_token_id);
+				}
+				//PERF_END("sampling");
 
 				bool is_eog = llama_token_is_eog(model, new_token_id);
 

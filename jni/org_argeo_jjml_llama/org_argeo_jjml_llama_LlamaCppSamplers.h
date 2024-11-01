@@ -105,6 +105,14 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitDist__I
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppSamplers
+ * Method:    doInitGrammar
+ * Signature: (Lorg/argeo/jjml/llama/LlamaCppModel;Ljava/lang/String;Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitGrammar
+  (JNIEnv *, jclass, jobject, jstring, jstring);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppSamplers
  * Method:    doInitJavaSampler
  * Signature: (Lorg/argeo/jjml/llama/LlamaCppJavaSampler;)J
  */

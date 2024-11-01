@@ -10,18 +10,18 @@ extern "C" {
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
  * Method:    doWriteBatch
- * Signature: (JI[Ljava/nio/IntBuffer;[I[IZ)I
+ * Signature: (JJI[Ljava/nio/IntBuffer;[I[IZ)I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteBatch
-  (JNIEnv *, jclass, jlong, jint, jobjectArray, jintArray, jintArray, jboolean);
+  (JNIEnv *, jclass, jlong, jlong, jint, jobjectArray, jintArray, jintArray, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppBatchProcessor
  * Method:    doReadBatch
- * Signature: (JJI[Ljava/nio/IntBuffer;[I[ILjava/nio/channels/CompletionHandler;)I
+ * Signature: (JJJI[Ljava/nio/IntBuffer;[I[ILjava/nio/channels/CompletionHandler;)I
  */
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBatch
-  (JNIEnv *, jclass, jlong, jlong, jint, jobjectArray, jintArray, jintArray, jobject);
+  (JNIEnv *, jclass, jlong, jlong, jlong, jint, jobjectArray, jintArray, jintArray, jobject);
 
 #ifdef __cplusplus
 }

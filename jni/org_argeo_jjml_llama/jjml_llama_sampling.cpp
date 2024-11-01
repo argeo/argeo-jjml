@@ -80,6 +80,23 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitDist__I
 	return reinterpret_cast<jlong>(llama_sampler_init_dist(seed));
 }
 
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitGrammar(
+		JNIEnv *env, jclass, jobject modelObj, jstring grammarStr,
+		jstring rootStr) {
+	auto *model = argeo::jni::getPointer<llama_model*>(env, modelObj);
+	const char *grammar_str = env->GetStringUTFChars(grammarStr, nullptr);
+	const char *grammar_root = env->GetStringUTFChars(rootStr, nullptr);
+
+	llama_sampler *smpl = llama_sampler_init_grammar(model, grammar_str,
+			grammar_root);
+
+	// clean up
+	env->ReleaseStringUTFChars(grammarStr, grammar_str);
+	env->ReleaseStringUTFChars(rootStr, grammar_root);
+
+	return reinterpret_cast<jlong>(smpl);
+}
+
 /*
  * JAVA SAMPLER
  */

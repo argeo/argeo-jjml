@@ -38,6 +38,8 @@ public class LlamaCppSamplers {
 
 	private static native long doInitDist(int seed);
 
+	private static native long doInitGrammar(LlamaCppModel model, String grammar, String root);
+
 	private static native long doInitJavaSampler(LlamaCppJavaSampler javaSampler);
 
 	/*
@@ -146,8 +148,11 @@ public class LlamaCppSamplers {
 		return new LlamaCppNativeSampler(doInitDist());
 	}
 
-	public static LlamaCppNativeSampler newJavaSampler(LlamaCppJavaSampler javaSampler) {
+	public static LlamaCppNativeSampler newSamplerGrammar(LlamaCppModel model, String grammar, String root) {
+		return new LlamaCppNativeSampler(doInitGrammar(model, grammar, root));
+	}
 
+	public static LlamaCppNativeSampler newJavaSampler(LlamaCppJavaSampler javaSampler) {
 		return new LlamaCppNativeSampler(doInitJavaSampler(javaSampler));
 	}
 
