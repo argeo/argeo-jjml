@@ -43,24 +43,6 @@ public class LlamaCppBatchProcessor {
 		this.NO_OUTPUT_ID = this.context.getBatchSize();
 	}
 
-//	public LlamaCppBatchProcessor(LlamaCppModel model, boolean withTemp, int requiredContextSize, int maxBatchSize) {
-////		LlamaCppContext.Params contextParams = LlamaCppContext.DEFAULT_PARAMS //
-////				.with(n_ctx, requiredContextSize) //
-////				.with(n_batch, maxBatchSize);
-////			contextParams.setMaxBatchSize(Math.max(predictMax, parallelCount));
-//		this(new LlamaCppContext(model, LlamaCppContext.defaultContextParams() //
-//				.with(n_ctx, requiredContextSize) //
-//				.with(n_batch, maxBatchSize)) //
-//				, LlamaCppSamplers.newDefaultSampler(model, withTemp));
-////		this.context = contextToUse;
-////		this.model = this.context.getModel();
-////
-////		// there will never be an output id >= batch size
-////		this.NO_OUTPUT_ID = this.context.getBatchSize();
-////
-////		float temp = 0.8f;
-//	}
-
 	/*
 	 * NATIVE METHODS
 	 */
