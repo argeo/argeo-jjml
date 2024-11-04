@@ -87,7 +87,7 @@ public class LlamaCppBatchProcessor {
 	}
 
 	public String processBatch(String prompt, int[] sequenceIds, String[] parameters, String postPrompt) {
-		LlamaCppTokenList promptTL = model.tokenize(prompt, true);
+		LlamaCppTokenList promptTL = model.tokenizeAsArray(prompt, true);
 
 //		int predictMax = context.getBatchSize();
 		int parallelCount = sequenceIds.length;
@@ -122,60 +122,72 @@ public class LlamaCppBatchProcessor {
 		int tokenCount = promptTL.size();
 		int batchSize = context.getBatchSize();
 
-		int batchCount = tokenCount / batchSize;
-		if (tokenCount % batchSize != 0)
-			batchCount = batchCount + 1;
-		for (int i = 0; i < batchCount; i++) {
-			IntBuffer input = buf.slice();
-			boolean lastLogits;
-			if (i == batchCount - 1) {
-				input.limit(tokenCount % batchSize == 0 ? batchSize : tokenCount % batchSize);
-				lastLogits = parameters == null;
-			} else {
-				input.limit(batchSize);
-				lastLogits = false;
-			}
-			buf.position(buf.position() + input.limit());
+		boolean tokenList = false;
 
-			// copy data
-			input.put(promptTL.getTokens(), i * batchSize, input.limit());
-			input.flip();
-
-			writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, lastLogits);
-		}
-
-		if (parameters != null) {
-			if (parameters.length != parallelCount)
-				throw new IllegalArgumentException("Parameters count different from sequence count");
-
-			IntBuffer[] inputs = new IntBuffer[parallelCount];
-			for (int i = 0; i < parallelCount; i++) {
-				LlamaCppTokenList parameterTL = model.tokenize(parameters[i], true);
-				if (parameterTL.size() * parallelCount > batchSize)// TODO be more precise / robust
-					throw new IllegalArgumentException("Parameter '" + parameters[i] + "' is too long.");
-				inputs[i] = buf.slice();
-				inputs[i].limit(parameterTL.size());
-				buf.position(buf.position() + inputs[i].limit());
+		if (tokenList) {
+			int batchCount = tokenCount / batchSize;
+			if (tokenCount % batchSize != 0)
+				batchCount = batchCount + 1;
+			for (int i = 0; i < batchCount; i++) {
+				IntBuffer input = buf.slice();
+				boolean lastLogits;
+				if (i == batchCount - 1) {
+					input.limit(tokenCount % batchSize == 0 ? batchSize : tokenCount % batchSize);
+					lastLogits = parameters == null;
+				} else {
+					input.limit(batchSize);
+					lastLogits = false;
+				}
+				buf.position(buf.position() + input.limit());
 
 				// copy data
-				inputs[i].put(parameterTL.getTokens(), 0, inputs[i].limit());
-				inputs[i].flip();
+				input.put(promptTL.getTokens(), i * batchSize, input.limit());
+				input.flip();
+
+				writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, lastLogits);
 			}
-			writeBatch(inputs, sequenceIds, outputIds, postPrompt == null);
-		}
 
-		if (postPrompt != null) {
-			LlamaCppTokenList postPromptTL = model.tokenize(postPrompt, true);
-			if (postPromptTL.size() > batchSize)// TODO be more precise / robust
-				throw new IllegalArgumentException("Post prompt '" + postPrompt + "' is too long.");
+			if (parameters != null) {
+				if (parameters.length != parallelCount)
+					throw new IllegalArgumentException("Parameters count different from sequence count");
+
+				IntBuffer[] inputs = new IntBuffer[parallelCount];
+				for (int i = 0; i < parallelCount; i++) {
+					LlamaCppTokenList parameterTL = model.tokenizeAsArray(parameters[i], true);
+					if (parameterTL.size() * parallelCount > batchSize)// TODO be more precise / robust
+						throw new IllegalArgumentException("Parameter '" + parameters[i] + "' is too long.");
+					inputs[i] = buf.slice();
+					inputs[i].limit(parameterTL.size());
+					buf.position(buf.position() + inputs[i].limit());
+
+					// copy data
+					inputs[i].put(parameterTL.getTokens(), 0, inputs[i].limit());
+					inputs[i].flip();
+				}
+				writeBatch(inputs, sequenceIds, outputIds, postPrompt == null);
+			}
+
+			if (postPrompt != null) {
+				LlamaCppTokenList postPromptTL = model.tokenizeAsArray(postPrompt, true);
+				if (postPromptTL.size() > batchSize)// TODO be more precise / robust
+					throw new IllegalArgumentException("Post prompt '" + postPrompt + "' is too long.");
+				IntBuffer input = buf.slice();
+				input.limit(postPromptTL.size());
+				buf.position(buf.position() + input.limit());
+
+				// copy data
+				input.put(postPromptTL.getTokens(), 0, input.limit());
+				input.flip();
+
+				writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, true);
+			}
+		} else {
 			IntBuffer input = buf.slice();
-			input.limit(postPromptTL.size());
-			buf.position(buf.position() + input.limit());
+			input.limit(4);
+			model.tokenize(prompt, input, true, true);
+			buf.position(input.limit());
 
-			// copy data
-			input.put(postPromptTL.getTokens(), 0, input.limit());
 			input.flip();
-
 			writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, true);
 		}
 

@@ -41,11 +41,19 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokeniz
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel
- * Method:    doTokenizeString
+ * Method:    doTokenizeStringAsArray
  * Signature: (Ljava/lang/String;ZZ)[I
  */
-JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeString
+JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeStringAsArray
   (JNIEnv *, jobject, jstring, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doTokenizeString
+ * Signature: (JLjava/lang/String;Ljava/nio/IntBuffer;ZZ)V
+ */
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeString
+  (JNIEnv *, jobject, jlong, jstring, jobject, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel

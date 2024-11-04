@@ -9,6 +9,7 @@
 #include <locale>
 #include <string>
 #include <vector>
+#include <cassert>
 
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppModel.h" // IWYU pragma: keep
@@ -174,7 +175,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokeniz
 	return res;
 }
 
-JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeString(
+JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeStringAsArray(
 		JNIEnv *env, jobject obj, jstring str, jboolean addSpecial,
 		jboolean parseSpecial) {
 	auto *model = argeo::jni::getPointer<llama_model*>(env, obj);
@@ -192,6 +193,44 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeSt
 	jintArray res = env->NewIntArray(tokens.size());
 	env->SetIntArrayRegion(res, 0, tokens.size(), tokens.data());
 	return res;
+}
+
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeString(
+		JNIEnv *env, jobject, jlong modelPointer, jstring str, jobject buf,
+		jboolean addSpecial, jboolean parseSpecial) {
+	try {
+		auto *model = argeo::jni::getPointer<llama_model*>(modelPointer);
+		assert(
+				(env->CallIntMethod(buf, IntBuffer$position) == 0
+						&& "Buffer position must be 0"));
+		int tokens_size = env->CallIntMethod(buf, IntBuffer$limit);
+		llama_token *tokens =
+				static_cast<llama_token*>(env->GetDirectBufferAddress(buf));
+
+		// BEGIN STRING CRITICAL
+		const jchar *jchars = env->GetStringCritical(str, nullptr);
+		std::u16string u16text = argeo::jni::jcharsToUtf16(jchars);
+		std::string text = utf16_converter.to_bytes(u16text);
+
+		int n_tokens = llama_tokenize(model, text.data(), text.length(), tokens,
+				tokens_size, addSpecial, parseSpecial);
+		if (n_tokens < 0) {
+			throw std::range_error(
+					"Input buffer limit " + std::to_string(tokens_size)
+							+ " is too small for " + std::to_string(-n_tokens)
+							+ " tokens - " + __func__);
+		}
+
+		// clean up
+		env->ReleaseStringCritical(str, jchars);
+		// END STRING CRITICAL
+
+		// set buffer in a proper state
+		env->CallVoidMethod(buf, IntBuffer$limitI, n_tokens);
+		env->CallVoidMethod(buf, IntBuffer$positionI, n_tokens);
+	} catch (const std::exception &ex) {
+		env->ThrowNew(IllegalStateException, ex.what());
+	}
 }
 
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsString(

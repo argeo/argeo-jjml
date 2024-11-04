@@ -12,7 +12,7 @@ public class LlamaCppEmbeddingProcessor {
 	public List<LlamaCppEmbedding> processEmbeddings(List<String> prompts) {
 		List<LlamaCppTokenList> tokenLists = new ArrayList<>(prompts.size());
 		for (String prompt : prompts) {
-			LlamaCppTokenList tokenList = context.getModel().tokenize(prompt, true);
+			LlamaCppTokenList tokenList = context.getModel().tokenizeAsArray(prompt, true);
 			tokenLists.add(tokenList);
 		}
 

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.lang.reflect.RecordComponent;
+import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -47,6 +48,8 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	private final int embeddingSize;
 
+	private boolean destroyed = false;
+
 	LlamaCppModel(long pointer, Path localPath, Params initParams) {
 		this.pointer = pointer;
 		this.localPath = localPath;
@@ -79,7 +82,10 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	 * Tokenize a Java {@link String}. Its UTF-16 representation will be used
 	 * without copy on the native side, where it will be converted to UTF-8.
 	 */
-	native int[] doTokenizeString(String str, boolean addSpecial, boolean parseSpecial);
+	native int[] doTokenizeStringAsArray(String str, boolean addSpecial, boolean parseSpecial);
+
+	native void doTokenizeString(long modelPointer, String str, IntBuffer buf, boolean addSpecial,
+			boolean parseSpecial);
 
 	/** De-tokenize as a Java {@link String}. */
 	native String doDeTokenizeAsString(int[] tokens, boolean removeSpecial, boolean unparseSpecial);
@@ -102,14 +108,25 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		return doDeTokenizeAsString(tokenList.getTokens(), removeSpecial, unparseSpecial);
 	}
 
-	public LlamaCppTokenList tokenize(String str, boolean addSpecial) {
-		return tokenize(str, addSpecial, true);
+	public LlamaCppTokenList tokenizeAsArray(String str, boolean addSpecial) {
+		return tokenizeAsArray(str, addSpecial, true);
 	}
 
-	public LlamaCppTokenList tokenize(String str, boolean addSpecial, boolean parseSpecial) {
+	public LlamaCppTokenList tokenizeAsArray(String str, boolean addSpecial, boolean parseSpecial) {
 //		int[] tokens = doTokenizeUtf8Array(str.getBytes(UTF_8), addSpecial, parseSpecial);
-		int[] tokens = doTokenizeString(str, addSpecial, parseSpecial);
+		int[] tokens = doTokenizeStringAsArray(str, addSpecial, parseSpecial);
 		return new LlamaCppTokenList(this, tokens);
+	}
+
+	public void tokenize(String str, IntBuffer buf, boolean addSpecial, boolean parseSpecial) {
+		if (buf.isDirect() && buf.position() == 0) {
+			doTokenizeString(pointer, str, buf, addSpecial, parseSpecial);
+		} else {
+			int[] tokens = doTokenizeStringAsArray(str, addSpecial, parseSpecial);
+			if (tokens.length > (buf.limit() - buf.position()))
+				throw new IndexOutOfBoundsException(tokens.length);
+			buf.put(tokens);
+		}
 	}
 
 	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
@@ -133,7 +150,14 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	 */
 	@Override
 	public void close() throws RuntimeException {
+		checkDestroyed();
 		doDestroy();
+		destroyed = true;
+	}
+
+	private void checkDestroyed() {
+		if (destroyed)
+			throw new IllegalStateException("Model #" + pointer + " was already destroyed");
 	}
 
 	/*
@@ -141,6 +165,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	 */
 	@Override
 	public long getAsLong() {
+		checkDestroyed();
 		return pointer;
 	}
 
