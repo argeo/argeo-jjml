@@ -122,7 +122,7 @@ public class LlamaCppBatchProcessor {
 		int tokenCount = promptTL.size();
 		int batchSize = context.getBatchSize();
 
-		boolean tokenList = false;
+		boolean tokenList = true;
 
 		if (tokenList) {
 			int batchCount = tokenCount / batchSize;
@@ -183,9 +183,8 @@ public class LlamaCppBatchProcessor {
 			}
 		} else {
 			IntBuffer input = buf.slice();
-			input.limit(4);
 			model.tokenize(prompt, input, true, true);
-			buf.position(input.limit());
+			buf.position(input.position());
 
 			input.flip();
 			writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, true);

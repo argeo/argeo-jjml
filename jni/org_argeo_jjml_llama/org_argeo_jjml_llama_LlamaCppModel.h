@@ -9,6 +9,110 @@ extern "C" {
 #endif
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doFormatChatMessages
+ * Signature: (J[Ljava/lang/String;[Ljava/lang/String;Z)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMessages
+  (JNIEnv *, jobject, jlong, jobjectArray, jobjectArray, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doTokenizeUtf8AsArray
+ * Signature: (J[BIIZZ)[I
+ */
+JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeUtf8AsArray__J_3BIIZZ
+  (JNIEnv *, jobject, jlong, jbyteArray, jint, jint, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doTokenizeUtf8AsArray
+ * Signature: (JLjava/nio/ByteBuffer;ZZ)[I
+ */
+JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeUtf8AsArray__JLjava_nio_ByteBuffer_2ZZ
+  (JNIEnv *, jobject, jlong, jobject, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doTokenizeUtf8
+ * Signature: (J[BIILjava/nio/IntBuffer;ZZ)V
+ */
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeUtf8__J_3BIILjava_nio_IntBuffer_2ZZ
+  (JNIEnv *, jobject, jlong, jbyteArray, jint, jint, jobject, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doTokenizeUtf8
+ * Signature: (JLjava/nio/ByteBuffer;Ljava/nio/IntBuffer;ZZ)V
+ */
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeUtf8__JLjava_nio_ByteBuffer_2Ljava_nio_IntBuffer_2ZZ
+  (JNIEnv *, jobject, jlong, jobject, jobject, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doDeTokenizeAsUtf8Array
+ * Signature: (J[IIIZZ)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsUtf8Array__J_3IIIZZ
+  (JNIEnv *, jobject, jlong, jintArray, jint, jint, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doDeTokenizeAsUtf8Array
+ * Signature: (JLjava/nio/IntBuffer;ZZ)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsUtf8Array__JLjava_nio_IntBuffer_2ZZ
+  (JNIEnv *, jobject, jlong, jobject, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doDeTokenizeAsUtf8
+ * Signature: (J[IIILjava/nio/ByteBuffer;ZZ)V
+ */
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsUtf8__J_3IIILjava_nio_ByteBuffer_2ZZ
+  (JNIEnv *, jobject, jlong, jintArray, jint, jint, jobject, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doDeTokenizeAsUtf8
+ * Signature: (JLjava/nio/IntBuffer;Ljava/nio/ByteBuffer;ZZ)V
+ */
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsUtf8__JLjava_nio_IntBuffer_2Ljava_nio_ByteBuffer_2ZZ
+  (JNIEnv *, jobject, jlong, jobject, jobject, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doTokenizeStringAsArray
+ * Signature: (JLjava/lang/String;ZZ)[I
+ */
+JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeStringAsArray
+  (JNIEnv *, jobject, jlong, jstring, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doTokenizeString
+ * Signature: (JLjava/lang/String;Ljava/nio/IntBuffer;ZZ)V
+ */
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeString
+  (JNIEnv *, jobject, jlong, jstring, jobject, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doDeTokenizeAsString
+ * Signature: (J[IIIZZ)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsString__J_3IIIZZ
+  (JNIEnv *, jobject, jlong, jintArray, jint, jint, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
+ * Method:    doDeTokenizeAsString
+ * Signature: (JLjava/nio/IntBuffer;ZZ)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsString__JLjava_nio_IntBuffer_2ZZ
+  (JNIEnv *, jobject, jlong, jobject, jboolean, jboolean);
+
+/*
+ * Class:     org_argeo_jjml_llama_LlamaCppModel
  * Method:    doInit
  * Signature: (Ljava/lang/String;Lorg/argeo/jjml/llama/LlamaCppModel/Params;Ljava/util/function/DoublePredicate;)J
  */
@@ -22,54 +126,6 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit
  */
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy
   (JNIEnv *, jobject);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppModel
- * Method:    doTokenizeUtf8Array
- * Signature: ([BZZ)[I
- */
-JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeUtf8Array
-  (JNIEnv *, jobject, jbyteArray, jboolean, jboolean);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppModel
- * Method:    doDeTokenizeAsUtf8Array
- * Signature: ([IZZ)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsUtf8Array
-  (JNIEnv *, jobject, jintArray, jboolean, jboolean);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppModel
- * Method:    doTokenizeStringAsArray
- * Signature: (Ljava/lang/String;ZZ)[I
- */
-JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeStringAsArray
-  (JNIEnv *, jobject, jstring, jboolean, jboolean);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppModel
- * Method:    doTokenizeString
- * Signature: (JLjava/lang/String;Ljava/nio/IntBuffer;ZZ)V
- */
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doTokenizeString
-  (JNIEnv *, jobject, jlong, jstring, jobject, jboolean, jboolean);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppModel
- * Method:    doDeTokenizeAsString
- * Signature: ([IZZ)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDeTokenizeAsString
-  (JNIEnv *, jobject, jintArray, jboolean, jboolean);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppModel
- * Method:    doFormatChatMessages
- * Signature: ([Ljava/lang/String;[Ljava/lang/String;Z)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMessages
-  (JNIEnv *, jobject, jobjectArray, jobjectArray, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppModel

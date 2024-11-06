@@ -8,7 +8,10 @@ import java.io.IOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.lang.reflect.RecordComponent;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.IntBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -60,11 +63,9 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	/*
 	 * NATIVE METHODS
 	 */
-	// Lifcycle
-
-	private static native long doInit(String localPathStr, Params params, DoublePredicate progressCallback);
-
-	native void doDestroy();
+	// Chat
+	private native String doFormatChatMessages(long pointer, String[] roles, String[] contents,
+			boolean addAssistantTokens);
 
 	// Tokenization
 	/**
@@ -73,27 +74,53 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	 * 
 	 * @see #doDeTokenizeAsUtf8Array(int[], boolean, boolean)
 	 */
-	native int[] doTokenizeUtf8Array(byte[] str, boolean addSpecial, boolean parseSpecial);
+	private native int[] doTokenizeUtf8AsArray(long pointer, byte[] str, int offset, int length, boolean addSpecial,
+			boolean parseSpecial);
+
+	private native int[] doTokenizeUtf8AsArray(long pointer, ByteBuffer str, boolean addSpecial, boolean parseSpecial);
+
+	private native void doTokenizeUtf8(long pointer, byte[] str, int offset, int length, IntBuffer tokens,
+			boolean addSpecial, boolean parseSpecial);
+
+	private native void doTokenizeUtf8(long pointer, ByteBuffer str, IntBuffer tokens, boolean addSpecial,
+			boolean parseSpecial);
 
 	/** De-tokenize as a string encoded in standard UTF-8. */
-	native byte[] doDeTokenizeAsUtf8Array(int[] tokens, boolean removeSpecial, boolean unparseSpecial);
+	private native byte[] doDeTokenizeAsUtf8Array(long pointer, int[] tokens, int offset, int length,
+			boolean removeSpecial, boolean unparseSpecial);
+
+	private native byte[] doDeTokenizeAsUtf8Array(long pointer, IntBuffer tokens, boolean removeSpecial,
+			boolean unparseSpecial);
+
+	private native void doDeTokenizeAsUtf8(long pointer, int[] tokens, int offset, int length, ByteBuffer str,
+			boolean removeSpecial, boolean unparseSpecial);
+
+	private native void doDeTokenizeAsUtf8(long pointer, IntBuffer tokens, ByteBuffer str, boolean removeSpecial,
+			boolean unparseSpecial);
 
 	/**
 	 * Tokenize a Java {@link String}. Its UTF-16 representation will be used
 	 * without copy on the native side, where it will be converted to UTF-8.
 	 */
-	native int[] doTokenizeStringAsArray(String str, boolean addSpecial, boolean parseSpecial);
+	private native int[] doTokenizeStringAsArray(long pointer, String str, boolean addSpecial, boolean parseSpecial);
 
-	native void doTokenizeString(long modelPointer, String str, IntBuffer buf, boolean addSpecial,
+	private native void doTokenizeString(long pointer, String str, IntBuffer buf, boolean addSpecial,
 			boolean parseSpecial);
 
 	/** De-tokenize as a Java {@link String}. */
-	native String doDeTokenizeAsString(int[] tokens, boolean removeSpecial, boolean unparseSpecial);
+	private native String doDeTokenizeAsString(long pointer, int[] tokens, int offset, int length,
+			boolean removeSpecial, boolean unparseSpecial);
 
-	// Chat
-	native String doFormatChatMessages(String[] roles, String[] contents, boolean addAssistantTokens);
+	private native String doDeTokenizeAsString(long pointer, IntBuffer buf, boolean removeSpecial,
+			boolean unparseSpecial);
 
-	native int doGetEmbeddingSize();
+	// Lifecycle
+	private static native long doInit(String localPathStr, Params params, DoublePredicate progressCallback);
+
+	private native void doDestroy();
+
+	// Accessors
+	private native int doGetEmbeddingSize();
 
 	/*
 	 * USABLE METHODS
@@ -105,7 +132,8 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	public String deTokenize(LlamaCppTokenList tokenList, boolean removeSpecial, boolean unparseSpecial) {
 //		byte[] str = doDeTokenizeAsUtf8Array(tokenList.getTokens(), removeSpecial, unparseSpecial);
 //		return new String(str, UTF_8);
-		return doDeTokenizeAsString(tokenList.getTokens(), removeSpecial, unparseSpecial);
+		int[] tokens = tokenList.getTokens();
+		return doDeTokenizeAsString(pointer, tokens, 0, tokens.length, removeSpecial, unparseSpecial);
 	}
 
 	public LlamaCppTokenList tokenizeAsArray(String str, boolean addSpecial) {
@@ -114,18 +142,63 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	public LlamaCppTokenList tokenizeAsArray(String str, boolean addSpecial, boolean parseSpecial) {
 //		int[] tokens = doTokenizeUtf8Array(str.getBytes(UTF_8), addSpecial, parseSpecial);
-		int[] tokens = doTokenizeStringAsArray(str, addSpecial, parseSpecial);
+		int[] tokens = doTokenizeStringAsArray(pointer, str, addSpecial, parseSpecial);
 		return new LlamaCppTokenList(this, tokens);
 	}
 
-	public void tokenize(String str, IntBuffer buf, boolean addSpecial, boolean parseSpecial) {
-		if (buf.isDirect() && buf.position() == 0) {
-			doTokenizeString(pointer, str, buf, addSpecial, parseSpecial);
-		} else {
-			int[] tokens = doTokenizeStringAsArray(str, addSpecial, parseSpecial);
-			if (tokens.length > (buf.limit() - buf.position()))
-				throw new IndexOutOfBoundsException(tokens.length);
-			buf.put(tokens);
+	public void tokenizeUtf16(String str, IntBuffer tokens, boolean addSpecial, boolean parseSpecial) {
+		synchronized (tokens) {// we are writing into this buffer and changing its position
+			IntBuffer tokensToUse = tokens.slice().limit(tokens.limit() - tokens.position());
+			if (tokens.isDirect()) {
+				doTokenizeString(pointer, str, tokensToUse, addSpecial, parseSpecial);
+				tokens.position(tokens.position() + tokensToUse.position());
+			} else {
+				int[] tokenArr = doTokenizeStringAsArray(pointer, str, addSpecial, parseSpecial);
+				if (tokenArr.length > (tokens.limit() - tokens.position()))
+					throw new IndexOutOfBoundsException(tokenArr.length);
+				tokens.put(tokenArr);
+			}
+		}
+	}
+
+	public void tokenize(CharSequence str, IntBuffer tokens, boolean addSpecial, boolean parseSpecial) {
+		CharBuffer chars = CharBuffer.wrap(str);
+		ByteBuffer utf8Str = StandardCharsets.UTF_8.encode(chars);
+		tokenizeUtf8(utf8Str, tokens, addSpecial, parseSpecial);
+	}
+
+	public void tokenizeUtf8(ByteBuffer str, IntBuffer tokens, boolean addSpecial, boolean parseSpecial) {
+		synchronized (tokens) {// we are writing into this buffer and changing its position
+			// make sure position is 0
+			ByteBuffer strToUse = str.slice().limit(str.limit() - str.position());
+			IntBuffer tokensToUse = tokens.slice().limit(tokens.limit() - tokens.position());
+
+			if (tokensToUse.isDirect()) {
+				if (strToUse.isDirect()) {
+					doTokenizeUtf8(pointer, strToUse, tokensToUse, addSpecial, parseSpecial);
+				} else if (strToUse.hasArray()) {
+					byte[] arr = strToUse.array();
+					doTokenizeUtf8(pointer, arr, strToUse.arrayOffset(), strToUse.limit(), tokensToUse, addSpecial,
+							parseSpecial);
+				} else {
+					throw new IllegalArgumentException("UTF-8 buffer is neither direct nor array-backed");
+				}
+				tokens.position(tokens.position() + tokensToUse.position());
+			} else {
+				int[] tokenArr;
+				if (strToUse.isDirect()) {
+					tokenArr = doTokenizeUtf8AsArray(pointer, strToUse, addSpecial, parseSpecial);
+				} else if (strToUse.hasArray()) {
+					byte[] arr = strToUse.array();
+					tokenArr = doTokenizeUtf8AsArray(pointer, arr, strToUse.arrayOffset(), strToUse.limit(), addSpecial,
+							parseSpecial);
+				} else {
+					throw new IllegalArgumentException("UTF-8 buffer is neither direct nor array-backed");
+				}
+				if (tokenArr.length > (tokens.limit() - tokens.position()))
+					throw new IndexOutOfBoundsException(tokenArr.length);
+				tokens.put(tokenArr);
+			}
 		}
 	}
 
@@ -141,7 +214,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 			contents[i] = message.getContent();
 		}
 
-		String res = doFormatChatMessages(roles, contents, currIsUserRole);
+		String res = doFormatChatMessages(pointer, roles, contents, currIsUserRole);
 		return res;
 	}
 
