@@ -11,6 +11,7 @@ if (JNI_FOUND)
     message (STATUS "JNI_LIBRARIES=${JNI_LIBRARIES}")
 endif()
 
+
 # libggml as external library
 find_library(GGML_LOCATION ggml)
 message (STATUS "Found GGML library: ${GGML_LOCATION}") 
@@ -39,7 +40,11 @@ set_target_properties(org_argeo_jjml_llama PROPERTIES POSITION_INDEPENDENT_CODE 
 target_include_directories(org_argeo_jjml_llama PRIVATE ${JNI_INCLUDE_DIRS} include org_argeo_jjml_llama )
 target_compile_features(org_argeo_jjml_llama PRIVATE cxx_std_11)
 
-target_link_libraries(org_argeo_jjml_llama PRIVATE llama)
+target_link_libraries(org_argeo_jjml_llama PRIVATE ggml llama)
+
+# MSYS2
+#link_directories("/ucrt64/lib/")
+#target_link_libraries(org_argeo_jjml_llama PRIVATE libggml libllama)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
