@@ -54,8 +54,8 @@ public class A2SmokeTests {
 			try (LlamaCppModel model = loaded.get();) {
 				assertVocabulary(model.getVocabulary());
 				// TODO return if vocabulary only
-				if (true)
-					return;
+//				if (true)
+//					return;
 
 				assertLoadUnloadDefaultContext(model);
 				assertEmbeddings(model);
