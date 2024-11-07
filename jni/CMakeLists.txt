@@ -11,6 +11,10 @@ if (JNI_FOUND)
     message (STATUS "JNI_LIBRARIES=${JNI_LIBRARIES}")
 endif()
 
+if(MINGW)
+   # cmake ../../ -DCMAKE_INSTALL_PREFIX=$MINGW_PREFIX
+   set(CMAKE_SHARED_LIBRARY_PREFIX "")
+else()
 
 # libggml as external library
 find_library(GGML_LOCATION ggml)
@@ -24,6 +28,8 @@ message (STATUS "Found LLAMA library: ${LLAMA_LOCATION}")
 add_library(llama SHARED IMPORTED GLOBAL)
 set_target_properties(llama PROPERTIES IMPORTED_LOCATION ${LLAMA_LOCATION})
 target_link_libraries(llama INTERFACE ${GGML_LOCATION})
+
+endif()
 
 # org_argeo_jjml_llama
 add_library(org_argeo_jjml_llama SHARED 
