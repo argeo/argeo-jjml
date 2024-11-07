@@ -88,12 +88,13 @@ public class LlamaCppNative {
 			System.load(llamaLibraryPath.toAbsolutePath().toString());
 			logger.log(Level.WARNING, "llama.cpp library loaded from " + llamaLibraryPath);
 		}
+
 		if (jjmlLlamaLibraryPath != null) {
 			System.load(jjmlLlamaLibraryPath.toAbsolutePath().toString());
+		} else {
+			// default behavior
+			System.loadLibrary(JJML_LAMA_LIBRARY_NAME);
 		}
-
-		// default behavior
-		System.loadLibrary(JJML_LAMA_LIBRARY_NAME);
 
 		// TODO register the stack where libraries were already loaded
 		librariesLoaded = true;
