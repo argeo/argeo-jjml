@@ -1,5 +1,4 @@
 #include <argeo/argeo_jni.h>
-#include <bits/stdint-intn.h>
 #include <ggml.h>
 #include <jni.h>
 #include <jni_md.h>
@@ -76,9 +75,9 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 	int cur_pos = contextPosition;
 
 	const int n_parallel = env->GetArrayLength(sequenceIds);
-	auto *sequence_ids = static_cast<llama_seq_id*>(env->GetIntArrayElements(
+	auto *sequence_ids = reinterpret_cast<llama_seq_id*>(env->GetIntArrayElements(
 			sequenceIds, nullptr));
-	auto *output_ids = static_cast<int32_t*>(env->GetIntArrayElements(outputIds,
+	auto *output_ids = reinterpret_cast<int32_t*>(env->GetIntArrayElements(outputIds,
 			nullptr));
 
 	int inputBuffersCount = env->GetArrayLength(inputBuffers);
@@ -231,8 +230,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteB
 		llama_batch_free(batch);
 	}
 	// clean up
-	env->ReleaseIntArrayElements(sequenceIds, sequence_ids, 0);
-	env->ReleaseIntArrayElements(outputIds, output_ids, 0);
+	env->ReleaseIntArrayElements(sequenceIds, reinterpret_cast<jint*>(sequence_ids), 0);
+	env->ReleaseIntArrayElements(outputIds, reinterpret_cast<jint*>(output_ids), 0);
 
 	return cur_pos;
 }
@@ -314,7 +313,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	}
 	env->ReleaseIntArrayElements(sequenceIds, arr, 0);
 
-	auto *output_ids = static_cast<int32_t*>(env->GetIntArrayElements(outputIds,
+	auto *output_ids = reinterpret_cast<int32_t*>(env->GetIntArrayElements(outputIds,
 			nullptr));
 
 	const int outBuffersCount = env->GetArrayLength(outputBuffers);
@@ -462,7 +461,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	PERF_END(__func__);
 
 // clean up
-	env->ReleaseIntArrayElements(outputIds, output_ids, 0);
+	env->ReleaseIntArrayElements(outputIds, reinterpret_cast<jint*>(output_ids), 0);
 
 	// TODO assert consistency of context position with regard to the output buffers sizes
 	return cur_pos;

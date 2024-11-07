@@ -1,5 +1,4 @@
 #include <argeo/argeo_jni.h>
-#include <bits/stdint-intn.h>
 #include <ggml.h>
 #include <jni.h>
 #include <jni_md.h>
@@ -89,7 +88,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doToken
 //	env->ReleasePrimitiveArrayCritical(str, arr, 0);
 
 	jintArray res = env->NewIntArray(tokens.size());
-	env->SetIntArrayRegion(res, 0, tokens.size(), tokens.data());
+	env->SetIntArrayRegion(res, 0, tokens.size(), reinterpret_cast<jint*>(tokens.data()));
 	return res;
 }
 
@@ -146,7 +145,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTo
 
 	int32_t n_tokens = env->GetArrayLength(tokenList);
 	llama_token tokens[n_tokens];
-	env->GetIntArrayRegion(tokenList, 0, n_tokens, tokens);
+	env->GetIntArrayRegion(tokenList, 0, n_tokens, reinterpret_cast<jint*>(tokens));
 //	jboolean *is_copy;
 //	llama_token *tokens =
 //			static_cast<llama_token*>(env->GetPrimitiveArrayCritical(tokenList,
@@ -259,7 +258,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doToken
 	env->ReleaseStringCritical(str, jchars);
 
 	jintArray res = env->NewIntArray(tokens.size());
-	env->SetIntArrayRegion(res, 0, tokens.size(), tokens.data());
+	env->SetIntArrayRegion(res, 0, tokens.size(), reinterpret_cast<jint*>(tokens.data()));
 	return res;
 }
 
@@ -309,7 +308,7 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeToken
 //	int32_t n_tokens = env->GetArrayLength(tokenList);
 	int32_t n_tokens = length;
 	llama_token tokens[n_tokens];
-	env->GetIntArrayRegion(tokenList, offset, n_tokens, tokens);
+	env->GetIntArrayRegion(tokenList, offset, n_tokens, reinterpret_cast<jint*>(tokens));
 //	int32_t n_tokens = env->GetArrayLength(tokenList);
 //	jboolean *is_copy;
 //	jint *arr = env->GetIntArrayElements(tokenList, is_copy);

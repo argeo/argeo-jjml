@@ -1,7 +1,6 @@
 #ifndef argeo_jni_h
 #define argeo_jni_h
 
-#include <bits/types/mbstate_t.h>
 #include <jni.h>
 #include <jni_md.h>
 #include <cstdarg>

@@ -1,5 +1,4 @@
 #include <argeo/argeo_jni.h>
-#include <bits/stdint-intn.h>
 #include <ggml.h>
 #include <jni.h>
 #include <jni_md.h>
