@@ -44,13 +44,13 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 			"(D)Z");
 	LongSupplier$getAsLong = LongSupplier$getAsLong(env);
 
-	jclass IntBuffer = env->FindClass("java/nio/IntBuffer");
+	jclass IntBuffer = env->FindClass("java/nio/Buffer");
 	IntBuffer$limit = env->GetMethodID(IntBuffer, "limit", "()I");
 	IntBuffer$limitI = env->GetMethodID(IntBuffer, "limit",
-			"(I)Ljava/nio/IntBuffer;");
+			"(I)Ljava/nio/Buffer;");
 	IntBuffer$position = env->GetMethodID(IntBuffer, "position", "()I");
 	IntBuffer$positionI = env->GetMethodID(IntBuffer, "position",
-			"(I)Ljava/nio/IntBuffer;");
+			"(I)Ljava/nio/Buffer;");
 
 	// EXCEPTIONS
 	IllegalStateException = env->FindClass("java/lang/IllegalStateException");

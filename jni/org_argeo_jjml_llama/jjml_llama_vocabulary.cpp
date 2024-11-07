@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <locale>
 #include <string>
+#include <cstring>
 #include <vector>
 #include <cassert>
 
@@ -176,7 +177,35 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenize
 }
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeAsUtf8(
-		JNIEnv*, jobject, jlong, jobject, jobject, jboolean, jboolean) {
+		JNIEnv *env, jobject, jlong pointer, jobject buf, jobject outBuf,
+		jboolean removeSpecial, jboolean unparseSpecial) {
+	try {
+		auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+
+		int tokens_size = env->CallIntMethod(buf, IntBuffer$limit);
+		llama_token *tokens =
+				static_cast<llama_token*>(env->GetDirectBufferAddress(buf));
+
+		int out_size = env->CallIntMethod(outBuf, IntBuffer$limit);
+		char *out = static_cast<char*>(env->GetDirectBufferAddress(outBuf));
+
+//		std::string text = jjml_tokens_to_cpp_string(model, tokens, tokens_size,
+//				removeSpecial, unparseSpecial);
+		int32_t n_chars = llama_detokenize(model, tokens, tokens_size, out,
+				out_size, removeSpecial, unparseSpecial);
+
+		if (n_chars < 0)
+			throw std::range_error(
+					"Output buffer capacity " + std::to_string(out_size)
+							+ " is too small for " + std::to_string(-n_chars)
+							+ " characters - " + __func__);
+//		std::memcpy(out, text.data(), text.length());
+
+		// set buffer into a proper state
+		env->CallVoidMethod(outBuf, IntBuffer$positionI, n_chars);
+	} catch (const std::exception &ex) {
+		env->ThrowNew(IllegalStateException, ex.what());
+	}
 
 }
 

@@ -102,12 +102,6 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		return new LlamaCppTokenList(this, tokens);
 	}
 
-	public void tokenize(CharSequence str, IntBuffer tokens, boolean addSpecial, boolean parseSpecial) {
-		CharBuffer chars = CharBuffer.wrap(str);
-		ByteBuffer utf8Str = StandardCharsets.UTF_8.encode(chars);
-		vocabulary.tokenizeUtf8(utf8Str, tokens, addSpecial, parseSpecial);
-	}
-
 	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
 		String[] roles = new String[messages.size()];
 		String[] contents = new String[messages.size()];
@@ -158,6 +152,10 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	public int getEmbeddingSize() {
 		return embeddingSize;
+	}
+
+	public LlamaCppVocabulary getVocabulary() {
+		return vocabulary;
 	}
 
 	/*

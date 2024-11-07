@@ -183,7 +183,7 @@ public class LlamaCppBatchProcessor {
 			}
 		} else {
 			IntBuffer input = buf.slice();
-			model.tokenize(prompt, input, true, true);
+			model.getVocabulary().tokenize(prompt, input, true, true);
 			buf.position(input.position());
 
 			input.flip();
