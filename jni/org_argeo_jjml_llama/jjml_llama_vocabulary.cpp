@@ -170,10 +170,44 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTo
 	return nullptr;
 }
 
+static void jjml_llama_detokenize(JNIEnv *env, llama_model *model,
+		llama_token *tokens, int tokens_size, jobject outBuf,
+		bool remove_special, bool unparse_special) {
+	int out_size = env->CallIntMethod(outBuf, IntBuffer$limit);
+	char *out = static_cast<char*>(env->GetDirectBufferAddress(outBuf));
+	int32_t n_chars = llama_detokenize(model, tokens, tokens_size, out,
+			out_size, remove_special, unparse_special);
+
+	if (n_chars < 0)
+		throw std::range_error(
+				"Output buffer capacity " + std::to_string(out_size)
+						+ " is too small for " + std::to_string(-n_chars)
+						+ " characters - " + __func__);
+//		std::memcpy(out, text.data(), text.length());
+
+	// set buffer into a proper state
+	env->CallVoidMethod(outBuf, IntBuffer$positionI, n_chars);
+}
+
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeArrayAsUtf8(
-		JNIEnv*, jobject, jlong, jintArray, jint, jint, jobject, jboolean,
-		jboolean) {
-	// TODO
+		JNIEnv* env, jobject, jlong pointer, jintArray tokensArray, jint offset, jint tokens_size, jobject outBuf, jboolean removeSpecial,
+		jboolean unparseSpecial) {
+	try {
+		auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+
+		void* arr = env->GetPrimitiveArrayCritical(tokensArray,
+				nullptr);
+			llama_token *tokens =
+					static_cast<llama_token*>(arr);
+
+		jjml_llama_detokenize(env, model, tokens, tokens_size, outBuf,
+				removeSpecial, unparseSpecial);
+
+		env->ReleasePrimitiveArrayCritical(tokensArray, arr, 0);
+
+	} catch (const std::exception &ex) {
+		env->ThrowNew(IllegalStateException, ex.what());
+	}
 }
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeAsUtf8(
@@ -186,23 +220,23 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenize
 		llama_token *tokens =
 				static_cast<llama_token*>(env->GetDirectBufferAddress(buf));
 
-		int out_size = env->CallIntMethod(outBuf, IntBuffer$limit);
-		char *out = static_cast<char*>(env->GetDirectBufferAddress(outBuf));
+		jjml_llama_detokenize(env, model, tokens, tokens_size, outBuf,
+				removeSpecial, unparseSpecial);
 
-//		std::string text = jjml_tokens_to_cpp_string(model, tokens, tokens_size,
-//				removeSpecial, unparseSpecial);
-		int32_t n_chars = llama_detokenize(model, tokens, tokens_size, out,
-				out_size, removeSpecial, unparseSpecial);
-
-		if (n_chars < 0)
-			throw std::range_error(
-					"Output buffer capacity " + std::to_string(out_size)
-							+ " is too small for " + std::to_string(-n_chars)
-							+ " characters - " + __func__);
-//		std::memcpy(out, text.data(), text.length());
-
-		// set buffer into a proper state
-		env->CallVoidMethod(outBuf, IntBuffer$positionI, n_chars);
+//		int out_size = env->CallIntMethod(outBuf, IntBuffer$limit);
+//		char *out = static_cast<char*>(env->GetDirectBufferAddress(outBuf));
+//
+//		int32_t n_chars = llama_detokenize(model, tokens, tokens_size, out,
+//				out_size, removeSpecial, unparseSpecial);
+//
+//		if (n_chars < 0)
+//			throw std::range_error(
+//					"Output buffer capacity " + std::to_string(out_size)
+//							+ " is too small for " + std::to_string(-n_chars)
+//							+ " characters - " + __func__);
+//
+//		// set buffer into a proper state
+//		env->CallVoidMethod(outBuf, IntBuffer$positionI, n_chars);
 	} catch (const std::exception &ex) {
 		env->ThrowNew(IllegalStateException, ex.what());
 	}

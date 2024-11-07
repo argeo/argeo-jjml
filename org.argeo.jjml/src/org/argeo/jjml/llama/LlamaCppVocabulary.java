@@ -119,7 +119,16 @@ public class LlamaCppVocabulary {
 	}
 
 	public void deTokenizeUtf8(IntBuffer in, ByteBuffer str, boolean removeSpecial, boolean unparseSpecial) {
-		doDeTokenizeAsUtf8(model.getAsLong(), in, str, removeSpecial, unparseSpecial);
+		if (str.isDirect()) {
+			if (in.isDirect()) {
+				doDeTokenizeAsUtf8(model.getAsLong(), in, str, removeSpecial, unparseSpecial);
+			} else {
+				if (in.hasArray()) {
+					doDeTokenizeArrayAsUtf8(model.getAsLong(), in.array(), in.position(), in.limit() - in.position(),
+							str, removeSpecial, unparseSpecial);
+				}
+			}
+		}
 	}
 
 	/*

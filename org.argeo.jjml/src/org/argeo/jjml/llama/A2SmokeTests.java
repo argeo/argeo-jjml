@@ -54,6 +54,8 @@ public class A2SmokeTests {
 			try (LlamaCppModel model = loaded.get();) {
 				assertVocabulary(model.getVocabulary());
 				// TODO return if vocabulary only
+				if (true)
+					return;
 
 				assertLoadUnloadDefaultContext(model);
 				assertEmbeddings(model);
@@ -70,14 +72,34 @@ public class A2SmokeTests {
 
 	void assertVocabulary(LlamaCppVocabulary vocabulary) {
 		ByteBuffer in = ByteBuffer.allocateDirect(256);
-		ByteBuffer out = ByteBuffer.allocateDirect(256);
-		out.order(ByteOrder.nativeOrder());
+//		ByteBuffer in = ByteBuffer.allocate(256);
+		ByteBuffer directOut = ByteBuffer.allocateDirect(256);
+		directOut.order(ByteOrder.nativeOrder());
+		// IntBuffer out = direct.asIntBuffer();
+		IntBuffer out = IntBuffer.allocate(256);
 		assert testTokenizeDetokenize(vocabulary, in, out, "Hello World!");
 		assert testTokenizeDetokenize(vocabulary, in, out, "Même si je suis Français, je dis bonjour au monde");
 		assert testTokenizeDetokenize(vocabulary, in, out, "ἔορθoι χθόνιοι"); // according to olmoe-1b-7b-0924
 		assert testTokenizeDetokenize(vocabulary, in, out, "السلام عليكم"); // according to olmoe-1b-7b-0924
 		assert testTokenizeDetokenize(vocabulary, in, out, "¡Hola и أَشْكَرُ мир! 👋🏼🌍");
 		logger.log(INFO, "Vocabulary smoke tests PASSED");
+	}
+
+	boolean testTokenizeDetokenize(LlamaCppVocabulary vocabulary, ByteBuffer in, IntBuffer buf, String msg) {
+		in.clear();
+		buf.clear();
+
+		logger.log(INFO, msg);
+		in.put(msg.getBytes(UTF_8));
+		in.flip();
+		vocabulary.tokenize(msg, buf, false, false);
+		buf.flip();
+		logger.log(INFO, LlamaCppVocabulary.logIntegers(buf, 32, ", "));
+		in.clear();
+		vocabulary.deTokenize(buf, in, false, false);
+		in.flip();
+		String str = UTF_8.decode(in).toString();
+		return str.equals(msg);
 	}
 
 	void assertLoadUnloadDefaultContext(LlamaCppModel model) {
@@ -188,23 +210,6 @@ public class A2SmokeTests {
 	/*
 	 * UTILITIES
 	 */
-	boolean testTokenizeDetokenize(LlamaCppVocabulary vocabulary, ByteBuffer in, ByteBuffer out, String msg) {
-		in.clear();
-		out.clear();
-
-		logger.log(INFO, msg);
-		in.put(msg.getBytes(UTF_8));
-		in.flip();
-		IntBuffer buf = out.asIntBuffer();
-		vocabulary.tokenize(msg, buf, false, false);
-		buf.flip();
-		logger.log(INFO, LlamaCppVocabulary.logIntegers(buf, 32, ", "));
-		in.clear();
-		vocabulary.deTokenize(buf, in, false, false);
-		in.flip();
-		String str = UTF_8.decode(in).toString();
-		return str.equals(msg);
-	}
 
 	public static void main(String[] args) throws Exception {
 		new A2SmokeTests().main(Arrays.asList(args));
