@@ -28,6 +28,7 @@ target_link_libraries(llama INTERFACE ${GGML_LOCATION})
 add_library(org_argeo_jjml_llama SHARED 
 	org_argeo_jjml_llama/org_argeo_jjml_llama_.cpp
 	org_argeo_jjml_llama/jjml_llama.cpp
+	org_argeo_jjml_llama/jjml_llama_vocabulary.cpp
 	org_argeo_jjml_llama/jjml_llama_model.cpp
 	org_argeo_jjml_llama/jjml_llama_context.cpp
 	org_argeo_jjml_llama/jjml_llama_sampling.cpp
