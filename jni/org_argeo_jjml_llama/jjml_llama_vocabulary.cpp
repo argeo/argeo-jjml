@@ -258,16 +258,6 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeToken
 		jint size, jboolean removeSpecial, jboolean unparseSpecial) {
 	auto *model = argeo::jni::getPointer<llama_model*>(pointer);
 
-//	int32_t n_tokens = env->GetArrayLength(tokenList);
-//	int32_t n_tokens = size;
-//	llama_token tokens[n_tokens];
-//	env->GetIntArrayRegion(tokenList, pos, n_tokens,
-//			reinterpret_cast<jint*>(tokens));
-//	int32_t n_tokens = env->GetArrayLength(tokenList);
-//	jboolean *is_copy;
-//	jint *arr = env->GetIntArrayElements(tokenList, is_copy);
-//	llama_token *tokens = static_cast<llama_token*>(arr);
-
 	// input
 	void *tokens_arr = env->GetPrimitiveArrayCritical(tokenList,
 	NULL);

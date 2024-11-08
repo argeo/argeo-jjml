@@ -10,6 +10,7 @@ import java.lang.System.Logger.Level;
 import java.lang.reflect.RecordComponent;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.concurrent.FutureTask;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoublePredicate;
 import java.util.function.LongSupplier;
+import java.util.function.Predicate;
 
 import org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole;
 
@@ -77,28 +79,17 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	/*
 	 * USABLE METHODS
 	 */
-//	public String deTokenize(LlamaCppTokenList tokenList, boolean unparseSpecial) {
-//		return deTokenize(tokenList, false, unparseSpecial);
-//	}
-//
-//	public String deTokenize(LlamaCppTokenList tokenList, boolean removeSpecial, boolean unparseSpecial) {
-////		byte[] str = doDeTokenizeAsUtf8Array(tokenList.getTokens(), removeSpecial, unparseSpecial);
-////		return new String(str, UTF_8);
-//		int[] tokens = tokenList.getTokens();
-//		return vocabulary.doDeTokenizeArrayAsString(pointer, tokens, 0, tokens.length, removeSpecial, unparseSpecial);
-//	}
-//
-//	public LlamaCppTokenList tokenizeAsArray(String str, boolean addSpecial) {
-//		return tokenizeAsArray(str, addSpecial, true);
-//	}
-//
-//	public LlamaCppTokenList tokenizeAsArray(String str, boolean addSpecial, boolean parseSpecial) {
-////		int[] tokens = doTokenizeUtf8Array(str.getBytes(UTF_8), addSpecial, parseSpecial);
-//		int[] tokens = vocabulary.doTokenizeStringAsArray(pointer, str, addSpecial, parseSpecial);
-//		return new LlamaCppTokenList(this, tokens);
-//	}
+	public String formatChatMessages(LlamaCppChatMessage... messages) {
+		return formatChatMessages(Arrays.asList(messages));
+	}
 
 	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
+		return formatChatMessages(messages, //
+				(message) -> message.getRole().equals(StandardRole.USER.get()));
+	}
+
+	public String formatChatMessages(List<LlamaCppChatMessage> messages,
+			Predicate<LlamaCppChatMessage> addAssistantTokens) {
 		String[] roles = new String[messages.size()];
 		String[] contents = new String[messages.size()];
 
@@ -106,7 +97,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		for (int i = 0; i < messages.size(); i++) {
 			LlamaCppChatMessage message = messages.get(i);
 			roles[i] = message.getRole();
-			currIsUserRole = message.getRole().equals(StandardRole.USER.get());
+			currIsUserRole = addAssistantTokens.test(message);
 			contents[i] = message.getContent();
 		}
 

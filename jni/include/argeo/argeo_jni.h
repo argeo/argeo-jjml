@@ -12,16 +12,21 @@
 /*
  * PRE-PROCESSING
  */
-#ifndef ARGEO_PERF
+//#define ARGEO_PERF 1
+#ifdef ARGEO_PERF
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 
-#define ARGEO_PERF 1
 #define PERF_DURATION(_begin_) std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - _begin_).count()
 #define PERF_NS(_begin_, msg) "## ARGEO_PERF ## " << std::setfill(' ') << std::setw(16) << PERF_DURATION(_begin_) << " ns " << msg << std::endl
 #define PERF_BEGIN() auto _begin_ = std::chrono::high_resolution_clock::now()
 #define PERF_END(msg) std::cout << PERF_NS(_begin_, msg)
+#else
+#define PERF_DURATION(_begin_)
+#define PERF_NS(_begin_, msg)
+#define PERF_BEGIN()
+#define PERF_END(msg)
 #endif
 
 /*
@@ -182,6 +187,11 @@ inline std::u16string jcharsToUtf16(const jchar *jchars, const jsize length) {
 	const char16_t *u16chars = reinterpret_cast<const char16_t*>(jchars);
 	std::u16string u16text(u16chars, static_cast<size_t>(length));
 	return u16text;
+}
+
+inline std::u16string jstringToUtf16(JNIEnv *env, jstring str) {
+	return argeo::jni::jcharsToUtf16(env->GetStringChars(str, nullptr),
+			env->GetStringLength(str));
 }
 
 // METHODS

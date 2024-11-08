@@ -9,10 +9,17 @@
 #include <string>
 #include <vector>
 #include <cassert>
+#include <cstring>
 
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppModel.h" // IWYU pragma: keep
 #include "org_argeo_jjml_llama_LlamaCppNative.h" // IWYU pragma: keep
+
+/*
+ * FIELDS
+ */
+/** UTF-16 converter. */
+static argeo::jni::utf16_convert utf16_converter;
 
 /*
  * CHAT
@@ -23,59 +30,76 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 	auto *model = argeo::jni::getPointer<llama_model*>(pointer);
 
 	const jsize messages_size = env->GetArrayLength(roles);
-
 	std::vector<llama_chat_message> chat_messages;
-	int alloc_size = 0;
-	for (int i = 0; i < messages_size; i++) {
-		jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
-		jboolean isCopy;
-		const char *role = env->GetStringUTFChars(roleStr, &isCopy);
 
-		jstring contentStr = (jstring) env->GetObjectArrayElement(contents, i);
-		const char *content = env->GetStringUTFChars(contentStr, nullptr);
+	try {
+		int alloc_size = 0;
+		for (int i = 0; i < messages_size; i++) {
+			jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
+			std::u16string u16role = argeo::jni::jstringToUtf16(env, roleStr);
+			std::string u8role = utf16_converter.to_bytes(u16role);
+			char *role = new char[u8role.length()];
+			strcpy(role, u8role.c_str());
 
-		chat_messages.push_back( { role, content });
-		// using the same factor as in common.cpp
-		alloc_size += (env->GetStringUTFLength(roleStr)
-				+ env->GetStringUTFLength(contentStr)) * 1.25;
-	}
+			jstring contentStr = (jstring) env->GetObjectArrayElement(contents,
+					i);
+			std::u16string u16content = argeo::jni::jstringToUtf16(env,
+					contentStr);
+			std::string u8content = utf16_converter.to_bytes(u16content);
+			char *content = new char[u8content.length()];
+			strcpy(content, u8content.c_str());
 
-	const char *ptr_tmpl = nullptr; // TODO custom template
-	std::vector<char> buf(alloc_size);
-	int32_t res = llama_chat_apply_template(model, ptr_tmpl,
-			chat_messages.data(), chat_messages.size(), addAssistantTokens,
-			buf.data(), buf.size());
-
-	// error: chat template is not supported
-	if (res < 0) {
-		if (ptr_tmpl != nullptr) {
-			env->ThrowNew(IllegalStateException,
-					"Custom template is not supported");
-		} else {
-			env->ThrowNew(IllegalStateException,
-					"Built-in template is not supported");
+			llama_chat_message message { role, content };
+			chat_messages.push_back(message);
+			// using the same factor as in common.cpp
+			alloc_size += (u8role.length() + u8content.length()) * 1.25;
 		}
-		return nullptr;
-	}
 
-	// if it turns out that our buffer is too small, we resize it
-	if ((size_t) res > buf.size()) {
-		buf.resize(res);
-		res = llama_chat_apply_template(model, ptr_tmpl, chat_messages.data(),
-				chat_messages.size(), addAssistantTokens, buf.data(),
-				buf.size());
-	}
+		const char *ptr_tmpl = nullptr; // TODO custom template
+		std::vector<char> buf(alloc_size);
+		int32_t res = llama_chat_apply_template(model, ptr_tmpl,
+				chat_messages.data(), chat_messages.size(), addAssistantTokens,
+				buf.data(), buf.size());
 
-	// we clean up, since we don't need the messages anymore
-	for (int i = 0; i < messages_size; i++) {
-		llama_chat_message message = chat_messages[i];
-		jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
-		env->ReleaseStringUTFChars(roleStr, message.role);
-		jstring contentStr = (jstring) env->GetObjectArrayElement(contents, i);
-		env->ReleaseStringUTFChars(contentStr, message.content);
-	}
+		// error: chat template is not supported
+		if (res < 0) {
+			if (ptr_tmpl != nullptr) {
+				env->ThrowNew(IllegalStateException,
+						"Custom template is not supported");
+			} else {
+				env->ThrowNew(IllegalStateException,
+						"Built-in template is not supported");
+			}
+			return nullptr;
+		}
 
-	return env->NewStringUTF(buf.data());
+		// if it turns out that our buffer is too small, we resize it
+		if ((size_t) res > buf.size()) {
+			buf.resize(res);
+			res = llama_chat_apply_template(model, ptr_tmpl,
+					chat_messages.data(), chat_messages.size(),
+					addAssistantTokens, buf.data(), buf.size());
+		}
+
+		// we clean up, since we don't need the messages anymore
+		for (int i = 0; i < messages_size; i++) {
+			llama_chat_message message = chat_messages[i];
+			delete message.role;
+			delete message.content;
+//		jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
+//		env->ReleaseStringUTFChars(roleStr, message.role);
+//		jstring contentStr = (jstring) env->GetObjectArrayElement(contents, i);
+//		env->ReleaseStringUTFChars(contentStr, message.content);
+		}
+
+		std::string u8res(buf.data());
+		u8res.resize(res);
+		std::u16string u16res = utf16_converter.from_bytes(u8res);
+		return argeo::jni::utf16ToJstring(env, u16res);
+	} catch (std::exception &ex) {
+		return argeo::jni::throw_to_java(env, ex);
+	}
+//	return env->NewStringUTF(buf.data());
 }
 
 /*

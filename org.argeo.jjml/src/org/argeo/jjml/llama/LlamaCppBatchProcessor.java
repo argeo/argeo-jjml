@@ -92,9 +92,6 @@ public class LlamaCppBatchProcessor {
 		int tokenCount = promptTokens.limit();
 		int[] promptArr = promptTokens.array();
 
-//		LlamaCppTokenList promptTL = model.tokenizeAsArray(prompt, true);
-//		int tokenCount = promptTL.size();
-
 		int parallelCount = sequenceIds.length;
 		int outputMax = context.getBatchSize();
 		int requiredContextSize = tokenCount + outputMax * parallelCount * 10;
@@ -114,12 +111,8 @@ public class LlamaCppBatchProcessor {
 		// direct buffer area
 		IntBuffer buf;
 		{
-//			ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);// warm up
-//			long begin = System.nanoTime();
 			ByteBuffer directBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
 			directBuf.order(ByteOrder.nativeOrder());// IMPORTANT!
-//			long end = System.nanoTime();
-//			System.out.println("Allocated buffer in    " + (end - begin) / 10 + " ns.");
 			buf = directBuf.asIntBuffer();
 		}
 
@@ -228,7 +221,7 @@ public class LlamaCppBatchProcessor {
 
 				@Override
 				public void completed(Integer result, Integer sequenceIndex) {
-					System.out.println("Sequence with index " + sequenceIndex + " completed.");
+//					System.out.println("Sequence with index " + sequenceIndex + " completed.");
 
 					int sequenceId = sequenceIds[sequenceIndex];
 					IntBuffer output = outputs[sequenceIndex];
@@ -249,7 +242,7 @@ public class LlamaCppBatchProcessor {
 			readBatch(outputs, sequenceIds, outputIds, completionHandler);
 
 			long end = System.nanoTime();
-			System.out.println("Read batch in    " + (end - begin) / 1 + " ns.");
+			//System.out.println("Read batch in    " + (end - begin) / 1 + " ns.");
 
 			int sequencesLeft = 0;
 			for (int i = 0; i < outputIds.length; i++) {
@@ -258,12 +251,8 @@ public class LlamaCppBatchProcessor {
 					output.flip();
 					int[] newTokens = new int[output.limit() - output.position()];
 					output.get(newTokens);
-//					LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
-//					String outputStr = newTL.getAsText();
 					String outputStr = model.getVocabulary().deTokenize(IntBuffer.wrap(newTokens));
-//					System.out.println("\n\n\n Sequence " + i + "\n\n\n" + outputStr);
 					outputStrings[i].append(outputStr);
-					// res.add(outputStr);
 				}
 
 				if (outputIds[i] != NO_OUTPUT_ID) {
@@ -272,22 +261,6 @@ public class LlamaCppBatchProcessor {
 
 				}
 			}
-
-//			int[] newOutputIds = new int[currSequenceCount];
-//			int[] newSequenceIds = new int[currSequenceCount];
-//			int newIndex = 0;
-//			for (int i = 0; i < currOutputIds.length; i++) {
-//				if (currOutputIds[i] == NO_OUTPUT_ID) {
-//					currSequenceCount--;
-//				} else {
-//					newOutputIds[newIndex] = currOutputIds[i];
-//					newSequenceIds[newIndex] = currSequenceIds[i];
-//					newIndex++;
-//				}
-//			}
-//
-//			if (currSequenceCount != newIndex)
-//				throw new IllegalStateException("New index should be equald to curr seuqence count");
 
 			if (sequencesLeft == 0)
 				break reads;
@@ -301,22 +274,7 @@ public class LlamaCppBatchProcessor {
 
 			// TODO check context size and break the loop
 			// TODO timeout?
-
-//			currSequenceIds = new int[currSequenceCount];
-//			System.arraycopy(newSequenceIds, 0, currSequenceIds, 0, currSequenceIds.length);
-//			currOutputIds = new int[currSequenceCount];
-//			System.arraycopy(newOutputIds, 0, currOutputIds, 0, currOutputIds.length);
 		}
-
-//		for (int i = 0; i < outputs.length; i++) {
-//			IntBuffer output = outputs[i];
-//			output.flip();
-//			int[] newTokens = new int[output.limit() - output.position()];
-//			output.get(newTokens);
-//			LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
-//			String outputStr = newTL.getAsText();
-//			res.add(outputStr);
-//		}
 		StringJoiner res = new StringJoiner(
 				"\n\n\n---------------------------------------------------------------\n\n\n");
 		for (int i = 0; i < outputStrings.length; i++)
