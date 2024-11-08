@@ -90,17 +90,25 @@ class A2SmokeTests {
 		in.clear();
 		buf.clear();
 
+		for (char c : msg.toCharArray()) {
+			System.out.println(Character.toString(c));
+		}
+
 		logger.log(INFO, msg);
 		in.put(msg.getBytes(UTF_8));
 		in.flip();
-		vocabulary.tokenize(msg, buf, false, false);
+		vocabulary.tokenize(msg, buf, false, true);
 		buf.flip();
 		logger.log(INFO, LlamaCppVocabulary.logIntegers(buf, 32, ", "));
 		in.clear();
-		vocabulary.deTokenize(buf, in, false, false);
+		vocabulary.deTokenize(buf, in, true, true);
 		in.flip();
 		String str = UTF_8.decode(in).toString();
-		return str.equals(msg);
+		for (char c : str.toCharArray()) {
+			System.out.println(Character.toString(c));
+		}
+		assert str.equals(msg);
+		return true;
 	}
 
 	void assertLoadUnloadDefaultContext(LlamaCppModel model) {

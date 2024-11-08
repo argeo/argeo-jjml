@@ -285,7 +285,8 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doToken
 	auto *model = argeo::jni::getPointer<llama_model*>(pointer);
 
 	const jchar *jchars = env->GetStringCritical(str, nullptr);
-	std::u16string u16text = argeo::jni::jcharsToUtf16(jchars);
+	jsize length = env->GetStringLength(str);
+	std::u16string u16text = argeo::jni::jcharsToUtf16(jchars, length);
 	std::string text = utf16_converter.to_bytes(u16text);
 
 	std::vector<llama_token> tokens = jjml_cpp_string_to_tokens(model, text,

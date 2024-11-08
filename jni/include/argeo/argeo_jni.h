@@ -153,12 +153,12 @@ typedef std::wstring_convert<
 		char16_t> utf16_convert;
 
 /** Convenience method to make casting more readable in code.*/
-inline std::u16string jcharsToUtf16(const jchar *jchars) {
+inline std::u16string jcharsToUtf16(const jchar *jchars, const jsize length) {
 	// sanity check
 	static_assert(sizeof(char16_t) == sizeof(jchar));
 
 	const char16_t *u16chars = reinterpret_cast<const char16_t*>(jchars);
-	std::u16string u16text(u16chars);
+	std::u16string u16text(u16chars, static_cast<size_t>(length));
 	return u16text;
 }
 
@@ -173,7 +173,8 @@ inline const jchar* utf16ToJchars(std::u16string u16text) {
 
 /** UTF-16 string to Java string. No conversion is needed, as this is the default format.*/
 inline jstring utf16ToJstring(JNIEnv *env, std::u16string u16text) {
-	return env->NewString(utf16ToJchars(u16text), u16text.size());
+	return env->NewString(utf16ToJchars(u16text),
+			static_cast<jsize>(u16text.size()));
 }
 
 }  // namespace argeo::jni
