@@ -13,56 +13,6 @@
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppBatchProcessor.h" // IWYU pragma: keep
 
-/*
- * LLAMA UTILITIES
- */
-
-/*
- * BATCH
- */
-//static void jjml_populate_default_samplers(const llama_model *model,
-//		llama_sampler *chain, //
-//		float temp = 0.80f, // <= 0.0 to sample greedily, 0.0 to not output probabilities
-//		int32_t top_k = 40,    // <= 0 to use vocab size
-//		float top_p = 0.95f, // 1.0 = disabled
-//		float min_p = 0.05f, // 0.0 = disabled
-//		float tfs_z = 1.00f, // 1.0 = disabled
-//		float typ_p = 1.00f, // typical_p, 1.0 = disabled
-//		float dynatemp_range = 0.00f, // 0.0 = disabled
-//		float dynatemp_exponent = 1.00f, // controls how entropy maps to temperature in dynamic temperature sampler
-//		int32_t penalty_last_n = 64, // last n tokens to penalize (0 = disable penalty, -1 = context size)
-//		float penalty_repeat = 1.00f, // 1.0 = disabled
-//		float penalty_freq = 0.00f, // 0.0 = disabled
-//		float penalty_present = 0.00f, // 0.0 = disabled
-//		bool penalize_nl = false, // consider newlines as a repeatable token
-//		bool ignore_eos = false, int32_t mirostat = 0, // 0 = disabled, 1 = mirostat, 2 = mirostat 2.0
-//		float mirostat_tau = 5.00f, // target entropy
-//		float mirostat_eta = 0.10f // learning rate
-//		) {
-////    llama_sampler_chain_add(chain,
-////            llama_sampler_init_logit_bias(
-////                llama_n_vocab(model),
-////                logit_bias.size(),
-////                logit_bias.data())),
-//
-//	llama_sampler_chain_add(chain,
-//			llama_sampler_init_penalties(llama_n_vocab(model),
-//					llama_token_eos(model), llama_token_nl(model),
-//					penalty_last_n, penalty_repeat, penalty_freq,
-//					penalty_present, penalize_nl, ignore_eos));
-//	if (temp > 0) {
-//		llama_sampler_chain_add(chain, llama_sampler_init_top_k(top_k));
-//		llama_sampler_chain_add(chain, llama_sampler_init_top_p(top_p, min_p));
-//		llama_sampler_chain_add(chain, llama_sampler_init_temp(temp));
-//
-//		// final sampler
-//		llama_sampler_chain_add(chain,
-//				llama_sampler_init_dist(LLAMA_DEFAULT_SEED)); // !! crashes if seed is not set
-//	} else {
-//		llama_sampler_chain_add(chain, llama_sampler_init_greedy());
-//	}
-//
-//}
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteBatch(
 		JNIEnv *env, jclass, jlong contextPointer, jlong samplerChainPointer,
 		jint contextPosition, jobjectArray inputBuffers, jintArray sequenceIds,
