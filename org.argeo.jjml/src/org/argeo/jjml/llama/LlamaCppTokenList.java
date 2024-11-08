@@ -1,7 +1,9 @@
 package org.argeo.jjml.llama;
 
 import java.io.PrintStream;
+import java.nio.IntBuffer;
 
+@Deprecated
 public class LlamaCppTokenList {
 	private final LlamaCppModel model;
 
@@ -14,6 +16,10 @@ public class LlamaCppTokenList {
 
 	int[] getTokens() {
 		return tokens;
+	}
+
+	IntBuffer asIntBuffer() {
+		return IntBuffer.wrap(tokens);
 	}
 
 	public int size() {
@@ -29,7 +35,7 @@ public class LlamaCppTokenList {
 	}
 
 	public String getAsText() {
-		return model.deTokenize(this, true, true);
+		return model.getVocabulary().deTokenize(asIntBuffer(), true, true);
 	}
 
 	@Override

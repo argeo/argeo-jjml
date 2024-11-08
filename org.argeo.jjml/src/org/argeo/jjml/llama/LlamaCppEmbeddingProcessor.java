@@ -1,5 +1,6 @@
 package org.argeo.jjml.llama;
 
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -10,9 +11,9 @@ public class LlamaCppEmbeddingProcessor {
 	private static native void doProcessEmbeddings(long contextPointer, int[][] tokens, float[] emb);
 
 	public List<LlamaCppEmbedding> processEmbeddings(List<String> prompts) {
-		List<LlamaCppTokenList> tokenLists = new ArrayList<>(prompts.size());
+		List<IntBuffer> tokenLists = new ArrayList<>(prompts.size());
 		for (String prompt : prompts) {
-			LlamaCppTokenList tokenList = context.getModel().tokenizeAsArray(prompt, true);
+			IntBuffer tokenList = context.getModel().getVocabulary().tokenize(prompt);
 			tokenLists.add(tokenList);
 		}
 
@@ -20,8 +21,8 @@ public class LlamaCppEmbeddingProcessor {
 		LlamaCppPoolingType poolingType = context.getPoolingType();
 		int n_embd_count = 0;
 		if (LlamaCppPoolingType.LLAMA_POOLING_TYPE_NONE.equals(poolingType)) {
-			for (LlamaCppTokenList tokenList : tokenLists) {
-				n_embd_count += tokenList.getTokens().length;
+			for (IntBuffer tokenList : tokenLists) {
+				n_embd_count += tokenList.remaining();
 			}
 		} else {
 			n_embd_count = tokenLists.size();
@@ -34,7 +35,7 @@ public class LlamaCppEmbeddingProcessor {
 
 		int[][] tokens = new int[tokenLists.size()][];
 		for (int i = 0; i < tokenLists.size(); i++) {
-			tokens[i] = tokenLists.get(i).getTokens();
+			tokens[i] = tokenLists.get(i).array();
 		}
 		doProcessEmbeddings(context.getAsLong(), tokens, emb);
 

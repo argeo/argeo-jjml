@@ -25,14 +25,6 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doToken
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
- * Method:    doTokenizeUtf8Bytes
- * Signature: (J[BIILjava/nio/IntBuffer;ZZ)V
- */
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeUtf8Bytes
-  (JNIEnv *, jobject, jlong, jbyteArray, jint, jint, jobject, jboolean, jboolean);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
  * Method:    doTokenizeUtf8
  * Signature: (JLjava/nio/ByteBuffer;Ljava/nio/IntBuffer;ZZ)V
  */
@@ -57,14 +49,6 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTo
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
- * Method:    doDeTokenizeArrayAsUtf8
- * Signature: (J[IIILjava/nio/ByteBuffer;ZZ)V
- */
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeArrayAsUtf8
-  (JNIEnv *, jobject, jlong, jintArray, jint, jint, jobject, jboolean, jboolean);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
  * Method:    doDeTokenizeAsUtf8
  * Signature: (JLjava/nio/IntBuffer;Ljava/nio/ByteBuffer;ZZ)V
  */
@@ -78,14 +62,6 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenize
  */
 JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeStringAsArray
   (JNIEnv *, jobject, jlong, jstring, jboolean, jboolean);
-
-/*
- * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
- * Method:    doTokenizeString
- * Signature: (JLjava/lang/String;Ljava/nio/IntBuffer;ZZ)V
- */
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeString
-  (JNIEnv *, jobject, jlong, jstring, jobject, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppVocabulary

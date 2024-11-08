@@ -87,13 +87,17 @@ public class LlamaCppBatchProcessor {
 	}
 
 	public String processBatch(String prompt, int[] sequenceIds, String[] parameters, String postPrompt) {
-		LlamaCppTokenList promptTL = model.tokenizeAsArray(prompt, true);
+		IntBuffer promptTokens = model.getVocabulary().tokenize(prompt);
+		assert promptTokens.position() == 0;
+		int tokenCount = promptTokens.limit();
+		int[] promptArr = promptTokens.array();
 
-//		int predictMax = context.getBatchSize();
+//		LlamaCppTokenList promptTL = model.tokenizeAsArray(prompt, true);
+//		int tokenCount = promptTL.size();
+
 		int parallelCount = sequenceIds.length;
-//		int outputMax = predictMax - systemPromptTL.size();
 		int outputMax = context.getBatchSize();
-		int requiredContextSize = promptTL.size() + outputMax * parallelCount * 10;
+		int requiredContextSize = tokenCount + outputMax * parallelCount * 10;
 
 		LlamaCppContext contextToUse = context;
 
@@ -119,7 +123,6 @@ public class LlamaCppBatchProcessor {
 			buf = directBuf.asIntBuffer();
 		}
 
-		int tokenCount = promptTL.size();
 		int batchSize = context.getBatchSize();
 
 		boolean tokenList = true;
@@ -141,7 +144,7 @@ public class LlamaCppBatchProcessor {
 				buf.position(buf.position() + input.limit());
 
 				// copy data
-				input.put(promptTL.getTokens(), i * batchSize, input.limit());
+				input.put(promptArr, i * batchSize, input.limit());
 				input.flip();
 
 				writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, lastLogits);
@@ -153,30 +156,32 @@ public class LlamaCppBatchProcessor {
 
 				IntBuffer[] inputs = new IntBuffer[parallelCount];
 				for (int i = 0; i < parallelCount; i++) {
-					LlamaCppTokenList parameterTL = model.tokenizeAsArray(parameters[i], true);
-					if (parameterTL.size() * parallelCount > batchSize)// TODO be more precise / robust
+//					LlamaCppTokenList parameterTL = model.tokenizeAsArray(parameters[i], true);
+					IntBuffer parametersTokens = model.getVocabulary().tokenize(parameters[i]);
+					if (parametersTokens.remaining() * parallelCount > batchSize)// TODO be more precise / robust
 						throw new IllegalArgumentException("Parameter '" + parameters[i] + "' is too long.");
 					inputs[i] = buf.slice();
-					inputs[i].limit(parameterTL.size());
+					inputs[i].limit(parametersTokens.remaining());
 					buf.position(buf.position() + inputs[i].limit());
 
 					// copy data
-					inputs[i].put(parameterTL.getTokens(), 0, inputs[i].limit());
+					inputs[i].put(parametersTokens.array(), 0, inputs[i].limit());
 					inputs[i].flip();
 				}
 				writeBatch(inputs, sequenceIds, outputIds, postPrompt == null);
 			}
 
 			if (postPrompt != null) {
-				LlamaCppTokenList postPromptTL = model.tokenizeAsArray(postPrompt, true);
-				if (postPromptTL.size() > batchSize)// TODO be more precise / robust
+//				LlamaCppTokenList postPromptTL = model.tokenizeAsArray(postPrompt, true);
+				IntBuffer postPromptTokens = model.getVocabulary().tokenize(postPrompt);
+				if (postPromptTokens.remaining() > batchSize)// TODO be more precise / robust
 					throw new IllegalArgumentException("Post prompt '" + postPrompt + "' is too long.");
 				IntBuffer input = buf.slice();
-				input.limit(postPromptTL.size());
+				input.limit(postPromptTokens.remaining());
 				buf.position(buf.position() + input.limit());
 
 				// copy data
-				input.put(postPromptTL.getTokens(), 0, input.limit());
+				input.put(postPromptTokens.array(), 0, input.limit());
 				input.flip();
 
 				writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, true);
@@ -253,8 +258,9 @@ public class LlamaCppBatchProcessor {
 					output.flip();
 					int[] newTokens = new int[output.limit() - output.position()];
 					output.get(newTokens);
-					LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
-					String outputStr = newTL.getAsText();
+//					LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
+//					String outputStr = newTL.getAsText();
+					String outputStr = model.getVocabulary().deTokenize(IntBuffer.wrap(newTokens));
 //					System.out.println("\n\n\n Sequence " + i + "\n\n\n" + outputStr);
 					outputStrings[i].append(outputStr);
 					// res.add(outputStr);
