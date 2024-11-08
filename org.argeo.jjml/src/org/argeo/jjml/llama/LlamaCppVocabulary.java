@@ -29,45 +29,38 @@ public class LlamaCppVocabulary {
 	 * 
 	 * @see #doDeTokenizeAsUtf8Array(int[], boolean, boolean)
 	 */
-	private native int[] doTokenizeUtf8BytesAsArray(long pointer, byte[] str, int offset, int length,
+	private static native int[] doTokenizeUtf8BytesAsArray(long pointer, byte[] str, int offset, int length,
 			boolean addSpecial, boolean parseSpecial);
 
-	private native int[] doTokenizeUtf8AsArray(long pointer, ByteBuffer str, boolean addSpecial, boolean parseSpecial);
+	private static native int[] doTokenizeUtf8AsArray(long pointer, ByteBuffer str, int offset, int length,
+			boolean addSpecial, boolean parseSpecial);
 
-//	private native void doTokenizeUtf8Bytes(long pointer, byte[] str, int offset, int length, IntBuffer tokens,
-//			boolean addSpecial, boolean parseSpecial);
-//
-	private native void doTokenizeUtf8(long pointer, ByteBuffer str, IntBuffer tokens, boolean addSpecial,
-			boolean parseSpecial);
+	private static native int doTokenizeUtf8(long pointer, ByteBuffer str, int offset, int length, IntBuffer tokens,
+			int pos, int size, boolean addSpecial, boolean parseSpecial);
 
 	/** De-tokenize as a string encoded in standard UTF-8. */
-	private native byte[] doDeTokenizeArrayAsUtf8Bytes(long pointer, int[] tokens, int offset, int length,
+	private static native byte[] doDeTokenizeArrayAsUtf8Bytes(long pointer, int[] tokens, int pos, int size,
 			boolean removeSpecial, boolean unparseSpecial);
 
-	private native byte[] doDeTokenizeAsUtf8Bytes(long pointer, IntBuffer tokens, boolean removeSpecial,
-			boolean unparseSpecial);
+	private static native byte[] doDeTokenizeAsUtf8Bytes(long pointer, IntBuffer tokens, int pos, int size,
+			boolean removeSpecial, boolean unparseSpecial);
 
-//	private native void doDeTokenizeArrayAsUtf8(long pointer, int[] tokens, int offset, int length, ByteBuffer str,
-//			boolean removeSpecial, boolean unparseSpecial);
-//
-	private native void doDeTokenizeAsUtf8(long pointer, IntBuffer tokens, ByteBuffer str, boolean removeSpecial,
-			boolean unparseSpecial);
+	private static native int doDeTokenizeAsUtf8(long pointer, IntBuffer tokens, int pos, int size, ByteBuffer str,
+			int offset, int length, boolean removeSpecial, boolean unparseSpecial);
 
 	/**
 	 * Tokenize a Java {@link String}. Its UTF-16 representation will be used
 	 * without copy on the native side, where it will be converted to UTF-8.
 	 */
-	private native int[] doTokenizeStringAsArray(long pointer, String str, boolean addSpecial, boolean parseSpecial);
-
-//	private native void doTokenizeString(long pointer, String str, IntBuffer buf, boolean addSpecial,
-//			boolean parseSpecial);
+	private static native int[] doTokenizeStringAsArray(long pointer, String str, boolean addSpecial,
+			boolean parseSpecial);
 
 	/** De-tokenize as a Java {@link String}. */
-	private native String doDeTokenizeArrayAsString(long pointer, int[] tokens, int offset, int length,
+	private static native String doDeTokenizeArrayAsString(long pointer, int[] tokens, int pos, int size,
 			boolean removeSpecial, boolean unparseSpecial);
 
-	private native String doDeTokenizeAsString(long pointer, IntBuffer buf, boolean removeSpecial,
-			boolean unparseSpecial);
+	private static native String doDeTokenizeAsString(long pointer, IntBuffer buf, int pos, int size,
+			boolean removeSpecial, boolean unparseSpecial);
 
 	/*
 	 * API
@@ -83,10 +76,6 @@ public class LlamaCppVocabulary {
 		}
 	}
 
-	final public IntBuffer tokenize(CharSequence str) {
-		return tokenize(str, false, true);
-	}
-
 	public IntBuffer tokenize(CharSequence str, boolean addSpecial, boolean parseSpecial) {
 		int[] arr;
 		if (stringMode) {
@@ -96,11 +85,12 @@ public class LlamaCppVocabulary {
 			ByteBuffer utf8 = UTF_8.encode(chars);
 			arr = tokenizeUtf8(utf8, addSpecial, parseSpecial);
 		}
-		//return IntBuffer.wrap(arr).asReadOnlyBuffer();
+		// return IntBuffer.wrap(arr).asReadOnlyBuffer();
 		return IntBuffer.wrap(arr);
 	}
 
-	public void tokenize(ByteBuffer utf8, IntBuffer tokens, boolean addSpecial, boolean parseSpecial) {
+	public void tokenize(ByteBuffer utf8, IntBuffer tokens, boolean addSpecial, boolean parseSpecial)
+			throws IndexOutOfBoundsException {
 		if (stringMode) {
 			CharBuffer chars = UTF_8.decode(utf8);
 			tokenizeUtf16(chars.toString(), tokens, addSpecial, parseSpecial);
@@ -120,17 +110,17 @@ public class LlamaCppVocabulary {
 		return IntBuffer.wrap(arr);
 	}
 
-	public void deTokenize(IntBuffer in, ByteBuffer utf8, boolean removeSpecial, boolean unparseSpecial) {
+	public void deTokenize(IntBuffer in, ByteBuffer utf8, boolean removeSpecial, boolean unparseSpecial)
+			throws IndexOutOfBoundsException {
 		if (stringMode) {
 			String s = deTokenizeUtf16(in, removeSpecial, unparseSpecial);
-			utf8.put(s.getBytes(UTF_8));
+			byte[] bytes = s.getBytes(UTF_8);
+			if (bytes.length > utf8.remaining())
+				throw new IndexOutOfBoundsException(bytes.length);
+			utf8.put(bytes);
 		} else {
 			deTokenizeUtf8(in, utf8, removeSpecial, unparseSpecial);
 		}
-	}
-
-	public final String deTokenize(IntBuffer in) {
-		return deTokenize(in, true, true);
 	}
 
 	public String deTokenize(IntBuffer in, boolean removeSpecial, boolean unparseSpecial) {
@@ -143,37 +133,69 @@ public class LlamaCppVocabulary {
 	}
 
 	/*
+	 * DEFAULTS
+	 */
+
+	final public IntBuffer tokenize(CharSequence str) {
+		return tokenize(str, false, true);
+	}
+
+	final public void tokenize(CharSequence str, IntBuffer tokens) throws IndexOutOfBoundsException {
+		tokenize(str, tokens, false, true);
+	}
+
+	final public String deTokenize(IntBuffer in) {
+		return deTokenize(in, true, true);
+	}
+
+	final public void deTokenize(IntBuffer in, ByteBuffer out) throws IndexOutOfBoundsException {
+		deTokenize(in, out, true, true);
+	}
+
+	/*
 	 * UTF-8
 	 */
 
-	int[] tokenizeUtf8(ByteBuffer str, boolean addSpecial, boolean parseSpecial) {
-		checkInput(str);
+	int[] tokenizeUtf8(ByteBuffer in, boolean addSpecial, boolean parseSpecial) {
+		checkInput(in);
 		// ensure position is 0
-		ByteBuffer in = str.slice().limit(str.limit() - str.position());
-		int[] tokenArr;
-		if (in.isDirect()) {
-			tokenArr = doTokenizeUtf8AsArray(model.getAsLong(), in, addSpecial, parseSpecial);
-		} else if (in.hasArray()) {
-			byte[] arr = in.array();
-			tokenArr = doTokenizeUtf8BytesAsArray(model.getAsLong(), arr, in.arrayOffset(), in.limit() - in.position(),
-					addSpecial, parseSpecial);
-		} else {// copy
-			byte[] copy = new byte[in.limit() - in.position()];
-			in.get(copy, in.position(), copy.length);
-			tokenArr = doTokenizeUtf8BytesAsArray(model.getAsLong(), copy, 0, copy.length, addSpecial, parseSpecial);
+		// ByteBuffer in = str.slice().limit(str.limit() - str.position());
+		synchronized (in) {
+			int[] tokenArr;
+			if (in.isDirect()) {
+				tokenArr = doTokenizeUtf8AsArray(model.getAsLong(), in, in.position(), in.remaining(), addSpecial,
+						parseSpecial);
+				in.position(in.limit());
+			} else if (in.hasArray() && !in.isReadOnly()) {
+				byte[] arr = in.array();
+				tokenArr = doTokenizeUtf8BytesAsArray(model.getAsLong(), arr, in.arrayOffset(), in.remaining(),
+						addSpecial, parseSpecial);
+				in.position(in.limit());
+			} else {// copy
+				byte[] copy = new byte[in.remaining()];
+				in.get(copy, in.position(), copy.length);
+				tokenArr = doTokenizeUtf8BytesAsArray(model.getAsLong(), copy, 0, copy.length, addSpecial,
+						parseSpecial);
+			}
+			return tokenArr;
 		}
-		return tokenArr;
 	}
 
-	void tokenizeUtf8(ByteBuffer str, IntBuffer tokens, boolean addSpecial, boolean parseSpecial) {
+	void tokenizeUtf8(ByteBuffer str, IntBuffer tokens, boolean addSpecial, boolean parseSpecial)
+			throws IndexOutOfBoundsException {
 		checkInput(str);
 		checkOutput(tokens);
 		synchronized (tokens) {// we are writing into this buffer and changing its position
 			if (str.isDirect() && tokens.isDirect()) {// optimal
-				doTokenizeUtf8(0, str, tokens, addSpecial, parseSpecial);
+				int count = doTokenizeUtf8(model.getAsLong(), str, str.position(), str.remaining(), tokens,
+						tokens.position(), tokens.remaining(), addSpecial, parseSpecial);
+				if (count < 0)
+					throw new IndexOutOfBoundsException(-count);
+				str.position(str.limit());
+				tokens.position(tokens.position() + count);
 			} else {
 				int[] tokenArr = tokenizeUtf8(str, addSpecial, parseSpecial);
-				if (tokenArr.length > (tokens.limit() - tokens.position()))
+				if (tokenArr.length > tokens.remaining())
 					throw new IndexOutOfBoundsException(tokenArr.length);
 				tokens.put(tokenArr);
 			}
@@ -183,12 +205,15 @@ public class LlamaCppVocabulary {
 	byte[] deTokenizeUtf8(IntBuffer in, boolean removeSpecial, boolean unparseSpecial) {
 		byte[] outArr;
 		if (in.isDirect()) {
-			outArr = doDeTokenizeAsUtf8Bytes(model.getAsLong(), in, removeSpecial, unparseSpecial);
-		} else if (in.hasArray()) {
-			outArr = doDeTokenizeArrayAsUtf8Bytes(model.getAsLong(), in.array(), in.arrayOffset(),
-					in.limit() - in.position(), removeSpecial, unparseSpecial);
+			outArr = doDeTokenizeAsUtf8Bytes(model.getAsLong(), in, in.position(), in.remaining(), removeSpecial,
+					unparseSpecial);
+			in.position(in.limit());
+		} else if (in.hasArray() && !in.isReadOnly()) {
+			outArr = doDeTokenizeArrayAsUtf8Bytes(model.getAsLong(), in.array(), in.arrayOffset(), in.remaining(),
+					removeSpecial, unparseSpecial);
+			in.position(in.limit());
 		} else {// copy
-			int[] copy = new int[in.limit() - in.position()];
+			int[] copy = new int[in.remaining()];
 			in.get(copy, in.position(), copy.length);
 			outArr = doDeTokenizeArrayAsUtf8Bytes(model.getAsLong(), copy, 0, copy.length, removeSpecial,
 					unparseSpecial);
@@ -196,9 +221,15 @@ public class LlamaCppVocabulary {
 		return outArr;
 	}
 
-	void deTokenizeUtf8(IntBuffer in, ByteBuffer str, boolean removeSpecial, boolean unparseSpecial) {
+	void deTokenizeUtf8(IntBuffer in, ByteBuffer str, boolean removeSpecial, boolean unparseSpecial)
+			throws IndexOutOfBoundsException {
 		if (in.isDirect() && str.isDirect()) {
-			doDeTokenizeAsUtf8(model.getAsLong(), in, str, removeSpecial, unparseSpecial);
+			int count = doDeTokenizeAsUtf8(model.getAsLong(), in, in.position(), in.remaining(), str, str.position(),
+					str.remaining(), removeSpecial, unparseSpecial);
+			if (count < 0)
+				throw new IndexOutOfBoundsException(-count);
+			str.position(str.position() + count);
+			in.position(in.limit());
 		} else {
 			byte[] bytes = deTokenizeUtf8(in, removeSpecial, unparseSpecial);
 			if (bytes.length > (str.limit() - str.position()))
@@ -242,12 +273,16 @@ public class LlamaCppVocabulary {
 	String deTokenizeUtf16(IntBuffer in, boolean removeSpecial, boolean unparseSpecial) {
 		Objects.requireNonNull(in);
 		if (in.isDirect()) {
-			return doDeTokenizeAsString(model.getAsLong(), in, removeSpecial, unparseSpecial);
+			String res = doDeTokenizeAsString(model.getAsLong(), in, in.position(), in.remaining(), removeSpecial,
+					unparseSpecial);
+			in.position(in.limit());
+			return res;
 		} else {
 			String res;
 			if (in.hasArray()) {
-				res = doDeTokenizeArrayAsString(model.getAsLong(), in.array(), in.arrayOffset(),
-						in.limit() - in.position(), removeSpecial, unparseSpecial);
+				res = doDeTokenizeArrayAsString(model.getAsLong(), in.array(), in.arrayOffset(), in.remaining(),
+						removeSpecial, unparseSpecial);
+				in.position(in.limit());
 			} else {// copy
 				int[] copy = new int[in.limit() - in.position()];
 				in.get(copy, in.position(), copy.length);
@@ -272,6 +307,17 @@ public class LlamaCppVocabulary {
 			throw new IllegalArgumentException("Output buffer is read-only");
 		if (out instanceof IntBuffer buf && !ByteOrder.nativeOrder().equals(buf.order()))
 			throw new IllegalArgumentException("Int buffer does not use native byte order");
+	}
+	/*
+	 * ACCESSORS
+	 */
+
+	synchronized boolean isStringMode() {
+		return stringMode;
+	}
+
+	synchronized void setStringMode(boolean stringMode) {
+		this.stringMode = stringMode;
 	}
 
 	/*

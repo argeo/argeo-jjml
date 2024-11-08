@@ -13,23 +13,23 @@ extern "C" {
  * Signature: (J[BIIZZ)[I
  */
 JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeUtf8BytesAsArray
-  (JNIEnv *, jobject, jlong, jbyteArray, jint, jint, jboolean, jboolean);
+  (JNIEnv *, jclass, jlong, jbyteArray, jint, jint, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
  * Method:    doTokenizeUtf8AsArray
- * Signature: (JLjava/nio/ByteBuffer;ZZ)[I
+ * Signature: (JLjava/nio/ByteBuffer;IIZZ)[I
  */
 JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeUtf8AsArray
-  (JNIEnv *, jobject, jlong, jobject, jboolean, jboolean);
+  (JNIEnv *, jclass, jlong, jobject, jint, jint, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
  * Method:    doTokenizeUtf8
- * Signature: (JLjava/nio/ByteBuffer;Ljava/nio/IntBuffer;ZZ)V
+ * Signature: (JLjava/nio/ByteBuffer;IILjava/nio/IntBuffer;IIZZ)I
  */
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeUtf8
-  (JNIEnv *, jobject, jlong, jobject, jobject, jboolean, jboolean);
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeUtf8
+  (JNIEnv *, jclass, jlong, jobject, jint, jint, jobject, jint, jint, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
@@ -37,23 +37,23 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeUt
  * Signature: (J[IIIZZ)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeArrayAsUtf8Bytes
-  (JNIEnv *, jobject, jlong, jintArray, jint, jint, jboolean, jboolean);
+  (JNIEnv *, jclass, jlong, jintArray, jint, jint, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
  * Method:    doDeTokenizeAsUtf8Bytes
- * Signature: (JLjava/nio/IntBuffer;ZZ)[B
+ * Signature: (JLjava/nio/IntBuffer;IIZZ)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeAsUtf8Bytes
-  (JNIEnv *, jobject, jlong, jobject, jboolean, jboolean);
+  (JNIEnv *, jclass, jlong, jobject, jint, jint, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
  * Method:    doDeTokenizeAsUtf8
- * Signature: (JLjava/nio/IntBuffer;Ljava/nio/ByteBuffer;ZZ)V
+ * Signature: (JLjava/nio/IntBuffer;IILjava/nio/ByteBuffer;IIZZ)I
  */
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeAsUtf8
-  (JNIEnv *, jobject, jlong, jobject, jobject, jboolean, jboolean);
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeAsUtf8
+  (JNIEnv *, jclass, jlong, jobject, jint, jint, jobject, jint, jint, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
@@ -61,7 +61,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenize
  * Signature: (JLjava/lang/String;ZZ)[I
  */
 JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeStringAsArray
-  (JNIEnv *, jobject, jlong, jstring, jboolean, jboolean);
+  (JNIEnv *, jclass, jlong, jstring, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
@@ -69,15 +69,15 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doToken
  * Signature: (J[IIIZZ)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeArrayAsString
-  (JNIEnv *, jobject, jlong, jintArray, jint, jint, jboolean, jboolean);
+  (JNIEnv *, jclass, jlong, jintArray, jint, jint, jboolean, jboolean);
 
 /*
  * Class:     org_argeo_jjml_llama_LlamaCppVocabulary
  * Method:    doDeTokenizeAsString
- * Signature: (JLjava/nio/IntBuffer;ZZ)Ljava/lang/String;
+ * Signature: (JLjava/nio/IntBuffer;IIZZ)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeAsString
-  (JNIEnv *, jobject, jlong, jobject, jboolean, jboolean);
+  (JNIEnv *, jclass, jlong, jobject, jint, jint, jboolean, jboolean);
 
 #ifdef __cplusplus
 }

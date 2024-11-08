@@ -35,7 +35,29 @@ namespace argeo::jni {
 /*
  * EXCEPTION HANDLING
  */
-//	inline CheckJava
+#define RuntimeException(env) env->FindClass("java/lang/RuntimeException")
+#define IllegalArgumentException(env) env->FindClass("java/lang/IllegalArgumentException")
+#define IndexOutOfBoundException(env) env->FindClass("java/lang/IndexOutOfBoundException")
+
+/** Catches a standard C++ exception and throws an unchecked Java exception.
+ * Does nothing if a Java execution is already pending
+ * (that is, the already thrown java exception has priority.
+ * A best effort is made to use an appropriate standard Java exception type.
+ * Returns a <code>nullptr</code> as a convenience,
+ * so that a call to it can be directly returned as the result of a (failed) non-void C++ function.
+ * */
+inline nullptr_t throw_to_java(JNIEnv *env, const std::exception &ex) {
+	if (env->ExceptionCheck())
+		return nullptr;
+	if (typeid(std::invalid_argument) == typeid(ex)) {
+		env->ThrowNew(IllegalArgumentException(env), ex.what());
+	} else if (typeid(std::range_error) == typeid(ex)) {
+		env->ThrowNew(IndexOutOfBoundException(env), ex.what());
+	} else {
+		env->ThrowNew(RuntimeException(env), ex.what());
+	}
+	return nullptr;
+}
 /*
  * SAFE FIELDS AN METHODS ACCESSORS
  */
