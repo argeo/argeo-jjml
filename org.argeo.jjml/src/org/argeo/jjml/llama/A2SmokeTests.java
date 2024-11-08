@@ -16,6 +16,7 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,7 +32,7 @@ import java.util.function.DoubleConsumer;
  * Minimal set of non-destructive in-memory tests, in order to check that a
  * given deployment and/or model are working. Java assertions must be enabled.
  */
-public class A2SmokeTests {
+class A2SmokeTests {
 	private final static Logger logger = System.getLogger(A2SmokeTests.class.getName());
 
 	static {
@@ -127,12 +128,12 @@ public class A2SmokeTests {
 				logger.log(INFO, "=>\n" + s);
 
 			// long begin = System.currentTimeMillis();
-			List<LlamaCppEmbedding> embeddings = embeddingProcessor.processEmbeddings(prompts);
+			List<FloatBuffer> embeddings = embeddingProcessor.processEmbeddings(prompts);
 			assert !embeddings.isEmpty();
 			// System.out.println("\n\n## Processing took " + (System.currentTimeMillis() -
 			// begin) + " ms");
 
-			for (LlamaCppEmbedding embedding : embeddings) {
+			for (FloatBuffer embedding : embeddings) {
 				logger.log(INFO, "<=\n" + embedding);
 			}
 		}

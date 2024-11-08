@@ -1,5 +1,6 @@
 package org.argeo.jjml.llama;
 
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,7 +11,7 @@ public class LlamaCppEmbeddingProcessor {
 
 	private static native void doProcessEmbeddings(long contextPointer, int[][] tokens, float[] emb);
 
-	public List<LlamaCppEmbedding> processEmbeddings(List<String> prompts) {
+	public List<FloatBuffer> processEmbeddings(List<String> prompts) {
 		List<IntBuffer> tokenLists = new ArrayList<>(prompts.size());
 		for (String prompt : prompts) {
 			IntBuffer tokenList = context.getModel().getVocabulary().tokenize(prompt);
@@ -40,7 +41,7 @@ public class LlamaCppEmbeddingProcessor {
 		doProcessEmbeddings(context.getAsLong(), tokens, emb);
 
 		// TODO optimise storage, returned values, and copy
-		List<LlamaCppEmbedding> res = new ArrayList<>(n_embd_count);
+		List<FloatBuffer> res = new ArrayList<>(n_embd_count);
 		for (int j = 0;;) { // at least one iteration (one prompt)
 			float[] arr = new float[n_embd];
 			for (int i = 0;;) { // at least one iteration (n_embd > 0)
@@ -49,7 +50,7 @@ public class LlamaCppEmbeddingProcessor {
 				if (i == n_embd)
 					break;
 			}
-			res.add(new LlamaCppEmbedding(arr));
+			res.add(FloatBuffer.wrap(arr));
 			j++;
 			if (j == n_embd_count)
 				break;

@@ -2,6 +2,7 @@ package org.argeo.jjml.llama;
 
 import java.util.StringJoiner;
 
+@Deprecated
 public class LlamaCppEmbedding {
 	private final float[] vector;
 
