@@ -141,6 +141,7 @@
 									<listOptionValue builtIn="false" value="/usr/lib/jvm/java-17-openjdk-amd64/include"/>
 									<listOptionValue builtIn="false" value="/usr/lib/jvm/java-17-openjdk-amd64/include/linux"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/include/org_argeo_jjml}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1538690077" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -207,7 +208,13 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.base.184024421.1303750083;cdt.managedbuild.toolchain.gnu.base.184024421.1303750083.;cdt.managedbuild.tool.gnu.cpp.compiler.base.197424261;cdt.managedbuild.tool.gnu.cpp.compiler.input.605763912">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.base.184024421.1303750083.1164261955;cdt.managedbuild.toolchain.gnu.base.184024421.1303750083.1164261955.;cdt.managedbuild.tool.gnu.c.compiler.base.1890550061;cdt.managedbuild.tool.gnu.c.compiler.input.1496809228">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.base.184024421.1303750083;cdt.managedbuild.toolchain.gnu.base.184024421.1303750083.;cdt.managedbuild.tool.gnu.c.compiler.base.1286208741;cdt.managedbuild.tool.gnu.c.compiler.input.67652049">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.base.184024421.1303750083.1164261955;cdt.managedbuild.toolchain.gnu.base.184024421.1303750083.1164261955.;cdt.managedbuild.tool.gnu.cpp.compiler.base.984636230;cdt.managedbuild.tool.gnu.cpp.compiler.input.1538690077">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>

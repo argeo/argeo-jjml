@@ -10,7 +10,7 @@ add_library(${TARGET} SHARED
 	jjml_llama_batch.cpp
 	jjml_llama_embedding.cpp
 )
-target_include_directories(${TARGET} PRIVATE ${JNI_INCLUDE_DIRS} ../include org_argeo_jjml_llama )
+target_include_directories(${TARGET} PRIVATE ${JNI_INCLUDE_DIRS} ../include ../include/org_argeo_jjml )
 target_link_libraries(${TARGET} PRIVATE ggml llama)
 
 set_target_properties(${TARGET} PROPERTIES POSITION_INDEPENDENT_CODE ON)
