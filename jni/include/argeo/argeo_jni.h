@@ -6,6 +6,7 @@
 #include <cstdarg>
 #include <fstream>
 #include <locale>
+#include <cstddef>
 #include <string>
 #include <type_traits>
 
@@ -51,7 +52,7 @@ namespace argeo::jni {
  * Returns a <code>nullptr</code> as a convenience,
  * so that a call to it can be directly returned as the result of a (failed) non-void C++ function.
  * */
-inline nullptr_t throw_to_java(JNIEnv *env, const std::exception &ex) {
+inline std::nullptr_t throw_to_java(JNIEnv *env, const std::exception &ex) {
 	if (env->ExceptionCheck())
 		return nullptr;
 	if (typeid(std::invalid_argument) == typeid(ex)) {
