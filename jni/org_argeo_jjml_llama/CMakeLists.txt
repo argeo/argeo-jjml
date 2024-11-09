@@ -10,19 +10,16 @@ add_library(${TARGET} SHARED
 	jjml_llama_batch.cpp
 	jjml_llama_embedding.cpp
 )
-target_include_directories(${TARGET} PRIVATE ${JNI_INCLUDE_DIRS} ../include ../include/org_argeo_jjml )
-target_link_libraries(${TARGET} PRIVATE ggml llama)
+target_include_directories(${TARGET} PRIVATE 
+	../include/org_argeo_jjml ../include ${JNI_INCLUDE_DIRS})
+target_link_libraries(${TARGET} PRIVATE
+	ggml llama)
 
 set_target_properties(${TARGET} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(${TARGET} PRIVATE cxx_std_11)
 
-set_target_properties(${TARGET} PROPERTIES 
-	LIBRARY_OUTPUT_DIRECTORY
-	"${CMAKE_BINARY_DIR}/../a2/${A2_TARGET_ARCH_CATEGORY_PREFIX}/${A2_CATEGORY}"
+set_target_properties(${TARGET} PROPERTIES LIBRARY_OUTPUT_DIRECTORY
+	"${A2_BASE}/${A2_TARGET_ARCH_CATEGORY_PREFIX}/${A2_CATEGORY}"
 )
-
-# MSYS2
-#link_directories("/ucrt64/lib/")
-#target_link_libraries(${TARGET} PRIVATE libggml libllama)
 
 install(TARGETS ${TARGET} LIBRARY)
