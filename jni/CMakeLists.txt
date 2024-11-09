@@ -1,15 +1,10 @@
 cmake_minimum_required(VERSION 3.14) # for add_link_options and implicit target directories.
 project("argeo-jjml-jni" C CXX)
-project("argeo-jjml-jni" VERSION 0.1.0)
-set(SOVERSION 0)
+project("argeo-jjml-jni")
+#set(SOVERSION 0)
 
 # Java
 find_package(JNI)
-
-if (JNI_FOUND)
-    message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
-    message (STATUS "JNI_LIBRARIES=${JNI_LIBRARIES}")
-endif()
 
 if(MINGW)
    # cmake ../../ -DCMAKE_INSTALL_PREFIX=$MINGW_PREFIX
@@ -45,8 +40,10 @@ add_library(org_argeo_jjml_llama SHARED
 set_target_properties(org_argeo_jjml_llama PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(org_argeo_jjml_llama PRIVATE ${JNI_INCLUDE_DIRS} include org_argeo_jjml_llama )
 target_compile_features(org_argeo_jjml_llama PRIVATE cxx_std_11)
-
 target_link_libraries(org_argeo_jjml_llama PRIVATE ggml llama)
+
+set_target_properties(org_argeo_jjml_llama PROPERTIES 
+	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../../a2/${A2_TARGET_ARCH_CATEGORY_PREFIX}/${A2_CATEGORY}")
 
 # MSYS2
 #link_directories("/ucrt64/lib/")
