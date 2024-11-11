@@ -8,25 +8,24 @@
 #include <vector>
 #include <math.h>
 #include <cassert>
+#include <functional>
 
 #include "jjml_llama.h"
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppBatchProcessor.h" // IWYU pragma: keep
 
-JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
-		JNIEnv *env, jclass, jlong contextPointer, jlong samplerChainPointer,
-		jint contextPosition, jobjectArray inputBuffers, jintArray offsets,
+/*
+ * WRITE
+ */
+static jint jjml_llama_batch_processor_write(llama_context *ctx,
+		llama_sampler *smpl, llama_pos cur_pos, void **inputs,
+		const int inputs_count, JNIEnv *env, jintArray offsets,
 		jintArray lengths, jintArray sequenceIds, jintArray outputIds,
 		jboolean lastLogits) {
 	assert(sequenceIds != nullptr);
 	const int n_parallel = env->GetArrayLength(sequenceIds);
 
-	// native references
-	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
 	const llama_model *model = llama_get_model(ctx);
-	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerChainPointer);
-
-	int cur_pos = contextPosition;
 
 	auto *sequence_ids =
 			reinterpret_cast<llama_seq_id*>(env->GetIntArrayElements(
@@ -34,33 +33,31 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
 	auto *output_ids = reinterpret_cast<int32_t*>(env->GetIntArrayElements(
 			outputIds, nullptr));
 
-	assert(inputBuffers != nullptr);
-	int inputs_count = env->GetArrayLength(inputBuffers);
-
 	assert(inputs_count > 0);
-	assert(offsets != nullptr);
-	assert(env->GetArrayLength(offsets) == inputs_count);
 	assert(lengths != nullptr);
 	assert(env->GetArrayLength(lengths) == inputs_count);
-
 	jint *seq_tokens_size = env->GetIntArrayElements(lengths, nullptr);
+	assert(offsets != nullptr);
+	assert(env->GetArrayLength(offsets) == inputs_count);
 	jint *seq_offsets = env->GetIntArrayElements(offsets, nullptr);
 
-	llama_token *seq_tokens[n_parallel];
-	int total_tokens = 0;
-	int max_decodes = 0;
-
+	llama_token *seq_tokens[inputs_count];
 	for (int i = 0; i < inputs_count; i++) {
-		jobject inputBuf = env->GetObjectArrayElement(inputBuffers, i);
-		if (inputBuf != nullptr) {
-			void *input = env->GetDirectBufferAddress(inputBuf);
+		void *input = inputs[i];
+		if (input != nullptr) {
 			seq_tokens[i] = static_cast<llama_token*>(input)
 					+ seq_offsets[i] * sizeof(llama_token);
-
-			total_tokens = total_tokens + seq_tokens_size[i];
-			if (seq_tokens_size[i] > max_decodes)
-				max_decodes = seq_tokens_size[i];
+		} else {
+			seq_tokens[i] = nullptr;
 		}
+	}
+
+	int total_tokens = 0;
+	int max_decodes = 0;
+	for (int i = 0; i < inputs_count; i++) {
+		total_tokens = total_tokens + seq_tokens_size[i];
+		if (seq_tokens_size[i] > max_decodes)
+			max_decodes = seq_tokens_size[i];
 	}
 
 	PERF_BEGIN();
@@ -165,13 +162,16 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
 			llama_batch_free(batch);
 			throw std::current_exception();
 		}
+		llama_batch_free(batch);
 	}
 
 	PERF_END(__func__);
 
 	// clean up
-	env->ReleaseIntArrayElements(offsets, seq_offsets, 0);
-	env->ReleaseIntArrayElements(lengths, seq_tokens_size, 0);
+	env->ReleaseIntArrayElements(offsets, reinterpret_cast<jint*>(seq_offsets),
+			0);
+	env->ReleaseIntArrayElements(lengths,
+			reinterpret_cast<jint*>(seq_tokens_size), 0);
 	env->ReleaseIntArrayElements(sequenceIds,
 			reinterpret_cast<jint*>(sequence_ids), 0);
 	env->ReleaseIntArrayElements(outputIds, reinterpret_cast<jint*>(output_ids),
@@ -179,6 +179,81 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
 
 	return cur_pos;
 }
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
+		JNIEnv *env, jclass, jlong contextPointer, jlong samplerChainPointer,
+		jint contextPosition, jobjectArray inputBuffers, jintArray offsets,
+		jintArray lengths, jintArray sequenceIds, jintArray outputIds,
+		jboolean lastLogits) {
+	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
+	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerChainPointer);
+	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
+
+	int inputs_count = env->GetArrayLength(inputBuffers);
+	void *inputs[inputs_count];
+	for (int i = 0; i < inputs_count; i++) {
+		jobject inputBuf = env->GetObjectArrayElement(inputBuffers, i);
+		if (inputBuf != nullptr) {
+			inputs[i] = env->GetDirectBufferAddress(inputBuf);
+		} else {
+			inputs[i] = nullptr;
+		}
+	}
+
+	jint newPosition;
+	try {
+		newPosition = jjml_llama_batch_processor_write(ctx, smpl, cur_pos,
+				inputs, inputs_count, env, offsets, lengths, sequenceIds,
+				outputIds, lastLogits);
+	} catch (std::exception &ex) {
+		argeo::jni::throw_to_java(env, ex);
+	}
+	return newPosition;
+}
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteArrays(
+		JNIEnv *env, jclass, jlong contextPointer, jlong samplerChainPointer,
+		jint contextPosition, jobjectArray inputArrays, jintArray offsets,
+		jintArray lengths, jintArray sequenceIds, jintArray outputIds,
+		jboolean lastLogits) {
+	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
+	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerChainPointer);
+	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
+
+	int inputs_count = env->GetArrayLength(inputArrays);
+	void *inputs[inputs_count];
+	for (int i = 0; i < inputs_count; i++) {
+		jarray arr = (jarray) env->GetObjectArrayElement(inputArrays, i);
+		if (arr != nullptr) {
+			inputs[i] = env->GetPrimitiveArrayCritical(arr, nullptr);
+		} else {
+			inputs[i] = nullptr;
+		}
+	}
+
+	jint newPosition;
+	try {
+		newPosition = jjml_llama_batch_processor_write(ctx, smpl, cur_pos,
+				inputs, inputs_count, env, offsets, lengths, sequenceIds,
+				outputIds, lastLogits);
+	} catch (std::exception &ex) {
+		argeo::jni::throw_to_java(env, ex);
+	}
+
+	// clean up
+	for (int i = 0; i < inputs_count; i++) {
+		jarray arr = (jarray) env->GetObjectArrayElement(inputArrays, i);
+		if (arr != nullptr) {
+			env->ReleasePrimitiveArrayCritical(arr, inputs[i], 0);
+		}
+	}
+
+	return newPosition;
+}
+
+/*
+ * READ
+ */
 
 static std::vector<llama_token_data> jjml_get_logits(llama_context *ctx,
 		int idx) {
@@ -228,23 +303,15 @@ static llama_token jjml_check_grammar(llama_context *ctx, int idx,
 	return res;
 }
 
-JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBatch(
-		JNIEnv *env, jclass, jlong contextPointer, jlong samplerPtr,
-		jlong grammarSamplerPtr, jint contextPosition,
-		jobjectArray outputBuffers, jintArray sequenceIds, jintArray outputIds,
+static jint jjml_llama_batch_processor_read(llama_context *ctx,
+		llama_sampler *smpl, llama_sampler *grmr, llama_pos cur_pos,
+		void **outputs, const int outputs_count, JNIEnv *env, jintArray offsets,
+		jintArray lengths, jintArray sequenceIds, jintArray outputIds,
 		jobject completionHandler) {
-	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
+
 	const llama_model *model = llama_get_model(ctx);
 
-	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerPtr);
-	auto *grmr =
-			grammarSamplerPtr != 0 ?
-					argeo::jni::getPointer<llama_sampler*>(grammarSamplerPtr) :
-					nullptr;
-
 	const uint32_t NO_OUTPUT_ID = llama_n_batch(ctx);
-
-	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
 
 	const int n_parallel = env->GetArrayLength(sequenceIds);
 	assert(n_parallel > 0 && "Sequence count");
@@ -260,28 +327,47 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	auto *output_ids = reinterpret_cast<int32_t*>(env->GetIntArrayElements(
 			outputIds, nullptr));
 
-	const int outBuffersCount = env->GetArrayLength(outputBuffers);
-	assert(outBuffersCount == n_parallel && "As many buffers as sequences");
+//	const int outBuffersCount = env->GetArrayLength(outputBuffers);
+	assert(outputs_count == n_parallel && "As many buffers as sequences");
 
-	llama_token *seq_tokens[n_parallel];
-	int seq_tokens_size[n_parallel];
+	assert(outputs_count > 0);
+	assert(lengths != nullptr);
+	assert(env->GetArrayLength(lengths) == outputs_count);
+	jint *seq_tokens_size = env->GetIntArrayElements(lengths, nullptr);
+	assert(offsets != nullptr);
+	assert(env->GetArrayLength(offsets) == outputs_count);
+	jint *seq_offsets = env->GetIntArrayElements(offsets, nullptr);
+
+	llama_token *seq_tokens[outputs_count];
+	for (int i = 0; i < outputs_count; i++) {
+		void *output = outputs[i];
+		if (output != nullptr) {
+			seq_tokens[i] = static_cast<llama_token*>(output)
+					+ seq_offsets[i] * sizeof(llama_token);
+		} else {
+			seq_tokens[i] = nullptr;
+		}
+	}
+
+//	llama_token *seq_tokens[n_parallel];
+//	int seq_tokens_size[n_parallel];
 	int max_decodes = 0;
 
 	for (int i = 0; i < n_parallel; i++) {
-		jobject outputBuf = env->GetObjectArrayElement(outputBuffers, i);
-		if (outputBuf != nullptr) {
-			void *output = env->GetDirectBufferAddress(outputBuf);
-			int out_tokens_size = env->CallIntMethod(outputBuf,
-					IntBuffer$limit);
-			assert(out_tokens_size > 0 && "Output buffer capacity");
-
-			llama_token *output_tokens = static_cast<llama_token*>(output);
-
-			seq_tokens[i] = output_tokens;
-			seq_tokens_size[i] = out_tokens_size;
-			if (out_tokens_size > max_decodes)
-				max_decodes = out_tokens_size;
-		}
+//		jobject outputBuf = env->GetObjectArrayElement(outputBuffers, i);
+//		if (outputBuf != nullptr) {
+//			void *output = env->GetDirectBufferAddress(outputBuf);
+//			int out_tokens_size = env->CallIntMethod(outputBuf,
+//					IntBuffer$limit);
+//			assert(out_tokens_size > 0 && "Output buffer capacity");
+//
+//			llama_token *output_tokens = static_cast<llama_token*>(output);
+//
+//			seq_tokens[i] = output_tokens;
+//			seq_tokens_size[i] = out_tokens_size;
+		if (seq_tokens_size[i] > max_decodes)
+			max_decodes = seq_tokens_size[i];
+//		}
 	}
 
 	PERF_BEGIN();
@@ -339,13 +425,13 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 					if (is_eog)
 						output_ids[i] = NO_OUTPUT_ID;
 
-					jobject outputBuf = env->GetObjectArrayElement(
-							outputBuffers, i);
-
-					// set output buffer in a proper state
-					env->CallVoidMethod(outputBuf, IntBuffer$limitI, next_idx);
-					env->CallVoidMethod(outputBuf, IntBuffer$positionI,
-							next_idx);
+//					jobject outputBuf = env->GetObjectArrayElement(
+//							outputBuffers, i);
+//
+//					// set output buffer in a proper state
+//					env->CallVoidMethod(outputBuf, IntBuffer$limitI, next_idx);
+//					env->CallVoidMethod(outputBuf, IntBuffer$positionI,
+//							next_idx);
 
 					// TODO find out while call to static method is failing with centralized class
 					jclass Integer = env->FindClass("java/lang/Integer");
@@ -404,10 +490,96 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadBa
 	llama_batch_free(batch);
 	PERF_END(__func__);
 
-// clean up
+	// clean up
+	env->ReleaseIntArrayElements(offsets, reinterpret_cast<jint*>(seq_offsets),
+			0);
+	env->ReleaseIntArrayElements(lengths,
+			reinterpret_cast<jint*>(seq_tokens_size), 0);
 	env->ReleaseIntArrayElements(outputIds, reinterpret_cast<jint*>(output_ids),
 			0);
 
 	// TODO assert consistency of context position with regard to the output buffers sizes
 	return cur_pos;
 }
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doRead(
+		JNIEnv *env, jclass, jlong contextPointer, jlong samplerPtr,
+		jlong grammarSamplerPtr, jint contextPosition,
+		jobjectArray outputBuffers, jintArray offsets, jintArray lengths,
+		jintArray sequenceIds, jintArray outputIds, jobject completionHandler) {
+	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
+
+	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerPtr);
+	auto *grmr =
+			grammarSamplerPtr != 0 ?
+					argeo::jni::getPointer<llama_sampler*>(grammarSamplerPtr) :
+					nullptr;
+	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
+
+	int outputs_count = env->GetArrayLength(outputBuffers);
+	void *outputs[outputs_count];
+	for (int i = 0; i < outputs_count; i++) {
+		jobject buf = env->GetObjectArrayElement(outputBuffers, i);
+		if (buf != nullptr) {
+			outputs[i] = env->GetDirectBufferAddress(buf);
+		} else {
+			outputs[i] = nullptr;
+		}
+	}
+
+	jint newPosition;
+	try {
+		newPosition = jjml_llama_batch_processor_read(ctx, smpl, grmr, cur_pos,
+				outputs, outputs_count, env, offsets, lengths, sequenceIds,
+				outputIds, completionHandler);
+	} catch (std::exception &ex) {
+		argeo::jni::throw_to_java(env, ex);
+	}
+	return newPosition;
+}
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadToArrays(
+		JNIEnv *env, jclass, jlong contextPointer, jlong samplerPtr,
+		jlong grammarSamplerPtr, jint contextPosition,
+		jobjectArray outputArrays, jintArray offsets, jintArray lengths,
+		jintArray sequenceIds, jintArray outputIds, jobject completionHandler) {
+	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
+
+	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerPtr);
+	auto *grmr =
+			grammarSamplerPtr != 0 ?
+					argeo::jni::getPointer<llama_sampler*>(grammarSamplerPtr) :
+					nullptr;
+	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
+
+	int outputs_count = env->GetArrayLength(outputArrays);
+	void *outputs[outputs_count];
+	for (int i = 0; i < outputs_count; i++) {
+		jarray arr = (jarray) env->GetObjectArrayElement(outputArrays, i);
+		if (arr != nullptr) {
+			outputs[i] = env->GetPrimitiveArrayCritical(arr, nullptr);
+		} else {
+			outputs[i] = nullptr;
+		}
+	}
+
+	jint newPosition;
+	try {
+		newPosition = jjml_llama_batch_processor_read(ctx, smpl, grmr, cur_pos,
+				outputs, outputs_count, env, offsets, lengths, sequenceIds,
+				outputIds, completionHandler);
+	} catch (std::exception &ex) {
+		argeo::jni::throw_to_java(env, ex);
+	}
+
+	// clean up
+	for (int i = 0; i < outputs_count; i++) {
+		jarray arr = (jarray) env->GetObjectArrayElement(outputArrays, i);
+		if (arr != nullptr) {
+			env->ReleasePrimitiveArrayCritical(arr, outputs[i], 0);
+		}
+	}
+
+	return newPosition;
+}
+

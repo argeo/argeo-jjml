@@ -77,8 +77,12 @@ public class LlamaCppBatchProcessor {
 	private static native int doWriteArrays(long contextPointer, long samplerChainPointer, int contextPosition,
 			int[][] input, int[] offsets, int[] lengths, int[] sequenceIds, int[] outputIds, boolean lastLogit);
 
-	private static native int doReadBatch(long contextPointer, long samplerChainPointer, long grammarSamplerPointer,
-			int contextPosition, IntBuffer[] output, int[] sequenceIds, int[] outputIds,
+	private static native int doRead(long contextPointer, long samplerChainPointer, long grammarSamplerPointer,
+			int contextPosition, IntBuffer[] output, int[] offsets, int[] lengths, int[] sequenceIds, int[] outputIds,
+			CompletionHandler<Integer, Integer> completionHandler);
+
+	private static native int doReadToArrays(long contextPointer, long samplerChainPointer, long grammarSamplerPointer,
+			int contextPosition, int[][] output, int[] offsets, int[] lengths, int[] sequenceIds, int[] outputIds,
 			CompletionHandler<Integer, Integer> completionHandler);
 
 	/*
@@ -132,10 +136,55 @@ public class LlamaCppBatchProcessor {
 		}
 	}
 
-	synchronized void readBatch(IntBuffer[] outputs, CompletionHandler<Integer, Integer> completionHandler) {
-		contextPosition = doReadBatch(context.getAsLong(), samplerChain.getAsLong(),
-				validatingSampler != null ? validatingSampler.getAsLong() : 0, contextPosition, outputs, sequenceIds,
-				outputIds, completionHandler);
+	synchronized void readBatch(IntBuffer[] outputs) {
+		if (!(outputs.length == 1 || outputs.length == parallelCount))
+			throw new IllegalArgumentException("There must be"
+					+ (parallelCount > 1 ? " either one or " + parallelCount + " inputs" : " only one input"));
+		int[] offsets = new int[outputs.length];
+		int[] lengths = new int[outputs.length];
+		boolean allDirect = true;
+		for (int i = 0; i < outputs.length; i++) {
+			IntBuffer buf = outputs[i];
+			if (buf.isDirect()) {
+				offsets[i] = buf.position();
+				lengths[i] = buf.remaining();
+			} else {
+				allDirect = false;
+				break;
+			}
+		}
+		int[][] arrays = allDirect ? null : new int[outputs.length][];
+
+		CompletionHandler<Integer, Integer> completionHandler = new CompletionHandler<Integer, Integer>() {
+
+			@Override
+			public void failed(Throwable exc, Integer attachment) {
+			}
+
+			@Override
+			public void completed(Integer result, Integer sequenceIndex) {
+				IntBuffer output = outputs[sequenceIndex];
+				if (arrays != null && !output.hasArray()) {
+					output.put(arrays[sequenceIndex], 0, result);
+				} else {
+					output.position(output.position() + result);
+				}
+				int outputId = outputIds[sequenceIndex];
+				if (outputId == NO_OUTPUT_ID) {
+					// TODO notify generation completed for this sequence
+				}
+			}
+		};
+
+		if (allDirect) {
+			contextPosition = doRead(context.getAsLong(), samplerChain.getAsLong(),
+					validatingSampler != null ? validatingSampler.getAsLong() : 0, contextPosition, outputs, offsets,
+					lengths, sequenceIds, outputIds, completionHandler);
+		} else {
+			contextPosition = doReadToArrays(context.getAsLong(), samplerChain.getAsLong(),
+					validatingSampler != null ? validatingSampler.getAsLong() : 0, contextPosition, arrays, offsets,
+					lengths, sequenceIds, outputIds, completionHandler);
+		}
 	}
 
 	/*
@@ -155,25 +204,25 @@ public class LlamaCppBatchProcessor {
 		int tokenCount = promptTokens.limit();
 		int[] promptArr = promptTokens.array();
 
-		int parallelCount = sequenceIds.length;
 		int outputMax = context.getBatchSize();
 		int requiredContextSize = tokenCount + outputMax * parallelCount * 10;
 
-		LlamaCppContext contextToUse = context;
-
-		int contextSize = contextToUse.getContextSize();
+		int contextSize = context.getContextSize();
 //		System.out.println("Context size: " + contextSize);
-		if (contextToUse.getContextSize() < requiredContextSize)
+		if (context.getContextSize() < requiredContextSize)
 			throw new IllegalArgumentException(
 					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
 							+ " available. Reduce parallel or increase context size.");
 
+		boolean direct = true;
 		// direct buffer area
 		IntBuffer buf;
-		{
+		if (direct) {
 			ByteBuffer directBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
 			directBuf.order(ByteOrder.nativeOrder());// IMPORTANT!
 			buf = directBuf.asIntBuffer();
+		} else {
+			buf = IntBuffer.allocate(requiredContextSize);
 		}
 
 		int batchSize = context.getBatchSize();
@@ -273,33 +322,9 @@ public class LlamaCppBatchProcessor {
 			}
 
 			long begin = System.nanoTime();
-			CompletionHandler<Integer, Integer> completionHandler = new CompletionHandler<Integer, Integer>() {
-
-				@Override
-				public void failed(Throwable exc, Integer attachment) {
-				}
-
-				@Override
-				public void completed(Integer result, Integer sequenceIndex) {
-//					System.out.println("Sequence with index " + sequenceIndex + " completed.");
-
-					int sequenceId = sequenceIds[sequenceIndex];
-					IntBuffer output = outputs[sequenceIndex];
-					int outputId = outputIds[sequenceIndex];
-					if (outputId == NO_OUTPUT_ID) {
-						// generation completed
-//						output.flip();
-//						int[] newTokens = new int[output.limit() - output.position()];
-//						output.get(newTokens);
-//						LlamaCppTokenList newTL = new LlamaCppTokenList(model, newTokens);
-//						String outputStr = newTL.getAsText();
-//						res.add(outputStr);
-					}
-				}
-			};
 
 //		writeBatch(new IntBuffer[] { input }, sequenceIds, true);
-			readBatch(outputs, completionHandler);
+			readBatch(outputs);
 
 			long end = System.nanoTime();
 			// System.out.println("Read batch in " + (end - begin) / 1 + " ns.");
