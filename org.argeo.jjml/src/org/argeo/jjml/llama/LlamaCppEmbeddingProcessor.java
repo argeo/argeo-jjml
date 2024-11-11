@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.argeo.jjml.llama.params.LlamaCppPoolingType;
+
 public class LlamaCppEmbeddingProcessor {
 	private LlamaCppContext context;
 

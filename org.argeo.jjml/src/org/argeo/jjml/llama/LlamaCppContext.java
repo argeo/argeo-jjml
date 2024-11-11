@@ -10,6 +10,8 @@ import java.util.Objects;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
 
+import org.argeo.jjml.llama.params.LlamaCppPoolingType;
+
 /**
  * Access to a llama.cpp context
  * 
