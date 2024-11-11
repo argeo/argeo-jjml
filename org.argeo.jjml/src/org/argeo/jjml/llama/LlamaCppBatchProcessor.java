@@ -71,8 +71,11 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * NATIVE METHODS
 	 */
-	private static native int doWriteBatch(long contextPointer, long samplerChainPointer, int contextPosition,
-			IntBuffer[] input, int[] sequenceIds, int[] outputIds, boolean lastLogit);
+	private static native int doWrite(long contextPointer, long samplerChainPointer, int contextPosition,
+			IntBuffer[] input, int[] offsets, int[] lengths, int[] sequenceIds, int[] outputIds, boolean lastLogit);
+
+	private static native int doWriteArrays(long contextPointer, long samplerChainPointer, int contextPosition,
+			int[][] input, int[] offsets, int[] lengths, int[] sequenceIds, int[] outputIds, boolean lastLogit);
 
 	private static native int doReadBatch(long contextPointer, long samplerChainPointer, long grammarSamplerPointer,
 			int contextPosition, IntBuffer[] output, int[] sequenceIds, int[] outputIds,
@@ -82,8 +85,46 @@ public class LlamaCppBatchProcessor {
 	 * LOW-LEVEL ACCESS
 	 */
 	synchronized void writeBatch(IntBuffer[] inputs, boolean lastLogits) {
-		contextPosition = doWriteBatch(context.getAsLong(), samplerChain.getAsLong(), contextPosition, inputs,
-				sequenceIds, outputIds, lastLogits);
+		if (!(inputs.length == 1 || inputs.length == parallelCount))
+			throw new IllegalArgumentException("There must be"
+					+ (parallelCount > 1 ? " either one or " + parallelCount + " inputs" : " only one input"));
+		int[] offsets = new int[inputs.length];
+		int[] lengths = new int[inputs.length];
+		int[][] arrays = new int[inputs.length][];
+		boolean allDirect = true;
+		for (int i = 0; i < inputs.length; i++) {
+			IntBuffer buf = inputs[i];
+			if (buf.isDirect()) {
+				offsets[i] = buf.position();
+				lengths[i] = buf.remaining();
+			} else {
+				allDirect = false;
+				break;
+			}
+		}
+
+		if (allDirect) {
+			contextPosition = doWrite(context.getAsLong(), samplerChain.getAsLong(), contextPosition, inputs, offsets,
+					lengths, sequenceIds, outputIds, lastLogits);
+		} else {
+			for (int i = 0; i < inputs.length; i++) {
+				IntBuffer buf = inputs[i];
+				if (buf.hasArray()) {
+					offsets[i] = buf.arrayOffset() + buf.position();
+					lengths[i] = buf.remaining();
+					arrays[i] = buf.array();
+				} else {// copy
+					offsets[i] = 0;
+					lengths[i] = buf.remaining();
+					int[] arr = new int[lengths[i]];
+					buf.get(arr);
+					arrays[i] = arr;
+				}
+			}
+			contextPosition = doWriteArrays(context.getAsLong(), samplerChain.getAsLong(), contextPosition, arrays,
+					offsets, lengths, sequenceIds, outputIds, lastLogits);
+		}
+
 		if (lastLogits && contextPosition > 0) {// end of user input
 			samplerChain.reset();
 			if (validatingSampler != null)
