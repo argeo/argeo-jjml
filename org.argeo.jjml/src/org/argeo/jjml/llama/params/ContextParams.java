@@ -104,8 +104,8 @@ public class ContextParams { //
 		Objects.requireNonNull(key);
 		Objects.requireNonNull(value);
 		String str;
-		if (value instanceof IntSupplier supplier) {
-			str = Integer.toString(supplier.getAsInt());
+		if (value instanceof IntSupplier) {
+			str = Integer.toString(((IntSupplier) value).getAsInt());
 		} else {
 			str = value.toString();
 		}

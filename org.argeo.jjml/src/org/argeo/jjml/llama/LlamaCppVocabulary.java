@@ -296,8 +296,9 @@ public class LlamaCppVocabulary {
 	 * UTILITIES
 	 */
 	private void checkInput(Buffer in) {
-		if (in instanceof IntBuffer buf && !ByteOrder.nativeOrder().equals(buf.order()))
-			throw new IllegalArgumentException("Int buffer does not use native byte order");
+		if (in instanceof IntBuffer)
+			if (!ByteOrder.nativeOrder().equals(((IntBuffer) in).order()))
+				throw new IllegalArgumentException("Int buffer does not use native byte order");
 		Objects.requireNonNull(in, "Input buffer cannot be null");
 	}
 
@@ -305,8 +306,9 @@ public class LlamaCppVocabulary {
 		Objects.requireNonNull(out, "Output buffer cannot be null");
 		if (out.isReadOnly())
 			throw new IllegalArgumentException("Output buffer is read-only");
-		if (out instanceof IntBuffer buf && !ByteOrder.nativeOrder().equals(buf.order()))
-			throw new IllegalArgumentException("Int buffer does not use native byte order");
+		if (out instanceof IntBuffer)
+			if (!ByteOrder.nativeOrder().equals(((IntBuffer) out).order()))
+				throw new IllegalArgumentException("Int buffer does not use native byte order");
 	}
 	/*
 	 * ACCESSORS
