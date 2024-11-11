@@ -15,7 +15,7 @@
 /** @brief Get context parameters from Java to native.*/
 static void get_context_params(JNIEnv *env, jobject params,
 		llama_context_params *ctx_params) {
-	jclass clss = env->FindClass((JNI_PKG + "LlamaCppContext$Params").c_str());
+	jclass clss = env->FindClass(JCLASS_CONTEXT_PARAMS.c_str());
 	// integers
 	ctx_params->n_ctx = env->CallIntMethod(params,
 			env->GetMethodID(clss, "n_ctx", "()I"));
@@ -60,7 +60,7 @@ static void get_context_params(JNIEnv *env, jobject params,
 
 JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newContextParams(
 		JNIEnv *env, jclass) {
-	jclass clss = env->FindClass((JNI_PKG + "LlamaCppContext$Params").c_str());
+	jclass clss = env->FindClass(JCLASS_CONTEXT_PARAMS.c_str());
 	// Tip: in order to find the constructor signature, use:
 	// javap -s '../org.argeo.jjml/bin/org/argeo/jjml/llama/LlamaCppContext$Params.class'
 	jmethodID constructor = env->GetMethodID(clss, "<init>",

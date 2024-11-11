@@ -117,7 +117,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSiz
 /** @brief Get model parameters from Java to native.*/
 static void get_model_params(JNIEnv *env, jobject params,
 		llama_model_params *mparams) {
-	jclass clss = env->FindClass((JNI_PKG + "LlamaCppModel$Params").c_str());
+	jclass clss = env->FindClass(JCLASS_MODEL_PARAMS.c_str());
 	mparams->n_gpu_layers = env->CallIntMethod(params,
 			env->GetMethodID(clss, "n_gpu_layers", "()I"));
 	mparams->vocab_only = env->CallIntMethod(params,
@@ -130,7 +130,7 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParam
 		JNIEnv *env, jclass) {
 	llama_model_params mparams = llama_model_default_params();
 
-	jclass clss = env->FindClass((JNI_PKG + "LlamaCppModel$Params").c_str());
+	jclass clss = env->FindClass(JCLASS_MODEL_PARAMS.c_str());
 	jmethodID constructor = env->GetMethodID(clss, "<init>", "(IZZ)V");
 	jobject res = env->NewObject(clss, constructor, //
 			mparams.n_gpu_layers, //

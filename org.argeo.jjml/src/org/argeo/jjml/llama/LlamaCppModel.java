@@ -1,19 +1,13 @@
 package org.argeo.jjml.llama;
 
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
-import java.lang.reflect.RecordComponent;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -25,6 +19,7 @@ import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 
 import org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole;
+import org.argeo.jjml.llama.params.ModelParams;
 
 /**
  * Access to a llama.cpp model
@@ -34,11 +29,13 @@ import org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole;
 public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private final static Logger logger = System.getLogger(LlamaCppModel.class.getName());
 
-	private final static Params DEFAULT_PARAMS;
+	private final static ModelParams DEFAULT_PARAMS;
 
 	static {
-		assert Params.assertParamNames();
-		DEFAULT_PARAMS = Params.defaultModelParams();
+//		DEFAULT_PARAMS = ModelParams.defaultModelParams();
+		LlamaCppNative.ensureLibrariesLoaded();
+		DEFAULT_PARAMS = LlamaCppNative.newModelParams();
+
 	}
 
 	private final long pointer;
@@ -47,13 +44,13 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	private final Path localPath;
 
-	private final Params initParams;
+	private final ModelParams initParams;
 
 	private final int embeddingSize;
 
 	private boolean destroyed = false;
 
-	LlamaCppModel(long pointer, Path localPath, Params initParams) {
+	LlamaCppModel(long pointer, Path localPath, ModelParams initParams) {
 		this.pointer = pointer;
 		this.vocabulary = new LlamaCppVocabulary(this);
 		this.localPath = localPath;
@@ -69,7 +66,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 			boolean addAssistantTokens);
 
 	// Lifecycle
-	private static native long doInit(String localPathStr, Params params, DoublePredicate progressCallback);
+	private static native long doInit(String localPathStr, ModelParams params, DoublePredicate progressCallback);
 
 	private native void doDestroy();
 
@@ -133,7 +130,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		return localPath;
 	}
 
-	public Params getInitParams() {
+	public ModelParams getInitParams() {
 		return initParams;
 	}
 
@@ -153,16 +150,16 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		return load(localPath, DEFAULT_PARAMS);
 	}
 
-	public static Params defaultModelParams() {
+	public static ModelParams defaultModelParams() {
 		return DEFAULT_PARAMS;
 	}
 
 	/**
 	 * Loads a model synchronously. For more fine-grained control (following
 	 * progress, cancelling, executor used) use
-	 * {@link #loadAsync(Path, Params, DoubleConsumer, Executor)}.
+	 * {@link #loadAsync(Path, ModelParams, DoubleConsumer, Executor)}.
 	 */
-	public static LlamaCppModel load(Path localPath, Params initParams) throws IOException {
+	public static LlamaCppModel load(Path localPath, ModelParams initParams) throws IOException {
 		Future<LlamaCppModel> future = loadAsync(localPath, initParams, null, null);
 		try {
 			return future.get();
@@ -176,8 +173,8 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	 * {@link Future#cancel(boolean)} with <code>true</code> on the returned
 	 * {@link Future}.
 	 */
-	public static Future<LlamaCppModel> loadAsync(Path localPath, Params initParams, DoubleConsumer progressCallback,
-			Executor executor) throws IOException {
+	public static Future<LlamaCppModel> loadAsync(Path localPath, ModelParams initParams,
+			DoubleConsumer progressCallback, Executor executor) throws IOException {
 		Objects.requireNonNull(initParams);
 		if (!Files.exists(localPath))
 			throw new FileNotFoundException("Model path " + localPath + " does not exist.");
@@ -210,56 +207,5 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	/*
 	 * CLASSES
 	 */
-	/** Names of the supported model parameters. */
-	public static enum ParamName {
-		n_gpu_layers, //
-		vocab_only, //
-		use_mlock, //
-		;
-	}
-
-	/**
-	 * Initialization parameters of a model. New instance should be created by using
-	 * the {@link #with(Map)} methods on {@link LlamaCppModel#DEFAULT_PARAMS}, with
-	 * the default values populated by the shared library.
-	 * 
-	 * @see llama.h - llama_model_params
-	 */
-	public static record Params(int n_gpu_layers, boolean vocab_only, boolean use_mlock) {
-		public Params with(ParamName key, Object value) {
-			Objects.requireNonNull(key);
-			Objects.requireNonNull(value);
-			return with(Collections.singletonMap(key, value.toString()));
-		}
-
-		public Params with(Map<ParamName, String> p) {
-			return new Params( //
-					parseInt(p.getOrDefault(ParamName.n_gpu_layers, Integer.toString(this.n_gpu_layers))), //
-					parseBoolean(p.getOrDefault(ParamName.vocab_only, Boolean.toString(this.vocab_only))), //
-					parseBoolean(p.getOrDefault(ParamName.use_mlock, Boolean.toString(this.use_mlock))) //
-			);
-		}
-
-		/**
-		 * The default model parameters.
-		 * 
-		 * @see llama.h - llama_model_default_params()
-		 */
-		private static Params defaultModelParams() {
-			LlamaCppNative.ensureLibrariesLoaded();
-			return LlamaCppNative.newModelParams();
-		}
-
-		/** Ensure that components and enum are perfectly in line. */
-		private static boolean assertParamNames() {
-			RecordComponent[] components = Params.class.getRecordComponents();
-			ParamName[] names = ParamName.values();
-			assert components.length == names.length;
-			for (int i = 0; i < components.length; i++) {
-				assert components[i].getName().equals(names[i].name());
-			}
-			return true;
-		}
-	}
 
 }

@@ -5,11 +5,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole.SYSTEM;
 import static org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole.USER;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
-import static org.argeo.jjml.llama.LlamaCppContext.ParamName.embeddings;
-import static org.argeo.jjml.llama.LlamaCppContext.ParamName.n_batch;
-import static org.argeo.jjml.llama.LlamaCppContext.ParamName.n_ctx;
-import static org.argeo.jjml.llama.LlamaCppContext.ParamName.n_ubatch;
 import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
+import static org.argeo.jjml.llama.params.ContextParamName.embeddings;
+import static org.argeo.jjml.llama.params.ContextParamName.n_batch;
+import static org.argeo.jjml.llama.params.ContextParamName.n_ctx;
+import static org.argeo.jjml.llama.params.ContextParamName.n_ubatch;
 
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
@@ -26,6 +26,8 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
+
+import org.argeo.jjml.llama.params.ModelParams;
 
 /**
  * Minimal set of non-destructive in-memory tests, in order to check that a
@@ -48,7 +50,7 @@ class A2SmokeTests {
 				return;
 			Path modelPath = Paths.get(args.get(0));
 
-			LlamaCppModel.Params modelParams = defaultModelParams();
+			ModelParams modelParams = defaultModelParams();
 			Future<LlamaCppModel> loaded = LlamaCppModel.loadAsync(modelPath, modelParams,
 					new LoadModelProgressCallback(), null);
 			try (LlamaCppModel model = loaded.get();) {

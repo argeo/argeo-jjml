@@ -14,6 +14,9 @@
 /** To be concatenated with Java class names.*/
 const std::string JNI_PKG = "org/argeo/jjml/llama/";
 
+const std::string JCLASS_MODEL_PARAMS = JNI_PKG + "params/ModelParams";
+const std::string JCLASS_CONTEXT_PARAMS = JNI_PKG + "params/ContextParams";
+
 // NOTE: Only standard Java or this package's classes should be cached,
 // as the class loader may change in a dynamic environment (such as OSGi)
 /*

@@ -7,6 +7,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import org.argeo.jjml.llama.params.ContextParams;
+import org.argeo.jjml.llama.params.ModelParams;
+
 /**
  * Access to the native shared libraries and capabilities which are independent
  * of an initialized backend (such as default parameters, etc.)
@@ -41,9 +44,9 @@ public class LlamaCppNative {
 	/*
 	 * NATIVE METHODS
 	 */
-	static native LlamaCppModel.Params newModelParams();
+	static native ModelParams newModelParams();
 
-	static native LlamaCppContext.Params newContextParams();
+	static native ContextParams newContextParams();
 
 	/*
 	 * STATIC UTILITIES
