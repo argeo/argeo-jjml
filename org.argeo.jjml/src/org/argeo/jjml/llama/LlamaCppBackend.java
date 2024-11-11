@@ -2,7 +2,7 @@ package org.argeo.jjml.llama;
 
 import java.lang.System.Logger;
 
-import org.argeo.jjml.ggml.GgmlNumaStrategy;
+import org.argeo.jjml.ggml.params.NumaStrategy;
 
 /**
  * Wrapper to the llama.cpp backend. Only static methods as this is a singleton
@@ -50,7 +50,7 @@ public class LlamaCppBackend {
 	 * @see llama.h - llama_backend_init()
 	 * @see llama.h - llama_numa_init()
 	 */
-	public static void init(GgmlNumaStrategy numaStrategy) {
+	public static void init(NumaStrategy numaStrategy) {
 		if (initialized)
 			throw new IllegalStateException("llama.cpp backend is already initialized.");
 

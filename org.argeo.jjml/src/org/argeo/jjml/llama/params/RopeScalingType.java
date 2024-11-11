@@ -7,7 +7,7 @@ import java.util.function.IntSupplier;
  * 
  * @see llama.h - enum llama_rope_scaling_type
  */
-public enum LlamaCppRopeScalingType implements IntSupplier {
+public enum RopeScalingType implements IntSupplier {
 	LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED(-1), //
 	LLAMA_ROPE_SCALING_TYPE_NONE(0), //
 	LLAMA_ROPE_SCALING_TYPE_LINEAR(1), //
@@ -16,7 +16,7 @@ public enum LlamaCppRopeScalingType implements IntSupplier {
 
 	private int code;
 
-	private LlamaCppRopeScalingType(int code) {
+	private RopeScalingType(int code) {
 		this.code = code;
 	}
 
@@ -25,8 +25,8 @@ public enum LlamaCppRopeScalingType implements IntSupplier {
 		return code;
 	}
 
-	public static LlamaCppRopeScalingType byCode(int code) throws IllegalArgumentException {
-		for (LlamaCppRopeScalingType type : values())
+	public static RopeScalingType byCode(int code) throws IllegalArgumentException {
+		for (RopeScalingType type : values())
 			if (type.code == code)
 				return type;
 		throw new IllegalArgumentException("Unkown pooling type code : " + code);

@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.argeo.jjml.llama.params.LlamaCppPoolingType;
+import org.argeo.jjml.llama.params.PoolingType;
 
 public class LlamaCppEmbeddingProcessor {
 	private LlamaCppContext context;
@@ -21,9 +21,9 @@ public class LlamaCppEmbeddingProcessor {
 		}
 
 		// logic taken from llama.cpp's examples/embedding
-		LlamaCppPoolingType poolingType = context.getPoolingType();
+		PoolingType poolingType = context.getPoolingType();
 		int n_embd_count = 0;
-		if (LlamaCppPoolingType.LLAMA_POOLING_TYPE_NONE.equals(poolingType)) {
+		if (PoolingType.LLAMA_POOLING_TYPE_NONE.equals(poolingType)) {
 			for (IntBuffer tokenList : tokenLists) {
 				n_embd_count += tokenList.remaining();
 			}

@@ -7,7 +7,7 @@ import java.util.function.IntSupplier;
  * 
  * @see llama.h - enum llama_pooling_type
  */
-public enum LlamaCppPoolingType implements IntSupplier {
+public enum PoolingType implements IntSupplier {
 	LLAMA_POOLING_TYPE_UNSPECIFIED(-1), //
 	LLAMA_POOLING_TYPE_NONE(0), //
 	LLAMA_POOLING_TYPE_MEAN(1), //
@@ -17,7 +17,7 @@ public enum LlamaCppPoolingType implements IntSupplier {
 
 	private int code;
 
-	private LlamaCppPoolingType(int code) {
+	private PoolingType(int code) {
 		this.code = code;
 	}
 
@@ -26,8 +26,8 @@ public enum LlamaCppPoolingType implements IntSupplier {
 		return code;
 	}
 
-	public static LlamaCppPoolingType byCode(int code) throws IllegalArgumentException {
-		for (LlamaCppPoolingType type : values())
+	public static PoolingType byCode(int code) throws IllegalArgumentException {
+		for (PoolingType type : values())
 			if (type.code == code)
 				return type;
 		throw new IllegalArgumentException("Unkown pooling type code : " + code);

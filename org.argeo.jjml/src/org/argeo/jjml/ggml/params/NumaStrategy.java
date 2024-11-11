@@ -1,4 +1,4 @@
-package org.argeo.jjml.ggml;
+package org.argeo.jjml.ggml.params;
 
 import java.util.function.IntSupplier;
 
@@ -7,7 +7,7 @@ import java.util.function.IntSupplier;
  * 
  * @see ggml.h - enum ggml_numa_strategy
  */
-public enum GgmlNumaStrategy implements IntSupplier {
+public enum NumaStrategy implements IntSupplier {
 	GGML_NUMA_STRATEGY_DISABLED(0), //
 	GGML_NUMA_STRATEGY_DISTRIBUTE(1), //
 	GGML_NUMA_STRATEGY_ISOLATE(2), //
@@ -17,7 +17,7 @@ public enum GgmlNumaStrategy implements IntSupplier {
 
 	private int code;
 
-	private GgmlNumaStrategy(int code) {
+	private NumaStrategy(int code) {
 		this.code = code;
 	}
 
@@ -26,8 +26,8 @@ public enum GgmlNumaStrategy implements IntSupplier {
 		return code;
 	}
 
-	public static GgmlNumaStrategy byCode(int code) throws IllegalArgumentException {
-		for (GgmlNumaStrategy type : values())
+	public static NumaStrategy byCode(int code) throws IllegalArgumentException {
+		for (NumaStrategy type : values())
 			if (type.code == code)
 				return type;
 		throw new IllegalArgumentException("Unkown code : " + code);

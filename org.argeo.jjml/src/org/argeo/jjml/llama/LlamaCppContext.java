@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.function.LongSupplier;
 
 import org.argeo.jjml.llama.params.ContextParams;
-import org.argeo.jjml.llama.params.LlamaCppPoolingType;
+import org.argeo.jjml.llama.params.PoolingType;
 
 /**
  * Access to a llama.cpp context
@@ -26,7 +26,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	private final ContextParams initParams;
 
 	// Effective parameters
-	private final LlamaCppPoolingType poolingType;
+	private final PoolingType poolingType;
 	private final int contextSize;
 	private final int batchSize;
 
@@ -43,7 +43,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 		this.model = model;
 		this.initParams = initParams;
 		int poolingTypeCode = doGetPoolingType();
-		poolingType = LlamaCppPoolingType.byCode(poolingTypeCode);
+		poolingType = PoolingType.byCode(poolingTypeCode);
 		contextSize = doGetContextSize();
 		batchSize = doGetBatchSize();
 	}
@@ -85,7 +85,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 		return initParams;
 	}
 
-	public LlamaCppPoolingType getPoolingType() {
+	public PoolingType getPoolingType() {
 		return poolingType;
 	}
 

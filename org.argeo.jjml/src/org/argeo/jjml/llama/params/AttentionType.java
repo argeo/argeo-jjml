@@ -7,7 +7,7 @@ import java.util.function.IntSupplier;
  * 
  * @see llama.h - enum llama_attention_type
  */
-public enum LlamaCppAttentionType implements IntSupplier {
+public enum AttentionType implements IntSupplier {
 	LLAMA_ATTENTION_TYPE_UNSPECIFIED(-1), //
 	LLAMA_ATTENTION_TYPE_CAUSAL(0), //
 	LLAMA_ATTENTION_TYPE_NON_CAUSAL(1), //
@@ -15,7 +15,7 @@ public enum LlamaCppAttentionType implements IntSupplier {
 
 	private int code;
 
-	private LlamaCppAttentionType(int code) {
+	private AttentionType(int code) {
 		this.code = code;
 	}
 
@@ -24,8 +24,8 @@ public enum LlamaCppAttentionType implements IntSupplier {
 		return code;
 	}
 
-	public static LlamaCppAttentionType byCode(int code) throws IllegalArgumentException {
-		for (LlamaCppAttentionType type : values())
+	public static AttentionType byCode(int code) throws IllegalArgumentException {
+		for (AttentionType type : values())
 			if (type.code == code)
 				return type;
 		throw new IllegalArgumentException("Unkown code : " + code);

@@ -1,4 +1,4 @@
-package org.argeo.jjml.ggml;
+package org.argeo.jjml.ggml.params;
 
 import java.util.function.IntSupplier;
 
