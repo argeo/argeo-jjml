@@ -11,11 +11,11 @@ import org.argeo.jjml.llama.LlamaCppModel;
 
 /**
  * Initialization parameters of a model. New instance should be created by using
- * the {@link #with(Map)} methods on {@link LlamaCppModel#DEFAULT_PARAMS}, with
- * the default values populated by the shared library.
+ * the {@link #with(Map)} methods on {@link LlamaCppModel#defaultModelParams()},
+ * with the default values populated by the shared library.
  * 
  * Note: it provides record-style getters, in order to ease transition to
- * records in the future.
+ * Java records in the future.
  * 
  * @see llama.h - llama_model_params
  */
@@ -24,7 +24,12 @@ public class ModelParams {
 	private final boolean vocab_only;
 	private final boolean use_mlock;
 
-	public ModelParams(int n_gpu_layers, boolean vocab_only, boolean use_mlock) {
+	/** Record-like full constructor */
+	public ModelParams( //
+			int n_gpu_layers, //
+			boolean vocab_only, //
+			boolean use_mlock //
+	) {
 		this.n_gpu_layers = n_gpu_layers;
 		this.vocab_only = vocab_only;
 		this.use_mlock = use_mlock;

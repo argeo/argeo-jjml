@@ -1,5 +1,7 @@
 package org.argeo.jjml.llama;
 
+import org.argeo.jjml.llama.params.DefaultSamplerChainParams;
+
 /** Access to the native standard samplers. */
 public class LlamaCppSamplers {
 
@@ -154,49 +156,6 @@ public class LlamaCppSamplers {
 
 	public static LlamaCppNativeSampler newJavaSampler(LlamaCppJavaSampler javaSampler) {
 		return new LlamaCppNativeSampler(doInitJavaSampler(javaSampler));
-	}
-
-	// TODO distinct params records per sampler
-	public static record DefaultSamplerChainParams(//
-			// see gpt_sampler_params in common.h
-			float temp, // temperature
-			int n_probs, // if greater than 0, output the probabilities of top n_probs tokens
-			long min_keep, // minimal number of tokens to keep
-			int top_k, // <= 0 to use vocab size
-			float top_p, // 1.0 = disabled
-			float min_p, // 0.0 = disabled
-			float tfs_z, // 1.0 = disabled
-			float typ_p, // typical_p, 1.0 = disabled
-			float dynatemp_range, // 0.0 = disabled
-			float dynatemp_exponent, // controls how entropy maps to temperature in dynamic temperature sampler
-			int penalty_last_n, // last n tokens to penalize (0 = disable penalty, -1 = context size)
-			float penalty_repeat, // 1.0 = disabled
-			float penalty_freq, // 0.0 = disabled
-			float penalty_present, // 0.0 = disabled
-			boolean penalize_nl, // consider newlines as a repeatable token
-			boolean ignore_eos //
-	)
-
-	{
-		public DefaultSamplerChainParams() {
-			this(0.80f);
-		}
-
-		/** Default non-deterministic. */
-		public DefaultSamplerChainParams(float temp) {
-			this(temp, 0);
-		}
-
-		/** Default deterministic. */
-		public DefaultSamplerChainParams(int n_probs) {
-			this(0, n_probs);
-		}
-
-		/** Defaults. */
-		public DefaultSamplerChainParams(float temp, int n_probs) {
-			this(temp, n_probs, 0l, 40, 0.95f, 0.05f, 1.00f, 1.00f, 0.00f, 1.00f, 64, 1.00f, 0.00f, 0.00f, false,
-					false);
-		}
 	}
 
 	/** singleton */

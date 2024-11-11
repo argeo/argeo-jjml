@@ -8,6 +8,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.IntSupplier;
 
+import org.argeo.jjml.llama.LlamaCppContext;
+
+/**
+ * Parameters to configure a new context. New instance should be created by
+ * using the {@link #with(Map)} methods on
+ * {@link LlamaCppContext#defaultContextParams()}, with the default values
+ * populated by the shared library.
+ * 
+ * Note: it provides record-style getters, in order to ease transition to Java
+ * records in the future.
+ */
 public class ContextParams { //
 	private final int n_ctx; // text context, 0 = from model
 	private final int n_batch; // logical maximum batch size that can be submitted to llama_decode
@@ -38,6 +49,7 @@ public class ContextParams { //
 	private final boolean flash_attn; // whether to use flash attention [EXPERIMENTAL]
 	private final boolean no_perf; // whether to measure performance timings
 
+	/** Record-like full constructor */
 	public ContextParams(//
 			int n_ctx, //
 			int n_batch, //
