@@ -37,7 +37,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
 	assert(inputBuffers != nullptr);
 	int inputs_count = env->GetArrayLength(inputBuffers);
 
-	assert(inputs_count > 0 && "Inputs count");
+	assert(inputs_count > 0);
 	assert(offsets != nullptr);
 	assert(env->GetArrayLength(offsets) == inputs_count);
 	assert(lengths != nullptr);
@@ -46,36 +46,45 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
 	jint *seq_tokens_size = env->GetIntArrayElements(lengths, nullptr);
 	jint *seq_offsets = env->GetIntArrayElements(offsets, nullptr);
 
+	llama_token *seq_tokens[n_parallel];
+	int total_tokens = 0;
+	int max_decodes = 0;
+
+	for (int i = 0; i < inputs_count; i++) {
+		jobject inputBuf = env->GetObjectArrayElement(inputBuffers, i);
+		if (inputBuf != nullptr) {
+			void *input = env->GetDirectBufferAddress(inputBuf);
+			seq_tokens[i] = static_cast<llama_token*>(input)
+					+ seq_offsets[i] * sizeof(llama_token);
+
+			total_tokens = total_tokens + seq_tokens_size[i];
+			if (seq_tokens_size[i] > max_decodes)
+				max_decodes = seq_tokens_size[i];
+		}
+	}
+
+	PERF_BEGIN();
 	if (inputs_count == 1) { // common prompt to all sequences
 
-		jobject inputBuf = env->GetObjectArrayElement(inputBuffers, 0);
+//		jobject inputBuf = env->GetObjectArrayElement(inputBuffers, 0);
 
-		PERF_BEGIN();
-
-//		int input_tokens_size = env->GetDirectBufferCapacity(inputBuf);
-//		int input_tokens_size = env->CallIntMethod(inputBuf, IntBuffer$limit);
-		int input_tokens_size = seq_tokens_size[0];
-		llama_token *tokens =
-				static_cast<llama_token*>(env->GetDirectBufferAddress(inputBuf))
-						+ seq_offsets[0] * sizeof(llama_token);
+		const int seq_idx = 0;
+		int input_tokens_size = seq_tokens_size[seq_idx];
+//		llama_token *tokens =
+//				static_cast<llama_token*>(env->GetDirectBufferAddress(inputBuf))
+//						+ seq_offsets[0] * sizeof(llama_token);
 
 		llama_batch batch = llama_batch_init(
 				std::max((size_t) input_tokens_size, (size_t) n_parallel), 0,
 				n_parallel);
 
-		// Prepare the initial batch
-		// !! we use the Java direct buffer as source for the input tokens
-//		free(batch.token);
-//		free(batch.seq_id);
-//		batch.token = input_tokens;
 		for (size_t i = 0; i < input_tokens_size; i++) {
-			batch.token[batch.n_tokens] = tokens[i];
+			batch.token[batch.n_tokens] = seq_tokens[seq_idx][i];
 			batch.pos[batch.n_tokens] = cur_pos + i;
 			batch.n_seq_id[batch.n_tokens] = n_parallel;
 			for (size_t j = 0; j < n_parallel; j++) {
 				batch.seq_id[batch.n_tokens][j] = sequence_ids[j];
 			}
-//			batch.seq_id[batch.n_tokens] = sequence_ids;
 			batch.logits[batch.n_tokens] = false;
 
 			batch.n_tokens++;
@@ -83,8 +92,6 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
 		}
 		batch.n_tokens = input_tokens_size;
 		GGML_ASSERT(batch.n_tokens == (int ) input_tokens_size);
-
-		//std::cerr << "Position: " << batch.n_tokens << std::endl;
 
 		// FIXME temporary backward compatibility
 		std::vector<llama_seq_id> seq_ids(n_parallel, 0);
@@ -95,10 +102,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
 		// deal with encoder
 		// TODO does it make sense to do that when it is not the first batch?
 		if (llama_model_has_encoder(model)) {
-			if (llama_encode(ctx, batch)) {
-				env->ThrowNew(IllegalStateException, "Failed to encode");
-				return -1;
-			}
+			if (llama_encode(ctx, batch))
+				throw std::runtime_error("Encode failed");
 
 			llama_token decoder_start_token_id =
 					llama_model_decoder_start_token(model);
@@ -119,9 +124,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
 			}
 		}
 
-		if (llama_decode(ctx, batch) != 0) {
-			env->ThrowNew(IllegalStateException, "Decode failed");
-		}
+		if (llama_decode(ctx, batch) != 0)
+			throw std::runtime_error("Decode failed");
 
 		// sampler accept
 		for (int i = 0; i < batch.n_tokens; i++) {
@@ -130,70 +134,44 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
 		}
 
 		cur_pos = cur_pos + batch.n_tokens;
-
-		// !! dereference what Java owns before batch is freed
-//		batch.token = nullptr;
-//		for (size_t i = 0; i < input_tokens_size; i++) {
-//			batch.seq_id[i] = nullptr;
-//		}
 		llama_batch_free(batch);
 
-		PERF_END(__func__);
 	} else {
-		assert(inputs_count == n_parallel && "As many buffers as sequences");
-
-		llama_token *seq_tokens[n_parallel];
-//		int seq_tokens_size[n_parallel];
-		int total_tokens = 0;
-		int max_decodes = 0;
-
-		for (int i = 0; i < n_parallel; i++) {
-			jobject inputBuf = env->GetObjectArrayElement(inputBuffers, i);
-			if (inputBuf != nullptr) {
-				void *input = env->GetDirectBufferAddress(inputBuf);
-//				int input_tokens_size = env->CallIntMethod(inputBuf,
-//						IntBuffer$limit);
-//				assert(input_tokens_size > 0 && "Input buffer capacity");
-
-				seq_tokens[i] = static_cast<llama_token*>(input)
-						+ seq_offsets[i] * sizeof(llama_token);
-
-//				seq_tokens[i] = input_tokens;
-//				seq_tokens_size[i] = input_tokens_size;
-				total_tokens = total_tokens + seq_tokens_size[i];
-				if (seq_tokens_size[i] > max_decodes)
-					max_decodes = seq_tokens_size[i];
-			}
-		}
+		assert(inputs_count == n_parallel);
 
 		llama_batch batch = llama_batch_init(total_tokens, 0, n_parallel);
+		try {
+			for (size_t j = 0; j < n_parallel; j++) {
+				for (size_t i = 0; i < seq_tokens_size[j]; i++) {
+					batch.token[batch.n_tokens] = seq_tokens[j][i];
+					batch.pos[batch.n_tokens] = cur_pos;
+					batch.n_seq_id[batch.n_tokens] = 1;
+					batch.seq_id[batch.n_tokens][0] = sequence_ids[j];
+					batch.logits[batch.n_tokens] = false;
+					batch.n_tokens++;
+					cur_pos++;
+				}
 
-		for (size_t j = 0; j < n_parallel; j++) {
-			for (size_t i = 0; i < seq_tokens_size[j]; i++) {
-				batch.token[batch.n_tokens] = seq_tokens[j][i];
-				batch.pos[batch.n_tokens] = cur_pos;
-				batch.n_seq_id[batch.n_tokens] = 1;
-				batch.seq_id[batch.n_tokens][0] = sequence_ids[j];
-				batch.logits[batch.n_tokens] = false;
-				batch.n_tokens++;
-				cur_pos++;
+				if (lastLogits) {
+					batch.logits[batch.n_tokens - 1] = true;
+					output_ids[j] = batch.n_tokens - 1;
+				}
 			}
 
-			if (lastLogits) {
-				batch.logits[batch.n_tokens - 1] = true;
-				output_ids[j] = batch.n_tokens - 1;
-			}
+			// TODO deal with encoder models?
+			if (llama_decode(ctx, batch) != 0)
+				throw std::runtime_error("Decode failed");
+		} catch (...) {
+			llama_batch_free(batch);
+			throw std::current_exception();
 		}
-
-		// TODO deal with encoder models?
-
-		if (llama_decode(ctx, batch) != 0) {
-			env->ThrowNew(IllegalStateException, "Decode failed");
-		}
-
-		llama_batch_free(batch);
 	}
+
+	PERF_END(__func__);
+
 	// clean up
+	env->ReleaseIntArrayElements(offsets, seq_offsets, 0);
+	env->ReleaseIntArrayElements(lengths, seq_tokens_size, 0);
 	env->ReleaseIntArrayElements(sequenceIds,
 			reinterpret_cast<jint*>(sequence_ids), 0);
 	env->ReleaseIntArrayElements(outputIds, reinterpret_cast<jint*>(output_ids),
