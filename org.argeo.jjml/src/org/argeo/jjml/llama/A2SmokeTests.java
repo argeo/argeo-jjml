@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
@@ -178,7 +179,7 @@ class A2SmokeTests {
 	}
 
 	void assertBatch(LlamaCppModel model) {
-		int[] sequenceIds = { 1, 10, 100 };
+		Integer[] sequenceIds = { 1, 10, 100 };
 		try ( //
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
 						.with(n_ctx, 6144) //
@@ -188,7 +189,8 @@ class A2SmokeTests {
 						"root ::= [ \\t\\n]* \"TEST\"", "root");//
 		) {
 //			long begin = System.currentTimeMillis();
-			LlamaCppBatchProcessor processor = new LlamaCppBatchProcessor(context, chain, validatingSampler);
+			LlamaCppBatchProcessor processor = new LlamaCppBatchProcessor(context, chain, validatingSampler,
+					Set.of(sequenceIds));
 
 			String prompt = "Write HELLO\n"//
 					+ "HELLO\n"//
@@ -197,7 +199,7 @@ class A2SmokeTests {
 					+ "Write TEST\n" //
 			;
 			logger.log(INFO, "=>\n" + prompt);
-			String str = processor.processBatch(prompt, sequenceIds);
+			String str = processor.processBatch(prompt);
 			logger.log(INFO, "<=\n" + str);
 			// System.out.println("\n\n## Processing took " + (System.currentTimeMillis() -
 			// begin) + " ms");
@@ -225,11 +227,11 @@ class A2SmokeTests {
 			prompt = model.formatChatMessages( //
 					SYSTEM.msg("You are a helpful assistant."), //
 					USER.msg("Briefly introduce the Java programming language."));
-			reply = processor.processSingleBatch(prompt, 0);
+			reply = processor.processSingleBatch(prompt);
 			logger.log(INFO, "\n" + prompt + reply);
 
 			prompt = model.formatChatMessages(USER.msg("Thank you!"));
-			reply = processor.processSingleBatch(prompt, 0);
+			reply = processor.processSingleBatch(prompt);
 			logger.log(INFO, "\n" + prompt + reply);
 
 //			messages.add(USER.msg("Briefly introduce the Java programming language."));

@@ -34,6 +34,8 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	private final int contextSize;
 	private final int batchSize;
 
+	private LlamaCppBatchProcessor batchProcessor;
+
 	public LlamaCppContext(LlamaCppModel model) {
 		this(model, DEFAULT_PARAMS);
 	}
@@ -97,6 +99,16 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 
 	public int getBatchSize() {
 		return batchSize;
+	}
+
+	public LlamaCppBatchProcessor getBatchProcessor() {
+		return batchProcessor;
+	}
+
+	void setBatchProcessor(LlamaCppBatchProcessor batchProcessor) {
+		if (batchProcessor != null)
+			throw new IllegalArgumentException("A batch processor is already active for this context");
+		this.batchProcessor = batchProcessor;
 	}
 
 	/*

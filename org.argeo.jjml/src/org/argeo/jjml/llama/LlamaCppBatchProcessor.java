@@ -4,9 +4,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.channels.CompletionHandler;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -14,33 +17,55 @@ import java.util.concurrent.CompletionStage;
 /**
  * Processing capabilities based on llama.cpp's batch API.
  * 
- * @see llama.h -- llama_batch
+ * @see llama.h - llama_batch
  */
 public class LlamaCppBatchProcessor {
-	final private LlamaCppModel model;
-	final private LlamaCppContext context;
+	private final LlamaCppContext context;
+	private final LlamaCppVocabulary vocabulary;
 
 	private LlamaCppSamplerChain samplerChain;
 	private LlamaCppNativeSampler validatingSampler;
 
-	final private int NO_OUTPUT_ID;
+	/** Marker that end-of-generation has been reached for this sequence. */
+	private final int NO_OUTPUT_ID;
 
-	private int contextPosition = 0;
+	/** Current position from the context perspective. */
+	private volatile int contextPosition = 0;
+
+	// parallelism
+	private final int parallelCount;
+	private final /* const */ int[] sequenceIds;
+	private final int[] outputIds;
 
 	public LlamaCppBatchProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
-		this(context, samplerChain, null);
+		this(context, samplerChain, null, Collections.singleton(0));
 	}
 
 	public LlamaCppBatchProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain,
-			LlamaCppNativeSampler validatingSampler) {
+			LlamaCppNativeSampler validatingSampler, Set<Integer> sequenceIds) {
 		Objects.requireNonNull(context);
+		Objects.requireNonNull(samplerChain);
+		Objects.requireNonNull(sequenceIds);
+
 		this.context = context;
-		this.model = context.getModel();
+		this.vocabulary = context.getModel().getVocabulary();
 		this.samplerChain = samplerChain;
 		this.validatingSampler = validatingSampler;
 
 		// there will never be an output id >= batch size
 		this.NO_OUTPUT_ID = this.context.getBatchSize();
+
+		// parallelism
+		if (sequenceIds.isEmpty())
+			throw new IllegalArgumentException("There must be at least one sequence");
+		this.parallelCount = sequenceIds.size();
+		this.sequenceIds = new int[parallelCount];
+		List<Integer> lst = new ArrayList<>(sequenceIds);
+		Collections.sort(lst);// ensure predictable order, as a best practice
+		for (int i = 0; i < lst.size(); i++)
+			this.sequenceIds[i] = lst.get(i);
+		this.outputIds = new int[parallelCount];
+		Arrays.fill(outputIds, NO_OUTPUT_ID);
 	}
 
 	/*
@@ -56,7 +81,7 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * LOW-LEVEL ACCESS
 	 */
-	synchronized void writeBatch(IntBuffer[] inputs, int[] sequenceIds, int[] outputIds, boolean lastLogits) {
+	synchronized void writeBatch(IntBuffer[] inputs, boolean lastLogits) {
 		contextPosition = doWriteBatch(context.getAsLong(), samplerChain.getAsLong(), contextPosition, inputs,
 				sequenceIds, outputIds, lastLogits);
 		if (lastLogits && contextPosition > 0) {// end of user input
@@ -66,9 +91,7 @@ public class LlamaCppBatchProcessor {
 		}
 	}
 
-	synchronized void readBatch(IntBuffer[] outputs, int[] sequenceIds, int[] outputIds,
-			CompletionHandler<Integer, Integer> completionHandler) {
-		assert outputs.length == sequenceIds.length;
+	synchronized void readBatch(IntBuffer[] outputs, CompletionHandler<Integer, Integer> completionHandler) {
 		contextPosition = doReadBatch(context.getAsLong(), samplerChain.getAsLong(),
 				validatingSampler != null ? validatingSampler.getAsLong() : 0, contextPosition, outputs, sequenceIds,
 				outputIds, completionHandler);
@@ -77,17 +100,16 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * USABLE METHODS
 	 */
-	public String processSingleBatch(String systemPrompt, int sequenceId) {
-		int[] sequenceIds = { sequenceId };
-		return processBatch(systemPrompt, sequenceIds);
+	public String processSingleBatch(String systemPrompt) {
+		return processBatch(systemPrompt);
 	}
 
-	public String processBatch(String prompt, int[] sequenceIds) {
-		return processBatch(prompt, sequenceIds, null, null);
+	public String processBatch(String prompt) {
+		return processBatch(prompt, null, null);
 	}
 
-	public String processBatch(String prompt, int[] sequenceIds, String[] parameters, String postPrompt) {
-		IntBuffer promptTokens = model.getVocabulary().tokenize(prompt);
+	public String processBatch(String prompt, String[] parameters, String postPrompt) {
+		IntBuffer promptTokens = vocabulary.tokenize(prompt);
 		assert promptTokens.position() == 0;
 		int tokenCount = promptTokens.limit();
 		int[] promptArr = promptTokens.array();
@@ -104,9 +126,6 @@ public class LlamaCppBatchProcessor {
 			throw new IllegalArgumentException(
 					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
 							+ " available. Reduce parallel or increase context size.");
-
-		int[] outputIds = new int[sequenceIds.length];
-		Arrays.fill(outputIds, NO_OUTPUT_ID);
 
 		// direct buffer area
 		IntBuffer buf;
@@ -140,7 +159,7 @@ public class LlamaCppBatchProcessor {
 				input.put(promptArr, i * batchSize, input.limit());
 				input.flip();
 
-				writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, lastLogits);
+				writeBatch(new IntBuffer[] { input }, lastLogits);
 			}
 
 			if (parameters != null) {
@@ -150,7 +169,7 @@ public class LlamaCppBatchProcessor {
 				IntBuffer[] inputs = new IntBuffer[parallelCount];
 				for (int i = 0; i < parallelCount; i++) {
 //					LlamaCppTokenList parameterTL = model.tokenizeAsArray(parameters[i], true);
-					IntBuffer parametersTokens = model.getVocabulary().tokenize(parameters[i]);
+					IntBuffer parametersTokens = vocabulary.tokenize(parameters[i]);
 					if (parametersTokens.remaining() * parallelCount > batchSize)// TODO be more precise / robust
 						throw new IllegalArgumentException("Parameter '" + parameters[i] + "' is too long.");
 					inputs[i] = buf.slice();
@@ -161,12 +180,12 @@ public class LlamaCppBatchProcessor {
 					inputs[i].put(parametersTokens.array(), 0, inputs[i].limit());
 					inputs[i].flip();
 				}
-				writeBatch(inputs, sequenceIds, outputIds, postPrompt == null);
+				writeBatch(inputs, postPrompt == null);
 			}
 
 			if (postPrompt != null) {
 //				LlamaCppTokenList postPromptTL = model.tokenizeAsArray(postPrompt, true);
-				IntBuffer postPromptTokens = model.getVocabulary().tokenize(postPrompt);
+				IntBuffer postPromptTokens = vocabulary.tokenize(postPrompt);
 				if (postPromptTokens.remaining() > batchSize)// TODO be more precise / robust
 					throw new IllegalArgumentException("Post prompt '" + postPrompt + "' is too long.");
 				IntBuffer input = buf.slice();
@@ -177,15 +196,15 @@ public class LlamaCppBatchProcessor {
 				input.put(postPromptTokens.array(), 0, input.limit());
 				input.flip();
 
-				writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, true);
+				writeBatch(new IntBuffer[] { input }, true);
 			}
 		} else {
 			IntBuffer input = buf.slice();
-			model.getVocabulary().tokenize(prompt, input, true, true);
+			vocabulary.tokenize(prompt, input, true, true);
 			buf.position(input.position());
 
 			input.flip();
-			writeBatch(new IntBuffer[] { input }, sequenceIds, outputIds, true);
+			writeBatch(new IntBuffer[] { input }, true);
 		}
 
 		StringBuffer[] outputStrings = new StringBuffer[parallelCount];
@@ -239,10 +258,10 @@ public class LlamaCppBatchProcessor {
 			};
 
 //		writeBatch(new IntBuffer[] { input }, sequenceIds, true);
-			readBatch(outputs, sequenceIds, outputIds, completionHandler);
+			readBatch(outputs, completionHandler);
 
 			long end = System.nanoTime();
-			//System.out.println("Read batch in    " + (end - begin) / 1 + " ns.");
+			// System.out.println("Read batch in " + (end - begin) / 1 + " ns.");
 
 			int sequencesLeft = 0;
 			for (int i = 0; i < outputIds.length; i++) {
@@ -251,7 +270,7 @@ public class LlamaCppBatchProcessor {
 					output.flip();
 					int[] newTokens = new int[output.limit() - output.position()];
 					output.get(newTokens);
-					String outputStr = model.getVocabulary().deTokenize(IntBuffer.wrap(newTokens));
+					String outputStr = vocabulary.deTokenize(IntBuffer.wrap(newTokens));
 					outputStrings[i].append(outputStr);
 				}
 
