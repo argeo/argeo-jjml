@@ -7,7 +7,8 @@ add_library(${TARGET} SHARED
 	jjml_llama_model.cpp
 	jjml_llama_context.cpp
 	jjml_llama_sampling.cpp
-	jjml_llama_batch.cpp
+	jjml_llama_batch_write.cpp
+	jjml_llama_batch_read.cpp
 	jjml_llama_embedding.cpp
 )
 target_include_directories(${TARGET} PRIVATE 
