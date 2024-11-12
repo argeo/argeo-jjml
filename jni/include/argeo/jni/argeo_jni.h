@@ -2,14 +2,10 @@
 #define argeo_jni_h
 
 #include <cstdarg>
-#include <fstream>
-#include <locale>
-#include <cstddef>
 #include <string>
-#include <type_traits>
+#include <stdexcept>
 
 #include <jni.h>
-#include <jni_md.h>
 
 /*
  * PRE-PROCESSING
@@ -209,71 +205,6 @@ template<typename T>
 inline T as_pointer(JNIEnv *env, jobject reference) {
 	jlong pointer = env->CallLongMethod(reference, LongSupplier$getAsLong(env));
 	return as_pointer<T>(pointer);
-}
-
-/*
- * ENCODING
- */
-// TYPES
-/** Utility wrapper to adapt locale-bound facets for wstring/wbuffer convert
- *
- * @see https://en.cppreference.com/w/cpp/locale/codecvt
- */
-// We need to use this wrapper in order to have an UTF-16 converter which can be instantiated.
-// see https://en.cppreference.com/w/cpp/locale/codecvt
-// TODO Make sure that there is no better way.
-template<class Facet>
-struct deletable_facet: Facet {
-	template<class ... Args>
-	deletable_facet(Args &&... args) :
-			Facet(std::forward<Args>(args)...) {
-	}
-	~deletable_facet() {
-	}
-};
-
-/** A converter from std::string to std::u16string.
- *
- * Usage:
- * <code>
- *	std::string text = ...
- *	std::u16string u16text = utf16_converter.from_bytes(text);
- * </code>
- */
-typedef std::wstring_convert<
-		argeo::jni::deletable_facet<std::codecvt<char16_t, char, std::mbstate_t>>,
-		char16_t> utf16_convert;
-
-/** Convenience method to make casting more readable in code.*/
-inline std::u16string jchars_to_utf16(const jchar *jchars, const jsize length) {
-	// sanity check
-	static_assert(sizeof(char16_t) == sizeof(jchar));
-
-	const char16_t *u16chars = reinterpret_cast<const char16_t*>(jchars);
-	std::u16string u16text(u16chars, static_cast<size_t>(length));
-	return u16text;
-}
-
-inline std::u16string jstring_to_utf16(JNIEnv *env, jstring str) {
-	jsize length = env->GetStringLength(str);
-	jchar buf[length];
-	env->GetStringRegion(str, 0, length, buf);
-	return argeo::jni::jchars_to_utf16(buf, length);
-}
-
-// METHODS
-/** Convenience method to make casting more readable in code.*/
-inline const jchar* utf16_to_jchars(std::u16string u16text) {
-	// sanity check
-	static_assert(sizeof(char16_t) == sizeof(jchar));
-
-	return reinterpret_cast<const jchar*>(u16text.data());
-}
-
-/** UTF-16 string to Java string. No conversion is needed, as this is the default format.*/
-inline jstring utf16_to_jstring(JNIEnv *env, std::u16string u16text) {
-	return env->NewString(utf16_to_jchars(u16text),
-			static_cast<jsize>(u16text.size()));
 }
 
 }  // namespace argeo::jni

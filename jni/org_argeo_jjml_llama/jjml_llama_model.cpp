@@ -2,14 +2,13 @@
 #include <cstring>
 #include <functional>
 #include <iostream>
-#include <locale>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include <llama.h>
 
 #include <argeo/jni/argeo_jni.h>
+#include <argeo/jni/argeo_jni_encoding.h>
 
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppModel.h" // IWYU pragma: keep
