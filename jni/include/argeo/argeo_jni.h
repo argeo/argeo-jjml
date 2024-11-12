@@ -75,9 +75,62 @@ inline std::nullptr_t throw_to_java(JNIEnv *env, const std::exception &ex) {
 /*
  * SAFE FIELDS AN METHODS ACCESSORS
  */
-inline jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name,
-		const char *sig) {
-	return env->GetFieldID(clazz, name, sig);
+// ! We assume modified UTF-8 will work like C-strings
+/** The name of this Java class. */
+inline std::string jclass_name(JNIEnv *env, jclass clazz) {
+	// we first need to get the class descriptor as an object ...
+	jclass clsObj = env->GetObjectClass(clazz);
+	// ... in order to find the proper method ...
+	jmethodID Class$getName = env->GetMethodID(clsObj, "getName",
+			"()Ljava/lang/String;");
+	// ... to apply on the class passed as argument
+	jstring name = (jstring) env->CallObjectMethod(clazz, Class$getName);
+	jsize length = env->GetStringLength(name);
+	std::string str;
+	str.resize(length);
+	env->GetStringUTFRegion(name, 0, length, str.data());
+	return str;
+}
+
+/** This Java field. */
+inline jfieldID jfield_id(JNIEnv *env, jclass clazz, std::string name,
+		std::string sig) {
+	jfieldID res = env->GetFieldID(clazz, name.c_str(), sig.c_str());
+	if (res == NULL)
+		throw std::invalid_argument(
+				"Invalid field '" + name + "' with signature " + sig
+						+ " of class " + jclass_name(env, clazz));
+	return res;
+}
+
+/** This Java method. */
+inline jmethodID jmethod_id(JNIEnv *env, jclass clazz, std::string name,
+		std::string sig) {
+	jmethodID res = env->GetMethodID(clazz, name.c_str(), sig.c_str());
+	if (res == NULL)
+		throw std::invalid_argument(
+				"Invalid method '" + name + "' with signature " + sig
+						+ " of class " + jclass_name(env, clazz));
+	return res;
+}
+
+/** This Java static method. */
+inline jmethodID jmethod_id_static(JNIEnv *env, jclass clazz, std::string name,
+		std::string sig) {
+	jmethodID res = env->GetStaticMethodID(clazz, name.c_str(), sig.c_str());
+	if (res == NULL)
+		throw std::invalid_argument(
+				"Invalid static method '" + name + "' with signature " + sig
+						+ " of class " + jclass_name(env, clazz));
+	return res;
+}
+
+/** This Java class. */
+inline jclass find_jclass(JNIEnv *env, std::string name) {
+	jclass res = env->FindClass(name.c_str());
+	if (res == NULL)
+		throw std::invalid_argument("Invalid class " + name);
+	return res;
 }
 
 /*

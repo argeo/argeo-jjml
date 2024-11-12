@@ -163,17 +163,8 @@ static jint jjml_llama_batch_processor_read(llama_context *ctx,
 				if (is_eog)
 					output_ids[i] = NO_OUTPUT_ID;
 
-//					jobject outputBuf = env->GetObjectArrayElement(
-//							outputBuffers, i);
-//
-//					// set output buffer in a proper state
-//					env->CallVoidMethod(outputBuf, IntBuffer$limitI, next_idx);
-//					env->CallVoidMethod(outputBuf, IntBuffer$positionI,
-//							next_idx);
-
-				// TODO find out while call to static method is failing with centralized class
-				jclass Integer = env->FindClass("java/lang/Integer");
-
+				jclass Integer = argeo::jni::find_jclass(env,
+						"java/lang/Integer");
 				jobject completionHandlerResult = env->CallStaticObjectMethod(
 						Integer, Integer$valueOf, next_idx);
 				jobject completionHandlerAttachment =

@@ -113,9 +113,9 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_newModelPara
 		JNIEnv *env, jclass) {
 	llama_model_params mparams = llama_model_default_params();
 
-	jclass clss = env->FindClass(JCLASS_MODEL_PARAMS.c_str());
-	jmethodID constructor = env->GetMethodID(clss, "<init>", "(IZZZ)V");
-	jobject res = env->NewObject(clss, constructor, //
+	jobject res = env->NewObject(
+			argeo::jni::find_jclass(env, JCLASS_MODEL_PARAMS), //
+			ModelParams$init, //
 			mparams.n_gpu_layers, //
 			mparams.vocab_only, //
 			mparams.use_mmap, //

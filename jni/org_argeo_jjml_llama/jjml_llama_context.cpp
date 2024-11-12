@@ -61,13 +61,10 @@ static void get_context_params(JNIEnv *env, jobject params,
 
 JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_newContextParams(
 		JNIEnv *env, jclass) {
-	jclass clss = env->FindClass(JCLASS_CONTEXT_PARAMS.c_str());
-	// Tip: in order to find the constructor signature, use:
-	// javap -s '../org.argeo.jjml/bin/org/argeo/jjml/llama/LlamaCppContext$Params.class'
-	jmethodID constructor = env->GetMethodID(clss, "<init>",
-			"(IIIIIIIIIFFFFFFIFIIZZZZ)V");
 	llama_context_params ctx_params = llama_context_default_params();
-	jobject res = env->NewObject(clss, constructor, //
+	jobject res = env->NewObject(
+			argeo::jni::find_jclass(env, JCLASS_CONTEXT_PARAMS), //
+			ContextParams$init, //
 			ctx_params.n_ctx, //
 			ctx_params.n_batch, //
 			ctx_params.n_ubatch, //
