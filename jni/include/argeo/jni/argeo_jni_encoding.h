@@ -48,6 +48,11 @@ inline std::u16string jchars_to_utf16(const jchar *jchars, const jsize length) {
 	return u16text;
 }
 
+/** Convert a jstring to an UTF-16 string.
+ * Note that the characters are copied,
+ *  use jchars_to_utf16 in order to work directly
+ *  on the characters returned by GetString / GetStringCritical.
+ */
 inline std::u16string jstring_to_utf16(JNIEnv *env, jstring str) {
 	jsize length = env->GetStringLength(str);
 	jchar buf[length];
@@ -55,7 +60,15 @@ inline std::u16string jstring_to_utf16(JNIEnv *env, jstring str) {
 	return argeo::jni::jchars_to_utf16(buf, length);
 }
 
-// METHODS
+/** Convert a jstring to a string, via UTF-16.
+ * Note that the characters are copied.
+ */
+inline std::string to_string(JNIEnv *env, jstring str,
+		utf16_convert *utf16_converter) {
+	std::u16string u16text = jstring_to_utf16(env, str);
+	return utf16_converter->to_bytes(u16text);
+}
+
 /** Convenience method to make casting more readable in code.*/
 inline const jchar* utf16_to_jchars(std::u16string u16text) {
 	// sanity check
@@ -68,6 +81,13 @@ inline const jchar* utf16_to_jchars(std::u16string u16text) {
 inline jstring utf16_to_jstring(JNIEnv *env, std::u16string u16text) {
 	return env->NewString(utf16_to_jchars(u16text),
 			static_cast<jsize>(u16text.size()));
+}
+
+/** Converts a string to a jstring. */
+inline jstring to_jstring(JNIEnv *env, std::string str,
+		utf16_convert *utf16_converter) {
+	std::u16string u16text = utf16_converter->from_bytes(str);
+	return utf16_to_jstring(env, u16text);
 }
 
 }  // namespace argeo::jni

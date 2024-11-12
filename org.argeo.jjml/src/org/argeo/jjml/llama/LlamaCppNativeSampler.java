@@ -2,6 +2,7 @@ package org.argeo.jjml.llama;
 
 import java.util.function.LongSupplier;
 
+/** A natice llama.cpp sampler. */
 public class LlamaCppNativeSampler implements LongSupplier, AutoCloseable, Cloneable {
 	private final long pointer;
 

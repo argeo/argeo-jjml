@@ -8,6 +8,9 @@
 #include "org_argeo_jjml_llama_LlamaCppSamplerChain.h" // IWYU pragma: keep
 #include "org_argeo_jjml_llama_LlamaCppSamplers.h" // IWYU pragma: keep
 
+/** UTF-16 converter. */
+static argeo::jni::utf16_convert utf16_conv;
+
 /*
  * STANDARD SAMPLERS
  */
@@ -86,15 +89,19 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitGrammar
 		jstring rootStr) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, modelObj);
 
-	const char *grammar_str = env->GetStringUTFChars(grammarStr, nullptr);
-	const char *grammar_root = env->GetStringUTFChars(rootStr, nullptr);
+//	const char *grammar_str = env->GetStringUTFChars(grammarStr, nullptr);
+//	const char *grammar_root = env->GetStringUTFChars(rootStr, nullptr);
 
-	llama_sampler *smpl = llama_sampler_init_grammar(model, grammar_str,
-			grammar_root);
+	std::string grammar_str = argeo::jni::to_string(env, grammarStr,
+			&utf16_conv);
+	std::string grammar_root = argeo::jni::to_string(env, rootStr, &utf16_conv);
+
+	llama_sampler *smpl = llama_sampler_init_grammar(model, grammar_str.c_str(),
+			grammar_root.c_str());
 
 	// clean up
-	env->ReleaseStringUTFChars(grammarStr, grammar_str);
-	env->ReleaseStringUTFChars(rootStr, grammar_root);
+//	env->ReleaseStringUTFChars(grammarStr, grammar_str);
+//	env->ReleaseStringUTFChars(rootStr, grammar_root);
 
 	return reinterpret_cast<jlong>(smpl);
 }

@@ -6,6 +6,7 @@ import static org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole.SYSTEM;
 import static org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole.USER;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
+import static org.argeo.jjml.llama.LlamaCppSamplers.newJavaSampler;
 import static org.argeo.jjml.llama.params.ContextParamName.embeddings;
 import static org.argeo.jjml.llama.params.ContextParamName.n_batch;
 import static org.argeo.jjml.llama.params.ContextParamName.n_ctx;
@@ -75,6 +76,7 @@ class A2SmokeTests {
 				assertLoadUnloadDefaultContext(model);
 				assertEmbeddings(model);
 				assertBatch(model);
+				assertJavaSampler(model);
 				assertChat(model);
 			}
 		} catch (Exception | AssertionError e) {
@@ -217,6 +219,37 @@ class A2SmokeTests {
 
 		}
 		logger.log(INFO, "Batch smoke tests PASSED");
+	}
+
+	void assertJavaSampler(LlamaCppModel model) {
+		Integer[] sequenceIds = { 1 };
+		try ( //
+				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
+						.with(n_ctx, 6144) //
+						.with(n_batch, sequenceIds.length * 64)); //
+				LlamaCppSamplerChain chain = new LlamaCppSamplerChain(
+						newJavaSampler(new LlamaCppJavaSampler.SimpleGreedy())); //
+				LlamaCppNativeSampler validatingSampler = LlamaCppSamplers.newSamplerGrammar(model, //
+						"root ::= [ \\t\\n]* \"TEST\"", "root");//
+		) {
+//			long begin = System.currentTimeMillis();
+			LlamaCppBatchProcessor processor = new LlamaCppBatchProcessor(context, chain, validatingSampler,
+					Set.of(sequenceIds));
+
+			String prompt = "Write HELLO\n"//
+					+ "HELLO\n"//
+					+ "Write WORLD\n"//
+					+ "WORLD\n"//
+					+ "Write TEST\n" //
+			;
+			logger.log(INFO, "=>\n" + prompt);
+			String str = processor.processBatch(prompt);
+			logger.log(INFO, "<=\n" + str);
+			// System.out.println("\n\n## Processing took " + (System.currentTimeMillis() -
+			// begin) + " ms");
+
+		}
+		logger.log(INFO, "Java sampler smoke tests PASSED");
 	}
 
 	void assertChat(LlamaCppModel model) {

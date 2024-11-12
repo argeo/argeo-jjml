@@ -12,11 +12,8 @@
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppVocabulary.h" // IWYU pragma: keep
 
-/*
- * FIELDS
- */
 /** UTF-16 converter. */
-static argeo::jni::utf16_convert utf16_converter;
+static argeo::jni::utf16_convert utf16_conv;
 
 /*
  * VOCABULARY
@@ -96,7 +93,6 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doToken
 			throw std::invalid_argument("Input is not a direct buffer");
 		assert(env->GetDirectBufferCapacity(u8Buf) >= offset + length);
 		char *u8_chars = static_cast<char*>(u8_arr) + offset;
-//		std::string text(u8_chars, u8_size);
 
 		std::vector<llama_token> tokens = jjml_cpp_string_to_tokens(model,
 				u8_chars, length, addSpecial, parseSpecial);
@@ -134,12 +130,6 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeUt
 
 		n_tokens = llama_tokenize(model, u8_chars, length, tokens, size,
 				addSpecial, parseSpecial);
-
-//		if (n_tokens < 0)
-//			throw std::range_error(
-//					"Input buffer limit " + std::to_string(size)
-//							+ " is too small for " + std::to_string(-n_tokens)
-//							+ " tokens - " + __func__);
 	} catch (const std::exception &ex) {
 		argeo::jni::throw_to_java(env, ex);
 	}
@@ -151,10 +141,6 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTo
 		jint size, jboolean removeSpecial, jboolean unparseSpecial) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
-//	llama_token tokens[length];
-//	env->GetIntArrayRegion(tokenList, offset, length,
-//			reinterpret_cast<jint*>(tokens));
-//	jboolean *is_copy;
 	void *tokens_arr = env->GetPrimitiveArrayCritical(tokenList,
 	NULL);
 	llama_token *tokens = static_cast<llama_token*>(tokens_arr) + pos;
@@ -230,10 +216,10 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doToken
 		jboolean parseSpecial) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
-	const jchar *jchars = env->GetStringCritical(str, nullptr);
 	jsize length = env->GetStringLength(str);
+	const jchar *jchars = env->GetStringCritical(str, nullptr);
 	std::u16string u16text = argeo::jni::jchars_to_utf16(jchars, length);
-	std::string text = utf16_converter.to_bytes(u16text);
+	std::string text = utf16_conv.to_bytes(u16text);
 
 	std::vector<llama_token> tokens = jjml_cpp_string_to_tokens(model,
 			text.data(), text.length(), addSpecial, parseSpecial);
@@ -263,7 +249,7 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeToken
 	// clean up
 	env->ReleasePrimitiveArrayCritical(tokenList, tokens_arr, 0);
 
-	std::u16string u16text = utf16_converter.from_bytes(text);
+	std::u16string u16text = utf16_conv.from_bytes(text);
 	return argeo::jni::utf16_to_jstring(env, u16text);
 }
 
@@ -278,7 +264,7 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeToken
 	std::string text = jjml_tokens_to_cpp_string(model, tokens, size,
 			removeSpecial, unparseSpecial);
 
-	std::u16string u16text = utf16_converter.from_bytes(text);
+	std::u16string u16text = utf16_conv.from_bytes(text);
 	return argeo::jni::utf16_to_jstring(env, u16text);
 }
 

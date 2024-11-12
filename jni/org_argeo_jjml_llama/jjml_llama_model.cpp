@@ -14,11 +14,8 @@
 #include "org_argeo_jjml_llama_LlamaCppModel.h" // IWYU pragma: keep
 #include "org_argeo_jjml_llama_LlamaCppBackend.h" // IWYU pragma: keep
 
-/*
- * FIELDS
- */
 /** UTF-16 converter. */
-static argeo::jni::utf16_convert utf16_converter;
+static argeo::jni::utf16_convert utf16_conv;
 
 /*
  * CHAT
@@ -36,7 +33,7 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 		for (int i = 0; i < messages_size; i++) {
 			jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
 			std::u16string u16role = argeo::jni::jstring_to_utf16(env, roleStr);
-			std::string u8role = utf16_converter.to_bytes(u16role);
+			std::string u8role = utf16_conv.to_bytes(u16role);
 			char *role = new char[u8role.length()];
 			strcpy(role, u8role.c_str());
 
@@ -44,7 +41,7 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 					i);
 			std::u16string u16content = argeo::jni::jstring_to_utf16(env,
 					contentStr);
-			std::string u8content = utf16_converter.to_bytes(u16content);
+			std::string u8content = utf16_conv.to_bytes(u16content);
 			char *content = new char[u8content.length()];
 			strcpy(content, u8content.c_str());
 
@@ -83,7 +80,7 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 			delete message.content;
 		}
 
-		std::u16string u16res = utf16_converter.from_bytes(
+		std::u16string u16res = utf16_conv.from_bytes(
 				std::string(buf.data(), resLength));
 		return argeo::jni::utf16_to_jstring(env, u16res);
 	} catch (std::exception &ex) {
@@ -215,11 +212,10 @@ static jobjectArray jjml_lama_get_meta(JNIEnv *env, llama_model *model,
 				if (length > buf_size) { // chat templates can be quite big
 					char big_buf[length];
 					length = supplier(i, big_buf, length);
-					u16res = utf16_converter.from_bytes(
+					u16res = utf16_conv.from_bytes(
 							std::string(big_buf, length));
 				} else {
-					u16res = utf16_converter.from_bytes(
-							std::string(buf, length));
+					u16res = utf16_conv.from_bytes(std::string(buf, length));
 				}
 				jstring str = argeo::jni::utf16_to_jstring(env, u16res);
 				env->SetObjectArrayElement(res, i, str);
@@ -267,9 +263,9 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetDescripti
 		if (length > buf_size) { // big description
 			char big_buf[length];
 			length = llama_model_desc(model, big_buf, length);
-			u16res = utf16_converter.from_bytes(std::string(big_buf, length));
+			u16res = utf16_conv.from_bytes(std::string(big_buf, length));
 		} else {
-			u16res = utf16_converter.from_bytes(std::string(buf, length));
+			u16res = utf16_conv.from_bytes(std::string(buf, length));
 		}
 		return argeo::jni::utf16_to_jstring(env, u16res);
 	} catch (std::exception &ex) {

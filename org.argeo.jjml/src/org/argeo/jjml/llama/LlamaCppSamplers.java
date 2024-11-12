@@ -2,7 +2,11 @@ package org.argeo.jjml.llama;
 
 import org.argeo.jjml.llama.params.DefaultSamplerChainParams;
 
-/** Access to the native standard samplers. */
+/**
+ * Access to the native standard samplers.
+ * 
+ * @see llama.h - llama_sampler_init_*
+ */
 public class LlamaCppSamplers {
 
 	/*

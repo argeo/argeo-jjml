@@ -1,5 +1,10 @@
 package org.argeo.jjml.llama;
 
+/**
+ * A native llama.cpp sampler chain.
+ * 
+ * @see llama.h - llama_sampler_chain_init
+ */
 public class LlamaCppSamplerChain extends LlamaCppNativeSampler {
 	private static native long doInit();
 
@@ -13,6 +18,12 @@ public class LlamaCppSamplerChain extends LlamaCppNativeSampler {
 
 	public LlamaCppSamplerChain() {
 		super(doInit());
+	}
+
+	public LlamaCppSamplerChain(LlamaCppNativeSampler... samplers) {
+		this();
+		for (LlamaCppNativeSampler sampler : samplers)
+			addSampler(sampler);
 	}
 
 	public void addSampler(LlamaCppNativeSampler sampler) {
