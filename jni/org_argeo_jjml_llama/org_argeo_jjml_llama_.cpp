@@ -4,6 +4,8 @@
 #include <ggml.h>
 #include <llama.h>
 
+#include <argeo/jni/argeo_jni.h>
+
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppBackend.h" // IWYU pragma: keep
 
@@ -12,14 +14,7 @@
  */
 // METHODS
 jmethodID Integer$valueOf;
-
 jmethodID DoublePredicate$test;
-
-//jmethodID IntBuffer$limit;
-//jmethodID IntBuffer$limitI;
-//jmethodID IntBuffer$position;
-//jmethodID IntBuffer$positionI;
-
 jmethodID CompletionHandler$completed;
 jmethodID CompletionHandler$failed;
 

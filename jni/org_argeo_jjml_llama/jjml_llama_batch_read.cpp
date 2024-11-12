@@ -6,7 +6,7 @@
 #include <ggml.h>
 #include <llama.h>
 
-#include <argeo/argeo_jni.h>
+#include <argeo/jni/argeo_jni.h>
 
 #include "jjml_llama.h"
 #include "org_argeo_jjml_llama_.h"

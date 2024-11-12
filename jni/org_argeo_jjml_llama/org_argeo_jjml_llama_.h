@@ -1,7 +1,6 @@
 #include <string>
 
-#include <argeo/argeo_jni.h>
-
+#include <jni.h>
 /*
  * package org.argeo.jjml.llama
  */
@@ -22,12 +21,7 @@ const std::string JCLASS_CONTEXT_PARAMS = JNI_PKG + "params/ContextParams";
  */
 // METHODS
 extern jmethodID Integer$valueOf;
-
 extern jmethodID DoublePredicate$test;
-
-//extern jmethodID IntBuffer$limit;
-//extern jmethodID IntBuffer$position;
-
 extern jmethodID CompletionHandler$completed;
 extern jmethodID CompletionHandler$failed;
 
