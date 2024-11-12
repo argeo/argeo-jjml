@@ -3,6 +3,8 @@ package org.argeo.jjml.llama;
 import java.lang.System.Logger;
 
 import org.argeo.jjml.ggml.params.NumaStrategy;
+import org.argeo.jjml.llama.params.ContextParams;
+import org.argeo.jjml.llama.params.ModelParams;
 
 /**
  * Wrapper to the llama.cpp backend. Only static methods as this is a singleton
@@ -17,59 +19,41 @@ public class LlamaCppBackend {
 
 	private final static Logger logger = System.getLogger(LlamaCppBackend.class.getName());
 
-	private static boolean initialized = false;
-
-	/** Cannot be instantiated. */
-	private LlamaCppBackend() {
+	static {
+		LlamaCppNative.ensureLibrariesLoaded();
+		// Make sure that we will destroy the backend properly on JVM shutdown.
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> destroy(), "Destroy llama.cpp backend"));
 	}
 
 	/*
 	 * NATIVE
 	 */
-	static native void doInit();
-
 	static native void doNumaInit(int numaStrategyCode);
 
 	static native void doDestroy();
 
+	static native ModelParams newModelParams();
+
+	static native ContextParams newContextParams();
+
+	public static native boolean supportsMmap();
+
+	public static native boolean supportsMlock();
+
+	public static native boolean supportsGpuOffload();
+
 	/*
 	 * LIFECYCLE
 	 */
-	/**
-	 * Initialize the backend.
-	 * 
-	 * @see llama.h - llama_backend_init()
-	 */
-	public static void init() {
-		init(null);
-	}
 
 	/**
-	 * Initialize the backend with a NUMA strategy.
+	 * Initialize NUMA strategy.
 	 * 
-	 * @see llama.h - llama_backend_init()
 	 * @see llama.h - llama_numa_init()
 	 */
-	public static void init(NumaStrategy numaStrategy) {
-		if (initialized)
-			throw new IllegalStateException("llama.cpp backend is already initialized.");
-
-		// Make sure that we will destroy the backend properly on JVM shutdown.
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> destroy(), "Destroy llama.cpp backend"));
-
-		LlamaCppNative.ensureLibrariesLoaded();
-
-		doInit();
-		initialized = true;
-
+	public static void numaInit(NumaStrategy numaStrategy) {
 		if (numaStrategy != null)
 			doNumaInit(numaStrategy.getAsInt());
-	}
-
-	/** Ensure that the backend has been initialized. */
-	public static void ensureInitialized() {
-		if (!initialized)
-			init();
 	}
 
 	/**
@@ -79,11 +63,11 @@ public class LlamaCppBackend {
 	 * @see llama.h - llama_backend_free()
 	 */
 	public static void destroy() {
-		if (!initialized)
-			return; // ignore silently
-
 		doDestroy();
-		initialized = false;
-		// TODO classloading so that libraries can be unloaded by garbage collection
 	}
+
+	/** singleton */
+	private LlamaCppBackend() {
+	}
+
 }

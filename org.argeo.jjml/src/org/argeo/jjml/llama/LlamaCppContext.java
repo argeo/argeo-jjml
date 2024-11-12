@@ -15,9 +15,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	private final static ContextParams DEFAULT_PARAMS;
 
 	static {
-		// TODO implement missing parameters
-		// assert Params.assertParamNames();
-		DEFAULT_PARAMS = LlamaCppNative.newContextParams();
+		DEFAULT_PARAMS = LlamaCppBackend.newContextParams();
 	}
 
 	private final long pointer;
@@ -110,13 +108,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	/*
 	 * STATIC UTILTIES
 	 */
-
 	public static ContextParams defaultContextParams() {
 		return DEFAULT_PARAMS;
 	}
-
-	/*
-	 * CLASSES
-	 */
-
 }

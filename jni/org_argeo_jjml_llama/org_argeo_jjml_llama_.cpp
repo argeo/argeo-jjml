@@ -5,11 +5,6 @@
 
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppBackend.h" // IWYU pragma: keep
-#include "org_argeo_jjml_llama_LlamaCppNative.h" // IWYU pragma: keep
-
-/*
- * DEBUG & PERF
- */
 
 /*
  * Standard Java
@@ -32,6 +27,11 @@ jmethodID CompletionHandler$failed;
 // EXCEPTIONS
 jclass IllegalStateException;
 jclass IllegalArgumentException;
+
+/*
+ * LOCAL
+ */
+static bool backend_initialized = false;
 
 /** Initialization of common variables.*/
 static void org_argeo_jjml_llama_(JNIEnv *env) {
@@ -70,6 +70,23 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 }
 
 /*
+ * LOCAL UTILITIES
+ */
+static void jjml_llama_init_backend() {
+	if (!backend_initialized) {
+		llama_backend_init();
+		backend_initialized = true;
+	}
+}
+
+static void jjml_llama_free_backend() {
+	if (backend_initialized) {
+		llama_backend_free();
+		backend_initialized = false;
+	}
+}
+
+/*
  * JNI
  */
 /** Called when the library is loaded, before any other function. */
@@ -84,17 +101,24 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 	org_argeo_jjml_llama_(env);
 
 	vm->DetachCurrentThread();
+
+	// initialize llama.cpp backend
+	jjml_llama_init_backend();
+
 	return JNI_VERSION_10;
 }
 
+void JNI_OnUnload(JavaVM *vm, void *reserved) {
+	// free llama.cpp backend
+	jjml_llama_free_backend();
+}
 /*
  * BACKEND
  */
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doInit(
-		JNIEnv *env, jclass) {
-	llama_backend_init();
-}
-
+//JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doInit(
+//		JNIEnv *env, jclass) {
+//	jjml_llama_init_backend();
+//}
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doNumaInit(
 		JNIEnv*, jclass, jint numaStrategy) {
 	switch (numaStrategy) {
@@ -121,23 +145,23 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doNumaInit(
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_doDestroy(
 		JNIEnv*, jclass) {
-	llama_backend_free();
+	jjml_llama_free_backend();
 }
 
 /*
  * COMMON NATIVE
  */
-JNIEXPORT jboolean JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_supportsMmap(
+JNIEXPORT jboolean JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_supportsMmap(
 		JNIEnv*, jclass) {
 	return llama_supports_mmap();
 }
 
-JNIEXPORT jboolean JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_supportsMlock(
+JNIEXPORT jboolean JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_supportsMlock(
 		JNIEnv*, jclass) {
 	return llama_supports_mlock();
 }
 
-JNIEXPORT jboolean JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_supportsGpuOffload(
+JNIEXPORT jboolean JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_supportsGpuOffload(
 		JNIEnv*, jclass) {
 	return llama_supports_gpu_offload();
 }

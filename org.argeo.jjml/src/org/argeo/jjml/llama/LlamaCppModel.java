@@ -1,5 +1,7 @@
 package org.argeo.jjml.llama;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.System.Logger;
@@ -22,6 +24,7 @@ import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 
 import org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole;
+import org.argeo.jjml.llama.params.ModelParamName;
 import org.argeo.jjml.llama.params.ModelParams;
 
 /**
@@ -35,10 +38,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private final static ModelParams DEFAULT_PARAMS;
 
 	static {
-//		DEFAULT_PARAMS = ModelParams.defaultModelParams();
-		LlamaCppNative.ensureLibrariesLoaded();
-		DEFAULT_PARAMS = LlamaCppNative.newModelParams();
-
+		DEFAULT_PARAMS = LlamaCppBackend.newModelParams();
 	}
 
 	private final long pointer;
@@ -232,9 +232,8 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		if (!Files.exists(localPath))
 			throw new FileNotFoundException("Model path " + localPath + " does not exist.");
 
-		LlamaCppBackend.ensureInitialized();
-
 		FutureTask<LlamaCppModel> future = new FutureTask<>(() -> {
+			checkInitParams(initParams);
 			long begin = System.currentTimeMillis();
 			long pointer = doInit(localPath.toString(), initParams, (progress) -> {
 				if (progressCallback != null)
@@ -255,5 +254,17 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 			executor.execute(future);
 		}
 		return future;
+	}
+
+	private static void checkInitParams(ModelParams initParams) {
+		if (initParams.n_gpu_layers() != 0 && !LlamaCppBackend.supportsGpuOffload())
+			logger.log(WARNING, "GPU offload is not available, but " + ModelParamName.n_gpu_layers + " is set to "
+					+ initParams.n_gpu_layers());
+		if (initParams.use_mmap() && !LlamaCppBackend.supportsMmap())
+			logger.log(WARNING,
+					"mmap is not available, but " + ModelParamName.use_mmap + " is set to " + initParams.use_mmap());
+		if (initParams.use_mlock() && !LlamaCppBackend.supportsMlock())
+			logger.log(WARNING,
+					"mlock is not available, but " + ModelParamName.use_mlock + " is set to " + initParams.use_mlock());
 	}
 }

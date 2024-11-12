@@ -7,12 +7,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import org.argeo.jjml.llama.params.ContextParams;
-import org.argeo.jjml.llama.params.ModelParams;
-
 /**
- * Access to the native shared libraries and capabilities which are independent
- * of a loaded model (such as default parameters, etc.)
+ * Loads the shared libraries, possibly using system properties explicitly
+ * setting them. If it is used to set them programmatically, it must be done
+ * before accessing any other class.
  */
 public class LlamaCppNative {
 	/**
@@ -40,19 +38,6 @@ public class LlamaCppNative {
 	private static Path ggmlLibraryPath;
 	private static Path llamaLibraryPath;
 	private static Path jjmlLlamaLibraryPath;
-
-	/*
-	 * NATIVE METHODS
-	 */
-	static native ModelParams newModelParams();
-
-	static native ContextParams newContextParams();
-
-	public static native boolean supportsMmap();
-
-	public static native boolean supportsMlock();
-
-	public static native boolean supportsGpuOffload();
 
 	/*
 	 * STATIC UTILITIES
@@ -130,4 +115,7 @@ public class LlamaCppNative {
 			throw new IllegalStateException("Shared libraries are already loaded.");
 	}
 
+	/** singleton */
+	private LlamaCppNative() {
+	}
 }

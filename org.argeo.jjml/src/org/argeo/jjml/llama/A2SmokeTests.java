@@ -39,7 +39,6 @@ class A2SmokeTests {
 	static {
 		assert ((BooleanSupplier) () -> {
 			LlamaCppNative.ensureLibrariesLoaded();
-			LlamaCppBackend.ensureInitialized();
 			return true;
 		}).getAsBoolean();
 	}

@@ -8,7 +8,7 @@
 
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppContext.h" // IWYU pragma: keep
-#include "org_argeo_jjml_llama_LlamaCppNative.h" // IWYU pragma: keep
+#include "org_argeo_jjml_llama_LlamaCppBackend.h" // IWYU pragma: keep
 
 /*
  * PARAMETERS
@@ -59,7 +59,7 @@ static void get_context_params(JNIEnv *env, jobject params,
 			env->GetMethodID(clss, "embeddings", "()Z"));
 }
 
-JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newContextParams(
+JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_newContextParams(
 		JNIEnv *env, jclass) {
 	jclass clss = env->FindClass(JCLASS_CONTEXT_PARAMS.c_str());
 	// Tip: in order to find the constructor signature, use:

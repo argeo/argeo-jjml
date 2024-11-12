@@ -13,7 +13,7 @@
 
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppModel.h" // IWYU pragma: keep
-#include "org_argeo_jjml_llama_LlamaCppNative.h" // IWYU pragma: keep
+#include "org_argeo_jjml_llama_LlamaCppBackend.h" // IWYU pragma: keep
 
 /*
  * FIELDS
@@ -109,7 +109,7 @@ static void get_model_params(JNIEnv *env, jobject params,
 			env->GetMethodID(clss, "use_mlock", "()Z"));
 }
 
-JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParams(
+JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_newModelParams(
 		JNIEnv *env, jclass) {
 	llama_model_params mparams = llama_model_default_params();
 
