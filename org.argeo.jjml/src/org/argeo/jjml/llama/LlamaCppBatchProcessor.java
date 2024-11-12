@@ -344,9 +344,10 @@ public class LlamaCppBatchProcessor {
 				IntBuffer output = outputs[i];
 				if (output != null) {
 					output.flip();
-					int[] newTokens = new int[output.remaining()];
-					output.get(newTokens);
-					String outputStr = vocabulary.deTokenize(IntBuffer.wrap(newTokens));
+//					int[] newTokens = new int[output.remaining()];
+//					output.get(newTokens);
+//					String outputStr = vocabulary.deTokenize(IntBuffer.wrap(newTokens));
+					String outputStr = vocabulary.deTokenize(output);
 					outputStrings[i].append(outputStr);
 				}
 

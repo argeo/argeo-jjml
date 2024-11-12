@@ -62,14 +62,8 @@ static jint jjml_llama_batch_processor_write(llama_context *ctx,
 
 	PERF_BEGIN();
 	if (inputs_count == 1) { // common prompt to all sequences
-
-//		jobject inputBuf = env->GetObjectArrayElement(inputBuffers, 0);
-
 		const int seq_idx = 0;
 		int input_tokens_size = seq_tokens_size[seq_idx];
-//		llama_token *tokens =
-//				static_cast<llama_token*>(env->GetDirectBufferAddress(inputBuf))
-//						+ seq_offsets[0] * sizeof(llama_token);
 
 		llama_batch batch = llama_batch_init(
 				std::max((size_t) input_tokens_size, (size_t) n_parallel), 0,
@@ -360,54 +354,51 @@ static jint jjml_llama_batch_processor_read(llama_context *ctx,
 
 	llama_batch batch = llama_batch_init(n_parallel, 0, n_parallel);
 
-// FIXME deal more precisely with the upper limit
-//assert(max_decodes % sizeof(llama_token) == 0);
+	// FIXME deal more precisely with the upper limit
 	int n_predict = cur_pos + max_decodes;
 	bool all_eog = true;
 	while (cur_pos <= n_predict) {
 		// prepare the next batch
 		jjml_llama_batch_clear(batch);
 
-		{
-			// sample the next token for each parallel sequence / stream
-			for (int32_t i = 0; i < n_parallel; ++i) {
-				if (output_ids[i] == NO_OUTPUT_ID) {
-					// the stream has already finished
-					continue;
-				}
+		// sample the next token for each parallel sequence / stream
+		for (int32_t i = 0; i < n_parallel; ++i) {
+			if (output_ids[i] == NO_OUTPUT_ID) {
+				// the stream has already finished
+				continue;
+			}
 
-				//PERF_BEGIN();
-				llama_token new_token_id;
-				if (grmr == nullptr) {
-					new_token_id = llama_sampler_sample(smpl, ctx,
-							output_ids[i]);
+			//PERF_BEGIN();
+			llama_token new_token_id;
+			if (grmr == nullptr) {
+				new_token_id = llama_sampler_sample(smpl, ctx, output_ids[i]);
 
-				} else {	// grammar handling require lower-level methods
-					std::vector<llama_token_data> cur = jjml_get_logits(ctx,
-							output_ids[i]);
-					llama_token_data_array cur_p = { cur.data(), cur.size(), -1,
-							false, };
+			} else {	// grammar handling require lower-level methods
+				std::vector<llama_token_data> cur = jjml_get_logits(ctx,
+						output_ids[i]);
+				llama_token_data_array cur_p = { cur.data(), cur.size(), -1,
+						false, };
 
-					llama_sampler_apply(smpl, &cur_p);
-					llama_token candidate = cur_p.data[cur_p.selected].id;
-					new_token_id = jjml_check_grammar(ctx, output_ids[i], smpl,
-							grmr, candidate);
+				llama_sampler_apply(smpl, &cur_p);
+				llama_token candidate = cur_p.data[cur_p.selected].id;
+				new_token_id = jjml_check_grammar(ctx, output_ids[i], smpl,
+						grmr, candidate);
 //					new_token_id = candidate;
 
-					llama_sampler_accept(grmr, new_token_id);
-					llama_sampler_accept(smpl, new_token_id);
-				}
-				//PERF_END("sampling");
+				llama_sampler_accept(grmr, new_token_id);
+				llama_sampler_accept(smpl, new_token_id);
+			}
+			//PERF_END("sampling");
 
-				bool is_eog = llama_token_is_eog(model, new_token_id);
+			bool is_eog = llama_token_is_eog(model, new_token_id);
 
-				// is it an end of generation? -> mark the stream as finished
-				if (is_eog //
-				|| next_idx == seq_tokens_size[i] //
-				|| cur_pos == n_predict //
-						) {
-					if (is_eog)
-						output_ids[i] = NO_OUTPUT_ID;
+			// is it an end of generation? -> mark the stream as finished
+			if (is_eog //
+			|| next_idx == seq_tokens_size[i] //
+			|| cur_pos == n_predict //
+					) {
+				if (is_eog)
+					output_ids[i] = NO_OUTPUT_ID;
 
 //					jobject outputBuf = env->GetObjectArrayElement(
 //							outputBuffers, i);
@@ -417,41 +408,38 @@ static jint jjml_llama_batch_processor_read(llama_context *ctx,
 //					env->CallVoidMethod(outputBuf, IntBuffer$positionI,
 //							next_idx);
 
-					// TODO find out while call to static method is failing with centralized class
-					jclass Integer = env->FindClass("java/lang/Integer");
+				// TODO find out while call to static method is failing with centralized class
+				jclass Integer = env->FindClass("java/lang/Integer");
 
-					jobject completionHandlerResult =
-							env->CallStaticObjectMethod(Integer,
-									Integer$valueOf, next_idx);
-					jobject completionHandlerAttachment =
-							env->CallStaticObjectMethod(Integer,
-									Integer$valueOf, i);
-					// call completion handler
-					env->CallVoidMethod(completionHandler,
-							CompletionHandler$completed,
-							completionHandlerResult,
-							completionHandlerAttachment);
+				jobject completionHandlerResult = env->CallStaticObjectMethod(
+						Integer, Integer$valueOf, next_idx);
+				jobject completionHandlerAttachment =
+						env->CallStaticObjectMethod(Integer, Integer$valueOf,
+								i);
+				// call completion handler
+				env->CallVoidMethod(completionHandler,
+						CompletionHandler$completed, completionHandlerResult,
+						completionHandlerAttachment);
 
-					if (!is_eog) // at least one could have continued
-						all_eog = false;
+				if (!is_eog) // at least one could have continued
+					all_eog = false;
 
-					continue;
-				}
+				continue;
+			}
 
 //				std::cerr << cur_pos << "\t" << i << "\t" << new_token_id
 //						<< std::endl;
 
-				assert(next_idx < seq_tokens_size[i] && "No overflow");
-				seq_tokens[i][next_idx] = new_token_id;
+			assert(next_idx < seq_tokens_size[i] && "No overflow");
+			seq_tokens[i][next_idx] = new_token_id;
 
-				output_ids[i] = batch.n_tokens;
+			output_ids[i] = batch.n_tokens;
 
-				// push this new token for next evaluation
-				jjml_llama_batch_add(batch, new_token_id, cur_pos, {
-						sequence_ids[i] }, true);
-			}
-			next_idx++;
+			// push this new token for next evaluation
+			jjml_llama_batch_add(batch, new_token_id, cur_pos,
+					{ sequence_ids[i] }, true);
 		}
+		next_idx++;
 
 		// all streams are finished
 		if (batch.n_tokens == 0) {
