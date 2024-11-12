@@ -1,5 +1,6 @@
-#include <llama.h>
 #include <vector>
+
+#include <llama.h>
 
 #ifndef _jjml_llama_h
 #define _jjml_llama_h

@@ -1,14 +1,15 @@
 #ifndef argeo_jni_h
 #define argeo_jni_h
 
-#include <jni.h>
-#include <jni_md.h>
 #include <cstdarg>
 #include <fstream>
 #include <locale>
 #include <cstddef>
 #include <string>
 #include <type_traits>
+
+#include <jni.h>
+#include <jni_md.h>
 
 /*
  * PRE-PROCESSING

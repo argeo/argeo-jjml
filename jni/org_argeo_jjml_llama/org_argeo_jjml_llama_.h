@@ -1,8 +1,5 @@
 #include <string>
 
-#include <jni.h>
-#include <jni_md.h>
-
 #include <argeo/argeo_jni.h>
 
 /*

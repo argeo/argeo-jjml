@@ -2,8 +2,9 @@
 
 #include <llama.h>
 
-#include "jjml_llama.h"
+#include <argeo/argeo_jni.h>
 
+#include "jjml_llama.h"
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppEmbeddingProcessor.h" // IWYU pragma: keep
 

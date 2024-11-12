@@ -1,17 +1,15 @@
-#include <argeo/argeo_jni.h>
-#include <ggml.h>
-#include <jni.h>
-#include <jni_md.h>
-#include <llama.h>
-#include <stddef.h>
 #include <algorithm>
-#include <locale>
-#include <string>
-#include <cstring>
-#include <vector>
 #include <cassert>
+#include <locale>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
-#include "org_argeo_jjml_llama_.h"
+#include <ggml.h>
+#include <llama.h>
+
+#include <argeo/argeo_jni.h>
+
 #include "org_argeo_jjml_llama_LlamaCppVocabulary.h" // IWYU pragma: keep
 
 /*

@@ -1,9 +1,10 @@
-#include <argeo/argeo_jni.h>
-#include <jni.h>
-#include <jni_md.h>
-#include <llama.h>
-#include <stddef.h>
 #include <cassert>
+#include <stdexcept>
+#include <string>
+
+#include <llama.h>
+
+#include <argeo/argeo_jni.h>
 
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppContext.h" // IWYU pragma: keep
@@ -113,7 +114,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 		return (jlong) ctx;
 	} catch (const std::exception &ex) {
 		argeo::jni::throw_to_java(env, ex);
-		return NULL;
+		return 0;
 	}
 }
 

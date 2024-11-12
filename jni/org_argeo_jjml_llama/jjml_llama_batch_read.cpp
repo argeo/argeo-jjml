@@ -1,15 +1,12 @@
-#include <argeo/argeo_jni.h>
-#include <ggml.h>
-#include <jni.h>
-#include <jni_md.h>
-#include <llama.h>
-#include <stddef.h>
-#include <algorithm>
-#include <vector>
 #include <math.h>
 #include <cassert>
-#include <functional>
-#include <iostream>
+#include <stdexcept>
+#include <vector>
+
+#include <ggml.h>
+#include <llama.h>
+
+#include <argeo/argeo_jni.h>
 
 #include "jjml_llama.h"
 #include "org_argeo_jjml_llama_.h"
