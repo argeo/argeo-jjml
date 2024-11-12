@@ -12,7 +12,7 @@ import org.argeo.jjml.llama.params.ModelParams;
 
 /**
  * Access to the native shared libraries and capabilities which are independent
- * of an initialized backend (such as default parameters, etc.)
+ * of a loaded model (such as default parameters, etc.)
  */
 public class LlamaCppNative {
 	/**
@@ -47,6 +47,12 @@ public class LlamaCppNative {
 	static native ModelParams newModelParams();
 
 	static native ContextParams newContextParams();
+
+	public static native boolean supportsMmap();
+
+	public static native boolean supportsMlock();
+
+	public static native boolean supportsGpuOffload();
 
 	/*
 	 * STATIC UTILITIES

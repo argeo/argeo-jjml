@@ -4,6 +4,7 @@ package org.argeo.jjml.llama.params;
 public enum ModelParamName {
 	n_gpu_layers, //
 	vocab_only, //
+	use_mmap, //
 	use_mlock, //
 	;
 }

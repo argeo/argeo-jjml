@@ -103,6 +103,8 @@ static void get_model_params(JNIEnv *env, jobject params,
 			env->GetMethodID(clss, "n_gpu_layers", "()I"));
 	mparams->vocab_only = env->CallIntMethod(params,
 			env->GetMethodID(clss, "vocab_only", "()Z"));
+	mparams->use_mmap = env->CallIntMethod(params,
+			env->GetMethodID(clss, "use_mmap", "()Z"));
 	mparams->use_mlock = env->CallIntMethod(params,
 			env->GetMethodID(clss, "use_mlock", "()Z"));
 }
@@ -112,10 +114,11 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newModelParam
 	llama_model_params mparams = llama_model_default_params();
 
 	jclass clss = env->FindClass(JCLASS_MODEL_PARAMS.c_str());
-	jmethodID constructor = env->GetMethodID(clss, "<init>", "(IZZ)V");
+	jmethodID constructor = env->GetMethodID(clss, "<init>", "(IZZZ)V");
 	jobject res = env->NewObject(clss, constructor, //
 			mparams.n_gpu_layers, //
 			mparams.vocab_only, //
+			mparams.use_mmap, //
 			mparams.use_mlock //
 			);
 	//set_model_params(env, res, default_mparams);
