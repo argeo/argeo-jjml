@@ -54,6 +54,16 @@ class A2SmokeTests {
 			Future<LlamaCppModel> loaded = LlamaCppModel.loadAsync(modelPath, modelParams,
 					new LoadModelProgressCallback(), null);
 			try (LlamaCppModel model = loaded.get();) {
+				logger.log(INFO, "Model " + model.getDescription());
+				logger.log(INFO, model.getLayerCount() + " layers");
+				logger.log(INFO, model.getEmbeddingSize() + " embedding size");
+				logger.log(INFO, model.getVocabularySize() + " vocabulary size");
+				logger.log(INFO, model.getContextTrainingSize() + " context training size");
+				StringBuilder sb = new StringBuilder();
+				for (String key : model.getMetadata().keySet())
+					sb.append(key + "=" + model.getMetadata().get(key) + "\n");
+				logger.log(INFO, "Metadata:\n" + sb);
+
 				model.getVocabulary().setStringMode(false);
 				assertVocabulary(model.getVocabulary());
 				model.getVocabulary().setStringMode(true);

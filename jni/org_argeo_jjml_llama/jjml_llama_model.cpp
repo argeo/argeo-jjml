@@ -10,6 +10,7 @@
 #include <vector>
 #include <cassert>
 #include <cstring>
+#include <functional>
 
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppModel.h" // IWYU pragma: keep
@@ -57,26 +58,22 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 
 		const char *ptr_tmpl = nullptr; // TODO custom template
 		std::vector<char> buf(alloc_size);
-		int32_t res = llama_chat_apply_template(model, ptr_tmpl,
+		int32_t resLength = llama_chat_apply_template(model, ptr_tmpl,
 				chat_messages.data(), chat_messages.size(), addAssistantTokens,
 				buf.data(), buf.size());
 
 		// error: chat template is not supported
-		if (res < 0) {
-			if (ptr_tmpl != nullptr) {
-				env->ThrowNew(IllegalStateException,
-						"Custom template is not supported");
-			} else {
-				env->ThrowNew(IllegalStateException,
-						"Built-in template is not supported");
-			}
-			return nullptr;
+		if (resLength < 0) {
+			if (ptr_tmpl != nullptr)
+				throw std::runtime_error("Custom template is not supported");
+			else
+				throw std::runtime_error("Built-in template is not supported");
 		}
 
 		// if it turns out that our buffer is too small, we resize it
-		if ((size_t) res > buf.size()) {
-			buf.resize(res);
-			res = llama_chat_apply_template(model, ptr_tmpl,
+		if ((size_t) resLength > buf.size()) {
+			buf.resize(resLength);
+			resLength = llama_chat_apply_template(model, ptr_tmpl,
 					chat_messages.data(), chat_messages.size(),
 					addAssistantTokens, buf.data(), buf.size());
 		}
@@ -86,29 +83,14 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 			llama_chat_message message = chat_messages[i];
 			delete message.role;
 			delete message.content;
-//		jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
-//		env->ReleaseStringUTFChars(roleStr, message.role);
-//		jstring contentStr = (jstring) env->GetObjectArrayElement(contents, i);
-//		env->ReleaseStringUTFChars(contentStr, message.content);
 		}
 
-		std::string u8res(buf.data());
-		u8res.resize(res);
-		std::u16string u16res = utf16_converter.from_bytes(u8res);
+		std::u16string u16res = utf16_converter.from_bytes(
+				std::string(buf.data(), resLength));
 		return argeo::jni::utf16ToJstring(env, u16res);
 	} catch (std::exception &ex) {
 		return argeo::jni::throw_to_java(env, ex);
 	}
-//	return env->NewStringUTF(buf.data());
-}
-
-/*
- * ACCESSORS
- */
-JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSize(
-		JNIEnv *env, jobject obj) {
-	auto *model = argeo::jni::getPointer<llama_model*>(env, obj);
-	return llama_n_embd(model);
 }
 
 /*
@@ -184,3 +166,87 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy(
 	llama_free_model(model);
 }
 
+/*
+ * ACCESSORS
+ */
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetVocabularySize(
+		JNIEnv *env, jobject obj) {
+	auto *model = argeo::jni::getPointer<llama_model*>(env, obj);
+	return llama_n_vocab(model);
+
+}
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetContextTrainingSize(
+		JNIEnv *env, jobject obj) {
+	auto *model = argeo::jni::getPointer<llama_model*>(env, obj);
+	return llama_n_ctx_train(model);
+}
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSize(
+		JNIEnv *env, jobject obj) {
+	auto *model = argeo::jni::getPointer<llama_model*>(env, obj);
+	return llama_n_embd(model);
+}
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetLayerCount(
+		JNIEnv *env, jobject obj) {
+	auto *model = argeo::jni::getPointer<llama_model*>(env, obj);
+	return llama_n_layer(model);
+}
+
+static jobjectArray jjml_lama_get_meta(JNIEnv *env, llama_model *model,
+		std::function<int32_t(int32_t, char*, size_t)> supplier) {
+	try {
+		int32_t meta_count = llama_model_meta_count(model);
+
+		jobjectArray res = env->NewObjectArray(meta_count,
+				env->FindClass("java/lang/String"), nullptr);
+		for (int32_t i = 0; i < meta_count; i++) {
+			const size_t buf_size = 1024;
+			char buf[buf_size];
+			int32_t length = supplier(i, buf, buf_size);
+			if (length == -1)
+				throw std::runtime_error("Cannot read model meta key " + i);
+			std::u16string u16res = utf16_converter.from_bytes(
+					std::string(buf, length));
+			jstring str = argeo::jni::utf16ToJstring(env, u16res);
+			env->SetObjectArrayElement(res, i, str);
+		}
+		return res;
+	} catch (std::exception &ex) {
+		return argeo::jni::throw_to_java(env, ex);
+	}
+}
+
+JNIEXPORT jobjectArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetMetadataKeys(
+		JNIEnv *env, jobject obj) {
+	auto *model = argeo::jni::getPointer<llama_model*>(env, obj);
+	return jjml_lama_get_meta(env, model,
+			[model](int32_t i, char *buf, size_t buf_size) {
+				return llama_model_meta_key_by_index(model, i, buf, buf_size);
+			});
+}
+
+JNIEXPORT jobjectArray JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetMetadataValues(
+		JNIEnv *env, jobject obj) {
+	auto *model = argeo::jni::getPointer<llama_model*>(env, obj);
+	return jjml_lama_get_meta(env, model,
+			[model](int32_t i, char *buf, size_t buf_size) {
+				return llama_model_meta_val_str_by_index(model, i, buf,
+						buf_size);
+			});
+}
+
+JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetDescription(
+		JNIEnv *env, jobject obj) {
+	auto *model = argeo::jni::getPointer<llama_model*>(env, obj);
+	const size_t buf_size = 1024;
+	char buf[buf_size];
+	int32_t length = llama_model_desc(model, buf, buf_size);
+	if (length == -1)
+		throw std::runtime_error("Cannot read model description ");
+	std::u16string u16res = utf16_converter.from_bytes(
+			std::string(buf, length));
+	jstring str = argeo::jni::utf16ToJstring(env, u16res);
+	return str;
+}

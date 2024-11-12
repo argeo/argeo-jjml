@@ -7,7 +7,10 @@ import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -46,16 +49,35 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	private final ModelParams initParams;
 
-	private final int embeddingSize;
-
 	private boolean destroyed = false;
+
+	// effective parameters
+	private final int vocabularySize;
+	private final int contextTrainingSize;
+	private final int embeddingSize;
+	private final int layerCount;
+	private final Map<String, String> metadata;
+	private final String description;
 
 	LlamaCppModel(long pointer, Path localPath, ModelParams initParams) {
 		this.pointer = pointer;
 		this.vocabulary = new LlamaCppVocabulary(this);
 		this.localPath = localPath;
 		this.initParams = initParams;
-		this.embeddingSize = doGetEmbeddingSize();
+		vocabularySize = doGetVocabularySize();
+		contextTrainingSize = doGetContextTrainingSize();
+		embeddingSize = doGetEmbeddingSize();
+		layerCount = doGetLayerCount();
+		String[] keys = doGetMetadataKeys();
+		String[] values = doGetMetadataValues();
+		if (keys.length != values.length)
+			throw new IllegalStateException("Metadata keys and values don't have the same size");
+		LinkedHashMap<String, String> map = new LinkedHashMap<>();// preserve order
+		for (int i = 0; i < keys.length; i++) {
+			map.put(keys[i], values[i]);
+		}
+		metadata = Collections.unmodifiableMap(map);
+		description = doGetDescription();
 	}
 
 	/*
@@ -71,7 +93,19 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private native void doDestroy();
 
 	// Accessors
+	private native int doGetVocabularySize();
+
+	private native int doGetContextTrainingSize();
+
 	private native int doGetEmbeddingSize();
+
+	private native int doGetLayerCount();
+
+	private native String[] doGetMetadataKeys();
+
+	private native String[] doGetMetadataValues();
+
+	private native String doGetDescription();
 
 	/*
 	 * USABLE METHODS
@@ -134,14 +168,33 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		return initParams;
 	}
 
-	public int getEmbeddingSize() {
-		return embeddingSize;
-	}
-
 	public LlamaCppVocabulary getVocabulary() {
 		return vocabulary;
 	}
 
+	public int getVocabularySize() {
+		return vocabularySize;
+	}
+
+	public int getContextTrainingSize() {
+		return contextTrainingSize;
+	}
+
+	public int getEmbeddingSize() {
+		return embeddingSize;
+	}
+
+	public int getLayerCount() {
+		return layerCount;
+	}
+
+	public Map<String, String> getMetadata() {
+		return metadata;
+	}
+
+	public String getDescription() {
+		return description;
+	}
 	/*
 	 * STATIC UTILITIES
 	 */
@@ -203,9 +256,4 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		}
 		return future;
 	}
-
-	/*
-	 * CLASSES
-	 */
-
 }
