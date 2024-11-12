@@ -192,6 +192,9 @@ inline T as_pointer(jlong pointer) {
 	// since it is relied upon in order to map Java and native structures
 	// TODO provide alternative mechanism, such as a registry?
 	static_assert(sizeof(T) <= sizeof(jlong));
+
+	if (pointer == 0)
+		return nullptr;
 	return reinterpret_cast<T>(pointer);
 }
 
@@ -203,6 +206,8 @@ inline T as_pointer(jlong pointer) {
  */
 template<typename T>
 inline T as_pointer(JNIEnv *env, jobject reference) {
+	if (reference == nullptr)
+		return nullptr;
 	jlong pointer = env->CallLongMethod(reference, LongSupplier$getAsLong(env));
 	return as_pointer<T>(pointer);
 }

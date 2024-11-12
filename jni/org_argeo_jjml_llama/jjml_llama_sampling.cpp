@@ -1,6 +1,7 @@
 #include <llama.h>
 
 #include <argeo/jni/argeo_jni.h>
+#include <argeo/jni/argeo_jni_encoding.h>
 
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppNativeSampler.h" // IWYU pragma: keep
@@ -84,6 +85,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitGrammar
 		JNIEnv *env, jclass, jobject modelObj, jstring grammarStr,
 		jstring rootStr) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, modelObj);
+
 	const char *grammar_str = env->GetStringUTFChars(grammarStr, nullptr);
 	const char *grammar_root = env->GetStringUTFChars(rootStr, nullptr);
 
@@ -171,19 +173,15 @@ static struct llama_sampler_i jjml_llama_sampler_java_i = {
 /* .free   = */jjml_llama_sampler_java_free, };
 
 struct llama_sampler* jjml_llama_sampler_init_java(JNIEnv *env, jobject obj) {
-	jclass clss = env->FindClass((JNI_PKG + "LlamaCppJavaSampler").c_str());
-//	jstring nameObj = (jstring) env->CallObjectMethod(obj,
-//			env->GetMethodID(clss, "getName", "()Ljava/lang/String;"));
-//	const char *name = env->GetStringUTFChars(nameObj, nullptr);
+//	jclass clss = argeo::jni::find_jclass(env, JCLASS_JAVA_SAMPLER);
 	jjml_llama_sampler_java *ctx = new jjml_llama_sampler_java {
 			env->NewGlobalRef(obj), //
-			env->GetMethodID(clss, "apply", "(Ljava/nio/ByteBuffer;JJZ)J"), //
-			env->GetMethodID(clss, "accept", "(I)V"), //
-			env->GetMethodID(clss, "reset", "()V"), //
+			LlamaCppJavaSampler$apply, //
+			LlamaCppJavaSampler$accept, //
+			LlamaCppJavaSampler$reset, //
 			"java" //
 			};
 	env->GetJavaVM(&ctx->jvm);
-//	env->ReleaseStringUTFChars(nameObj, name);
 	return new llama_sampler {
 	/* .iface = */&jjml_llama_sampler_java_i,
 	/* .ctx   = */ctx, //

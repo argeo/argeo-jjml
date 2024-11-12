@@ -21,6 +21,13 @@ jmethodID CompletionHandler$failed;
 /*
  * org.argeo.jjml.llama package
  */
+jmethodID LlamaCppJavaSampler$apply;
+jmethodID LlamaCppJavaSampler$accept;
+jmethodID LlamaCppJavaSampler$reset;
+
+/*
+ * org.argeo.jjml.llama.params package
+ */
 jmethodID ModelParams$init;
 jmethodID ContextParams$init;
 
@@ -44,14 +51,6 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	DoublePredicate$test = argeo::jni::jmethod_id(env, DoublePredicate, //
 			"test", "(D)Z");
 
-//	jclass IntBuffer = env->FindClass("java/nio/Buffer");
-//	IntBuffer$limit = env->GetMethodID(IntBuffer, "limit", "()I");
-//	IntBuffer$limitI = env->GetMethodID(IntBuffer, "limit",
-//			"(I)Ljava/nio/Buffer;");
-//	IntBuffer$position = env->GetMethodID(IntBuffer, "position", "()I");
-//	IntBuffer$positionI = env->GetMethodID(IntBuffer, "position",
-//			"(I)Ljava/nio/Buffer;");
-
 	jclass CompletionHandler = argeo::jni::find_jclass(env,
 			"java/nio/channels/CompletionHandler");
 	CompletionHandler$completed = argeo::jni::jmethod_id(env, CompletionHandler,
@@ -61,6 +60,18 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 
 	/*
 	 * org.argeo.jjml.llama package
+	 */
+	jclass LlamaCppJavaSampler = argeo::jni::find_jclass(env,
+			JCLASS_JAVA_SAMPLER);
+	LlamaCppJavaSampler$apply = argeo::jni::jmethod_id(env, LlamaCppJavaSampler,
+			"apply", "(Ljava/nio/ByteBuffer;JJZ)J");
+	LlamaCppJavaSampler$accept = argeo::jni::jmethod_id(env,
+			LlamaCppJavaSampler, "accept", "(I)V");
+	LlamaCppJavaSampler$reset = argeo::jni::jmethod_id(env, LlamaCppJavaSampler,
+			"reset", "()V");
+
+	/*
+	 * org.argeo.jjml.llama.params package
 	 */
 	// We define the constructors here so that they fail right away when signatures change
 	jclass ModelParams = argeo::jni::find_jclass(env, JCLASS_MODEL_PARAMS);
