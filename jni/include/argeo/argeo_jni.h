@@ -34,19 +34,23 @@
 /*
  * NAMESPACE INDEPENDENT
  */
-#define LongSupplier$getAsLong(env) env->GetMethodID( \
-		env->FindClass("java/util/function/LongSupplier"), "getAsLong", "()J")
-extern jmethodID LongSupplier$getAsLong;
 
 namespace argeo::jni {
 /*
- * EXCEPTION HANDLING
+ * JAVA MACROS
  */
+// exceptions
 #define RuntimeException(env) env->FindClass("java/lang/RuntimeException")
 #define IllegalArgumentException(env) env->FindClass("java/lang/IllegalArgumentException")
 #define IndexOutOfBoundsException(env) env->FindClass("java/lang/IndexOutOfBoundsException")
 #define IllegalStateException(env) env->FindClass("java/lang/IllegalStateException")
 
+#define LongSupplier$getAsLong(env) env->GetMethodID( \
+		env->FindClass("java/util/function/LongSupplier"), "getAsLong", "()J")
+
+/*
+ * EXCEPTION HANDLING
+ */
 /** Catches a standard C++ exception and throws an unchecked Java exception.
  * Does nothing if a Java execution is already pending
  * (that is, the already thrown java exception has priority.
@@ -150,7 +154,7 @@ inline T getPointer(jlong pointer) {
  */
 template<typename T>
 inline T getPointer(JNIEnv *env, jobject reference) {
-	jlong pointer = env->CallLongMethod(reference, LongSupplier$getAsLong);
+	jlong pointer = env->CallLongMethod(reference, LongSupplier$getAsLong(env));
 	return getPointer<T>(pointer);
 }
 

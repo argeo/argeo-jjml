@@ -14,19 +14,14 @@ jclass Integer;
 jmethodID Integer$valueOf;
 
 jmethodID DoublePredicate$test;
-jmethodID LongSupplier$getAsLong;
 
-jmethodID IntBuffer$limit;
-jmethodID IntBuffer$limitI;
-jmethodID IntBuffer$position;
-jmethodID IntBuffer$positionI;
+//jmethodID IntBuffer$limit;
+//jmethodID IntBuffer$limitI;
+//jmethodID IntBuffer$position;
+//jmethodID IntBuffer$positionI;
 
 jmethodID CompletionHandler$completed;
 jmethodID CompletionHandler$failed;
-
-// EXCEPTIONS
-jclass IllegalStateException;
-jclass IllegalArgumentException;
 
 /*
  * LOCAL
@@ -46,20 +41,14 @@ static void org_argeo_jjml_llama_(JNIEnv *env) {
 	DoublePredicate$test = env->GetMethodID(
 			env->FindClass("java/util/function/DoublePredicate"), "test",
 			"(D)Z");
-	LongSupplier$getAsLong = LongSupplier$getAsLong(env);
 
-	jclass IntBuffer = env->FindClass("java/nio/Buffer");
-	IntBuffer$limit = env->GetMethodID(IntBuffer, "limit", "()I");
-	IntBuffer$limitI = env->GetMethodID(IntBuffer, "limit",
-			"(I)Ljava/nio/Buffer;");
-	IntBuffer$position = env->GetMethodID(IntBuffer, "position", "()I");
-	IntBuffer$positionI = env->GetMethodID(IntBuffer, "position",
-			"(I)Ljava/nio/Buffer;");
-
-	// EXCEPTIONS
-	IllegalStateException = env->FindClass("java/lang/IllegalStateException");
-	IllegalArgumentException = env->FindClass(
-			"java/lang/IllegalArgumentException");
+//	jclass IntBuffer = env->FindClass("java/nio/Buffer");
+//	IntBuffer$limit = env->GetMethodID(IntBuffer, "limit", "()I");
+//	IntBuffer$limitI = env->GetMethodID(IntBuffer, "limit",
+//			"(I)Ljava/nio/Buffer;");
+//	IntBuffer$position = env->GetMethodID(IntBuffer, "position", "()I");
+//	IntBuffer$positionI = env->GetMethodID(IntBuffer, "position",
+//			"(I)Ljava/nio/Buffer;");
 
 	jclass CompletionHandler = env->FindClass(
 			"java/nio/channels/CompletionHandler");

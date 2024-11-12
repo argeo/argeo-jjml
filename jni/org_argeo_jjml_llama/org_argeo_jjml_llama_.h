@@ -25,10 +25,8 @@ extern jmethodID Integer$valueOf;
 
 extern jmethodID DoublePredicate$test;
 
-extern jmethodID IntBuffer$limit;
-extern jmethodID IntBuffer$limitI;
-extern jmethodID IntBuffer$position;
-extern jmethodID IntBuffer$positionI;
+//extern jmethodID IntBuffer$limit;
+//extern jmethodID IntBuffer$position;
 
 extern jmethodID CompletionHandler$completed;
 extern jmethodID CompletionHandler$failed;
