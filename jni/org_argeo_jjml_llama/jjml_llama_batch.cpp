@@ -9,6 +9,7 @@
 #include <math.h>
 #include <cassert>
 #include <functional>
+#include <iostream>
 
 #include "jjml_llama.h"
 #include "org_argeo_jjml_llama_.h"
@@ -45,8 +46,7 @@ static jint jjml_llama_batch_processor_write(llama_context *ctx,
 	for (int i = 0; i < inputs_count; i++) {
 		void *input = inputs[i];
 		if (input != nullptr) {
-			seq_tokens[i] = static_cast<llama_token*>(input)
-					+ seq_offsets[i] * sizeof(llama_token);
+			seq_tokens[i] = static_cast<llama_token*>(input) + seq_offsets[i];
 		} else {
 			seq_tokens[i] = nullptr;
 		}
@@ -342,32 +342,16 @@ static jint jjml_llama_batch_processor_read(llama_context *ctx,
 	for (int i = 0; i < outputs_count; i++) {
 		void *output = outputs[i];
 		if (output != nullptr) {
-			seq_tokens[i] = static_cast<llama_token*>(output)
-					+ seq_offsets[i] * sizeof(llama_token);
+			seq_tokens[i] = static_cast<llama_token*>(output) + seq_offsets[i];
 		} else {
 			seq_tokens[i] = nullptr;
 		}
 	}
 
-//	llama_token *seq_tokens[n_parallel];
-//	int seq_tokens_size[n_parallel];
 	int max_decodes = 0;
-
 	for (int i = 0; i < n_parallel; i++) {
-//		jobject outputBuf = env->GetObjectArrayElement(outputBuffers, i);
-//		if (outputBuf != nullptr) {
-//			void *output = env->GetDirectBufferAddress(outputBuf);
-//			int out_tokens_size = env->CallIntMethod(outputBuf,
-//					IntBuffer$limit);
-//			assert(out_tokens_size > 0 && "Output buffer capacity");
-//
-//			llama_token *output_tokens = static_cast<llama_token*>(output);
-//
-//			seq_tokens[i] = output_tokens;
-//			seq_tokens_size[i] = out_tokens_size;
 		if (seq_tokens_size[i] > max_decodes)
 			max_decodes = seq_tokens_size[i];
-//		}
 	}
 
 	PERF_BEGIN();
@@ -555,9 +539,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadTo
 	int outputs_count = env->GetArrayLength(outputArrays);
 	void *outputs[outputs_count];
 	for (int i = 0; i < outputs_count; i++) {
-		jarray arr = (jarray) env->GetObjectArrayElement(outputArrays, i);
+		jintArray arr = (jintArray) env->GetObjectArrayElement(outputArrays, i);
 		if (arr != nullptr) {
 			outputs[i] = env->GetPrimitiveArrayCritical(arr, nullptr);
+//			outputs[i] = env->GetIntArrayElements(arr, nullptr);
 		} else {
 			outputs[i] = nullptr;
 		}
@@ -574,9 +559,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadTo
 
 	// clean up
 	for (int i = 0; i < outputs_count; i++) {
-		jarray arr = (jarray) env->GetObjectArrayElement(outputArrays, i);
+		jintArray arr = (jintArray) env->GetObjectArrayElement(outputArrays, i);
 		if (arr != nullptr) {
 			env->ReleasePrimitiveArrayCritical(arr, outputs[i], 0);
+//			env->ReleaseIntArrayElements(arr, (int*) outputs[i], 0);
 		}
 	}
 

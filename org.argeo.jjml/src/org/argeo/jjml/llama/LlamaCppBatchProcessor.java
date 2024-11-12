@@ -95,36 +95,13 @@ public class LlamaCppBatchProcessor {
 		int[] offsets = new int[inputs.length];
 		int[] lengths = new int[inputs.length];
 		int[][] arrays = new int[inputs.length][];
-		boolean allDirect = true;
-		for (int i = 0; i < inputs.length; i++) {
-			IntBuffer buf = inputs[i];
-			if (buf.isDirect()) {
-				offsets[i] = buf.position();
-				lengths[i] = buf.remaining();
-			} else {
-				allDirect = false;
-				break;
-			}
-		}
+		boolean allDirect = areAllBuffersDirect(inputs, offsets, lengths);
 
 		if (allDirect) {
 			contextPosition = doWrite(context.getAsLong(), samplerChain.getAsLong(), contextPosition, inputs, offsets,
 					lengths, sequenceIds, outputIds, lastLogits);
 		} else {
-			for (int i = 0; i < inputs.length; i++) {
-				IntBuffer buf = inputs[i];
-				if (buf.hasArray()) {
-					offsets[i] = buf.arrayOffset() + buf.position();
-					lengths[i] = buf.remaining();
-					arrays[i] = buf.array();
-				} else {// copy
-					offsets[i] = 0;
-					lengths[i] = buf.remaining();
-					int[] arr = new int[lengths[i]];
-					buf.get(arr);
-					arrays[i] = arr;
-				}
-			}
+			buffersToArrays(inputs, offsets, lengths, arrays, true);
 			contextPosition = doWriteArrays(context.getAsLong(), samplerChain.getAsLong(), contextPosition, arrays,
 					offsets, lengths, sequenceIds, outputIds, lastLogits);
 		}
@@ -142,17 +119,7 @@ public class LlamaCppBatchProcessor {
 					+ (parallelCount > 1 ? " either one or " + parallelCount + " inputs" : " only one input"));
 		int[] offsets = new int[outputs.length];
 		int[] lengths = new int[outputs.length];
-		boolean allDirect = true;
-		for (int i = 0; i < outputs.length; i++) {
-			IntBuffer buf = outputs[i];
-			if (buf.isDirect()) {
-				offsets[i] = buf.position();
-				lengths[i] = buf.remaining();
-			} else {
-				allDirect = false;
-				break;
-			}
-		}
+		boolean allDirect = areAllBuffersDirect(outputs, offsets, lengths);
 		int[][] arrays = allDirect ? null : new int[outputs.length][];
 
 		CompletionHandler<Integer, Integer> completionHandler = new CompletionHandler<Integer, Integer>() {
@@ -181,9 +148,52 @@ public class LlamaCppBatchProcessor {
 					validatingSampler != null ? validatingSampler.getAsLong() : 0, contextPosition, outputs, offsets,
 					lengths, sequenceIds, outputIds, completionHandler);
 		} else {
+			buffersToArrays(outputs, offsets, lengths, arrays, false);
 			contextPosition = doReadToArrays(context.getAsLong(), samplerChain.getAsLong(),
 					validatingSampler != null ? validatingSampler.getAsLong() : 0, contextPosition, arrays, offsets,
 					lengths, sequenceIds, outputIds, completionHandler);
+		}
+	}
+
+	/**
+	 * Common routine to fill check whether all buffers are direct. If all buffers
+	 * are direct, the arrays will be filled with proper values, otherwise they will
+	 * need to be processed again (via
+	 * {@link #buffersToArrays(IntBuffer[], int[], int[], int[][], boolean)}.
+	 */
+	private boolean areAllBuffersDirect(IntBuffer[] buffers, int[] offsets, int[] lengths) {
+		boolean allDirect = true;
+		for (int i = 0; i < buffers.length; i++) {
+			IntBuffer buf = buffers[i];
+			if (buf.isDirect()) {
+				offsets[i] = buf.position();
+				lengths[i] = buf.remaining();
+			} else {
+				allDirect = false;
+				break;
+			}
+		}
+		return allDirect;
+	}
+
+	/**
+	 * Common routine to fill arrays, to be used when not all buffers are direct.
+	 */
+	private void buffersToArrays(IntBuffer[] buffers, int[] offsets, int[] lengths, int[][] arrays, boolean input) {
+		for (int i = 0; i < buffers.length; i++) {
+			IntBuffer buf = buffers[i];
+			if (buf.hasArray()) {
+				offsets[i] = buf.arrayOffset() + buf.position();
+				lengths[i] = buf.remaining();
+				arrays[i] = buf.array();
+			} else {// new array
+				offsets[i] = 0;
+				lengths[i] = buf.remaining();
+				int[] arr = new int[lengths[i]];
+				if (input)
+					buf.get(arr);
+				arrays[i] = arr;
+			}
 		}
 	}
 
@@ -214,7 +224,7 @@ public class LlamaCppBatchProcessor {
 					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
 							+ " available. Reduce parallel or increase context size.");
 
-		boolean direct = true;
+		boolean direct = false;
 		// direct buffer area
 		IntBuffer buf;
 		if (direct) {
@@ -334,7 +344,7 @@ public class LlamaCppBatchProcessor {
 				IntBuffer output = outputs[i];
 				if (output != null) {
 					output.flip();
-					int[] newTokens = new int[output.limit() - output.position()];
+					int[] newTokens = new int[output.remaining()];
 					output.get(newTokens);
 					String outputStr = vocabulary.deTokenize(IntBuffer.wrap(newTokens));
 					outputStrings[i].append(outputStr);
