@@ -11,6 +11,7 @@
 #include <cassert>
 #include <cstring>
 #include <functional>
+#include <iostream>
 
 #include "org_argeo_jjml_llama_.h"
 #include "org_argeo_jjml_llama_LlamaCppModel.h" // IWYU pragma: keep
@@ -202,15 +203,32 @@ static jobjectArray jjml_lama_get_meta(JNIEnv *env, llama_model *model,
 		jobjectArray res = env->NewObjectArray(meta_count,
 				env->FindClass("java/lang/String"), nullptr);
 		for (int32_t i = 0; i < meta_count; i++) {
-			const size_t buf_size = 1024;
-			char buf[buf_size];
-			int32_t length = supplier(i, buf, buf_size);
-			if (length == -1)
-				throw std::runtime_error("Cannot read model meta key " + i);
-			std::u16string u16res = utf16_converter.from_bytes(
-					std::string(buf, length));
-			jstring str = argeo::jni::utf16ToJstring(env, u16res);
-			env->SetObjectArrayElement(res, i, str);
+			try {
+				// chat templates can be big
+				const size_t buf_size = 1024;
+				char buf[buf_size];
+				int32_t length = supplier(i, buf, buf_size);
+				if (length == -1)
+					throw std::runtime_error(
+							"Cannot read model metadata " + std::to_string(i));
+				jstring str;
+				if (length > buf_size) { // chat templates can be quite big
+					char big_buf[length];
+					length = supplier(i, big_buf, length);
+					std::u16string u16res = utf16_converter.from_bytes(
+							std::string(big_buf, length));
+					str = argeo::jni::utf16ToJstring(env, u16res);
+				} else {
+					std::u16string u16res = utf16_converter.from_bytes(
+							std::string(buf, length));
+					str = argeo::jni::utf16ToJstring(env, u16res);
+				}
+				env->SetObjectArrayElement(res, i, str);
+			} catch (std::exception &ex) {
+				// ignore
+				std::cerr << "Cannot read metadata " << i << ": " << ex.what()
+						<< ". Ignoring it." << std::endl;
+			}
 		}
 		return res;
 	} catch (std::exception &ex) {

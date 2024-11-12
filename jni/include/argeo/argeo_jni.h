@@ -43,7 +43,8 @@ namespace argeo::jni {
  */
 #define RuntimeException(env) env->FindClass("java/lang/RuntimeException")
 #define IllegalArgumentException(env) env->FindClass("java/lang/IllegalArgumentException")
-#define IndexOutOfBoundException(env) env->FindClass("java/lang/IndexOutOfBoundException")
+#define IndexOutOfBoundsException(env) env->FindClass("java/lang/IndexOutOfBoundsException")
+#define IllegalStateException(env) env->FindClass("java/lang/IllegalStateException")
 
 /** Catches a standard C++ exception and throws an unchecked Java exception.
  * Does nothing if a Java execution is already pending
@@ -58,7 +59,9 @@ inline std::nullptr_t throw_to_java(JNIEnv *env, const std::exception &ex) {
 	if (typeid(std::invalid_argument) == typeid(ex)) {
 		env->ThrowNew(IllegalArgumentException(env), ex.what());
 	} else if (typeid(std::range_error) == typeid(ex)) {
-		env->ThrowNew(IndexOutOfBoundException(env), ex.what());
+		env->ThrowNew(IndexOutOfBoundsException(env), ex.what());
+	} else if (typeid(std::runtime_error) == typeid(ex)) {
+		env->ThrowNew(IllegalStateException(env), ex.what());
 	} else {
 		env->ThrowNew(RuntimeException(env), ex.what());
 	}

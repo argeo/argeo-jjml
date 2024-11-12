@@ -449,9 +449,8 @@ static jint jjml_llama_batch_processor_read(llama_context *ctx,
 		cur_pos += 1;
 
 		// evaluate the current batch with the transformer model
-		if (llama_decode(ctx, batch)) {
-			env->ThrowNew(IllegalStateException, "Failed to decode");
-		}
+		if (llama_decode(ctx, batch))
+			throw std::runtime_error("Decode failed");
 	}
 
 	// clean up

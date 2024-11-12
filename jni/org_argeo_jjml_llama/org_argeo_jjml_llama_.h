@@ -36,8 +36,4 @@ extern jmethodID IntBuffer$positionI;
 extern jmethodID CompletionHandler$completed;
 extern jmethodID CompletionHandler$failed;
 
-// EXCEPTIONS
-extern jclass IllegalStateException;
-extern jclass IllegalArgumentException;
-
 #endif

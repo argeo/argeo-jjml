@@ -100,18 +100,21 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppNative_newContextPar
  */
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 		JNIEnv *env, jclass, jobject modelObj, jobject contextParams) {
-	auto *model = argeo::jni::getPointer<llama_model*>(env, modelObj);
+	try {
+		auto *model = argeo::jni::getPointer<llama_model*>(env, modelObj);
 
-	llama_context_params ctx_params = llama_context_default_params();
-	get_context_params(env, contextParams, &ctx_params);
+		llama_context_params ctx_params = llama_context_default_params();
+		get_context_params(env, contextParams, &ctx_params);
 
-	llama_context *ctx = llama_new_context_with_model(model, ctx_params);
-	if (ctx == NULL) {
-		env->ThrowNew(IllegalStateException,
-				"Failed to create llama.cpp context");
-		return 0;
+		llama_context *ctx = llama_new_context_with_model(model, ctx_params);
+		if (ctx == NULL) {
+			throw std::runtime_error("Failed to create llama.cpp context");
+		}
+		return (jlong) ctx;
+	} catch (const std::exception &ex) {
+		argeo::jni::throw_to_java(env, ex);
+		return NULL;
 	}
-	return (jlong) ctx;
 }
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy(
