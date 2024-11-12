@@ -232,12 +232,12 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doRead(
 		jlong grammarSamplerPtr, jint contextPosition,
 		jobjectArray outputBuffers, jintArray offsets, jintArray lengths,
 		jintArray sequenceIds, jintArray outputIds, jobject completionHandler) {
-	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
 
-	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerPtr);
+	auto *smpl = argeo::jni::as_pointer<llama_sampler*>(samplerPtr);
 	auto *grmr =
 			grammarSamplerPtr != 0 ?
-					argeo::jni::getPointer<llama_sampler*>(grammarSamplerPtr) :
+					argeo::jni::as_pointer<llama_sampler*>(grammarSamplerPtr) :
 					nullptr;
 	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
 
@@ -268,12 +268,12 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doReadTo
 		jlong grammarSamplerPtr, jint contextPosition,
 		jobjectArray outputArrays, jintArray offsets, jintArray lengths,
 		jintArray sequenceIds, jintArray outputIds, jobject completionHandler) {
-	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
 
-	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerPtr);
+	auto *smpl = argeo::jni::as_pointer<llama_sampler*>(samplerPtr);
 	auto *grmr =
 			grammarSamplerPtr != 0 ?
-					argeo::jni::getPointer<llama_sampler*>(grammarSamplerPtr) :
+					argeo::jni::as_pointer<llama_sampler*>(grammarSamplerPtr) :
 					nullptr;
 	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
 

@@ -3,7 +3,7 @@
 #include "jjml_llama.h"
 
 /*
- * SHARED C++ UTILITIES
+ * SHARED PLAIN C++ UTILITIES
  */
 void jjml_llama_batch_add(struct llama_batch &batch, llama_token id,
 		llama_pos pos, const std::vector<llama_seq_id> &seq_ids, bool logits) {

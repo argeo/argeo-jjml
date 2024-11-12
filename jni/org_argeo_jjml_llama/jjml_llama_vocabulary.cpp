@@ -67,7 +67,7 @@ static std::vector<llama_token> jjml_cpp_string_to_tokens(llama_model *model,
 JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeUtf8BytesAsArray(
 		JNIEnv *env, jclass, jlong pointer, jbyteArray str, jint offset,
 		jint length, jboolean addSpecial, jboolean parseSpecial) {
-	auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+	auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
 	void *u8_arr = env->GetPrimitiveArrayCritical(str, NULL);
 	char *u8_chars = static_cast<char*>(u8_arr) + offset;
@@ -88,7 +88,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doToken
 		JNIEnv *env, jclass, jlong pointer, jobject u8Buf, jint offset,
 		jint length, jboolean addSpecial, jboolean parseSpecial) {
 	try {
-		auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+		auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
 		// input
 		void *u8_arr = env->GetDirectBufferAddress(u8Buf);
@@ -117,7 +117,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeUt
 		jboolean addSpecial, jboolean parseSpecial) {
 	jint n_tokens = 0;
 	try {
-		auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+		auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
 		// input
 		void *u8_arr = env->GetDirectBufferAddress(u8Buf);
@@ -149,7 +149,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeUt
 JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeArrayAsUtf8Bytes(
 		JNIEnv *env, jclass, jlong pointer, jintArray tokenList, jint pos,
 		jint size, jboolean removeSpecial, jboolean unparseSpecial) {
-	auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+	auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
 //	llama_token tokens[length];
 //	env->GetIntArrayRegion(tokenList, offset, length,
@@ -174,7 +174,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTo
 JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeAsUtf8Bytes(
 		JNIEnv *env, jclass, jlong pointer, jobject tokensBuf, jint pos,
 		jint size, jboolean removeSpecial, jboolean unparseSpecial) {
-	auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+	auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
 	void *tokens_arr = env->GetDirectBufferAddress(tokensBuf);
 	if (tokens_arr == NULL)
@@ -196,7 +196,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenize
 		jboolean removeSpecial, jboolean unparseSpecial) {
 	jint n_chars = 0;
 	try {
-		auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+		auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
 		// input
 		void *tokens_arr = env->GetDirectBufferAddress(tokensBuf);
@@ -228,11 +228,11 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenize
 JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doTokenizeStringAsArray(
 		JNIEnv *env, jclass, jlong pointer, jstring str, jboolean addSpecial,
 		jboolean parseSpecial) {
-	auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+	auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
 	const jchar *jchars = env->GetStringCritical(str, nullptr);
 	jsize length = env->GetStringLength(str);
-	std::u16string u16text = argeo::jni::jcharsToUtf16(jchars, length);
+	std::u16string u16text = argeo::jni::jchars_to_utf16(jchars, length);
 	std::string text = utf16_converter.to_bytes(u16text);
 
 	std::vector<llama_token> tokens = jjml_cpp_string_to_tokens(model,
@@ -250,7 +250,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doToken
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeArrayAsString(
 		JNIEnv *env, jclass, jlong pointer, jintArray tokenList, jint pos,
 		jint size, jboolean removeSpecial, jboolean unparseSpecial) {
-	auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+	auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
 	// input
 	void *tokens_arr = env->GetPrimitiveArrayCritical(tokenList,
@@ -264,13 +264,13 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeToken
 	env->ReleasePrimitiveArrayCritical(tokenList, tokens_arr, 0);
 
 	std::u16string u16text = utf16_converter.from_bytes(text);
-	return argeo::jni::utf16ToJstring(env, u16text);
+	return argeo::jni::utf16_to_jstring(env, u16text);
 }
 
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeTokenizeAsString(
 		JNIEnv *env, jclass, jlong pointer, jobject tokensBuf, jint pos,
 		jint size, jboolean removeSpecial, jboolean unparseSpecial) {
-	auto *model = argeo::jni::getPointer<llama_model*>(pointer);
+	auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
 	void *tokens_arr = env->GetDirectBufferAddress(tokensBuf);
 	llama_token *tokens = static_cast<llama_token*>(tokens_arr) + pos;
@@ -279,6 +279,6 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppVocabulary_doDeToken
 			removeSpecial, unparseSpecial);
 
 	std::u16string u16text = utf16_converter.from_bytes(text);
-	return argeo::jni::utf16ToJstring(env, u16text);
+	return argeo::jni::utf16_to_jstring(env, u16text);
 }
 

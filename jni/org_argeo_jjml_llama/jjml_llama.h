@@ -6,13 +6,7 @@
 #define _jjml_llama_h
 
 /*
- * SHARED CONSTANTS
- */
-
-/*
  * SHARED UTILITIES
- *
- * Implemented in jjml_llama.cpp.
  */
 
 /**

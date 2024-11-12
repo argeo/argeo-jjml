@@ -177,8 +177,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWrite(
 		jint contextPosition, jobjectArray inputBuffers, jintArray offsets,
 		jintArray lengths, jintArray sequenceIds, jintArray outputIds,
 		jboolean lastLogits) {
-	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
-	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerChainPointer);
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
+	auto *smpl = argeo::jni::as_pointer<llama_sampler*>(samplerChainPointer);
 	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
 
 	int inputs_count = env->GetArrayLength(inputBuffers);
@@ -208,8 +208,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppBatchProcessor_doWriteA
 		jint contextPosition, jobjectArray inputArrays, jintArray offsets,
 		jintArray lengths, jintArray sequenceIds, jintArray outputIds,
 		jboolean lastLogits) {
-	auto *ctx = argeo::jni::getPointer<llama_context*>(contextPointer);
-	auto *smpl = argeo::jni::getPointer<llama_sampler*>(samplerChainPointer);
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
+	auto *smpl = argeo::jni::as_pointer<llama_sampler*>(samplerChainPointer);
 	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
 
 	int inputs_count = env->GetArrayLength(inputArrays);

@@ -190,7 +190,7 @@ inline jboolean exec_boolean_callback(java_callback *cb, ...) {
 
 /** Cast a jlong to a pointer. */
 template<typename T>
-inline T getPointer(jlong pointer) {
+inline T as_pointer(jlong pointer) {
 	static_assert(std::is_pointer<T>::value);
 	// Check the (unlikely) case where casting pointers as jlong would fail,
 	// since it is relied upon in order to map Java and native structures
@@ -206,9 +206,9 @@ inline T getPointer(jlong pointer) {
  * @return the native pointer
  */
 template<typename T>
-inline T getPointer(JNIEnv *env, jobject reference) {
+inline T as_pointer(JNIEnv *env, jobject reference) {
 	jlong pointer = env->CallLongMethod(reference, LongSupplier$getAsLong(env));
-	return getPointer<T>(pointer);
+	return as_pointer<T>(pointer);
 }
 
 /*
@@ -236,13 +236,16 @@ struct deletable_facet: Facet {
  *
  * Usage:
  * <code>
- * </code>*/
+ *	std::string text = ...
+ *	std::u16string u16text = utf16_converter.from_bytes(text);
+ * </code>
+ */
 typedef std::wstring_convert<
 		argeo::jni::deletable_facet<std::codecvt<char16_t, char, std::mbstate_t>>,
 		char16_t> utf16_convert;
 
 /** Convenience method to make casting more readable in code.*/
-inline std::u16string jcharsToUtf16(const jchar *jchars, const jsize length) {
+inline std::u16string jchars_to_utf16(const jchar *jchars, const jsize length) {
 	// sanity check
 	static_assert(sizeof(char16_t) == sizeof(jchar));
 
@@ -251,14 +254,16 @@ inline std::u16string jcharsToUtf16(const jchar *jchars, const jsize length) {
 	return u16text;
 }
 
-inline std::u16string jstringToUtf16(JNIEnv *env, jstring str) {
-	return argeo::jni::jcharsToUtf16(env->GetStringChars(str, nullptr),
-			env->GetStringLength(str));
+inline std::u16string jstring_to_utf16(JNIEnv *env, jstring str) {
+	jsize length = env->GetStringLength(str);
+	jchar buf[length];
+	env->GetStringRegion(str, 0, length, buf);
+	return argeo::jni::jchars_to_utf16(buf, length);
 }
 
 // METHODS
 /** Convenience method to make casting more readable in code.*/
-inline const jchar* utf16ToJchars(std::u16string u16text) {
+inline const jchar* utf16_to_jchars(std::u16string u16text) {
 	// sanity check
 	static_assert(sizeof(char16_t) == sizeof(jchar));
 
@@ -266,8 +271,8 @@ inline const jchar* utf16ToJchars(std::u16string u16text) {
 }
 
 /** UTF-16 string to Java string. No conversion is needed, as this is the default format.*/
-inline jstring utf16ToJstring(JNIEnv *env, std::u16string u16text) {
-	return env->NewString(utf16ToJchars(u16text),
+inline jstring utf16_to_jstring(JNIEnv *env, std::u16string u16text) {
+	return env->NewString(utf16_to_jchars(u16text),
 			static_cast<jsize>(u16text.size()));
 }
 
