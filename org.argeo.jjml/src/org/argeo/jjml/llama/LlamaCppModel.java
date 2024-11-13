@@ -58,12 +58,15 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private final int layerCount;
 	private final Map<String, String> metadata;
 	private final String description;
+	private final long modelSize;
 
 	LlamaCppModel(long pointer, Path localPath, ModelParams initParams) {
 		this.pointer = pointer;
 		this.vocabulary = new LlamaCppVocabulary(this);
 		this.localPath = localPath;
 		this.initParams = initParams;
+
+		// effective parameters from native side
 		vocabularySize = doGetVocabularySize();
 		contextTrainingSize = doGetContextTrainingSize();
 		embeddingSize = doGetEmbeddingSize();
@@ -78,6 +81,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		}
 		metadata = Collections.unmodifiableMap(map);
 		description = doGetDescription();
+		modelSize = doGetModelSize();
 	}
 
 	/*
@@ -106,6 +110,8 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private native String[] doGetMetadataValues();
 
 	private native String doGetDescription();
+
+	private native long doGetModelSize();
 
 	/*
 	 * USABLE METHODS
@@ -195,6 +201,11 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	public String getDescription() {
 		return description;
 	}
+
+	public long getModelSize() {
+		return modelSize;
+	}
+
 	/*
 	 * STATIC UTILITIES
 	 */

@@ -272,3 +272,10 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetDescripti
 		return argeo::jni::throw_to_java(env, ex);
 	}
 }
+
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetModelSize(
+		JNIEnv *env, jobject obj) {
+	static_assert(sizeof(jlong) >= sizeof(uint64_t));
+	auto *model = argeo::jni::as_pointer<llama_model*>(env, obj);
+	return llama_model_size(model);
+}

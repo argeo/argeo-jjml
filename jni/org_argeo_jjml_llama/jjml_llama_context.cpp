@@ -1,14 +1,14 @@
+#include <argeo/jni/argeo_jni.h>
+#include <jni.h>
+#include <jni_md.h>
+#include <llama.h>
+#include "org_argeo_jjml_llama_LlamaCppBackend.h" // IWYU pragma: keep
+#include "org_argeo_jjml_llama_LlamaCppContext.h" // IWYU pragma: keep
 #include <cassert>
 #include <stdexcept>
 #include <string>
 
-#include <llama.h>
-
-#include <argeo/jni/argeo_jni.h>
-
 #include "org_argeo_jjml_llama_.h"
-#include "org_argeo_jjml_llama_LlamaCppContext.h" // IWYU pragma: keep
-#include "org_argeo_jjml_llama_LlamaCppBackend.h" // IWYU pragma: keep
 
 /*
  * PARAMETERS
@@ -140,4 +140,16 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetBatchSize(
 		JNIEnv *env, jobject obj) {
 	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
 	return llama_n_batch(ctx);
+}
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetPhysicalBatchSize(
+		JNIEnv *env, jobject obj) {
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
+	return llama_n_ubatch(ctx);
+}
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetMaxSequenceCount(
+		JNIEnv *env, jobject obj) {
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
+	return llama_n_seq_max(ctx);
 }

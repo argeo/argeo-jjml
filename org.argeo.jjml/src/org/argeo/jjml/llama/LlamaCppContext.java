@@ -23,10 +23,12 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 
 	private final ContextParams initParams;
 
-	// Effective parameters
+	// effective parameters
 	private final PoolingType poolingType;
 	private final int contextSize;
 	private final int batchSize;
+	private final int physicalBatchSize;
+	private final int maxSequenceCount;
 
 	private LlamaCppBatchProcessor batchProcessor;
 
@@ -40,10 +42,14 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 		this.pointer = doInit(model, initParams);
 		this.model = model;
 		this.initParams = initParams;
+
+		// effective parameters from native side
 		int poolingTypeCode = doGetPoolingType();
 		poolingType = PoolingType.byCode(poolingTypeCode);
 		contextSize = doGetContextSize();
 		batchSize = doGetBatchSize();
+		physicalBatchSize = doGetPhysicalBatchSize();
+		maxSequenceCount = doGetMaxSequenceCount();
 	}
 
 	/*
@@ -51,7 +57,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	 */
 	private static native long doInit(LlamaCppModel model, ContextParams params);
 
-	native void doDestroy();
+	private native void doDestroy();
 
 	private native int doGetPoolingType();
 
@@ -59,12 +65,25 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 
 	private native int doGetBatchSize();
 
+	private native int doGetPhysicalBatchSize();
+
+	private native int doGetMaxSequenceCount();
+
 	/*
 	 * LIFECYCLE
 	 */
 	@Override
 	public void close() throws RuntimeException {
 		doDestroy();
+	}
+
+	/*
+	 * PACKAGE COORDINATION
+	 */
+	void setBatchProcessor(LlamaCppBatchProcessor batchProcessor) {
+		if (batchProcessor != null)
+			throw new IllegalArgumentException("A batch processor is already active for this context");
+		this.batchProcessor = batchProcessor;
 	}
 
 	/*
@@ -99,10 +118,12 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 		return batchProcessor;
 	}
 
-	void setBatchProcessor(LlamaCppBatchProcessor batchProcessor) {
-		if (batchProcessor != null)
-			throw new IllegalArgumentException("A batch processor is already active for this context");
-		this.batchProcessor = batchProcessor;
+	public int getPhysicalBatchSize() {
+		return physicalBatchSize;
+	}
+
+	public int getMaxSequenceCount() {
+		return maxSequenceCount;
 	}
 
 	/*
