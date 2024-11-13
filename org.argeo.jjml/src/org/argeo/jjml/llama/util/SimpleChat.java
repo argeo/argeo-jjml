@@ -76,6 +76,7 @@ public class SimpleChat extends LlamaCppBatchProcessor
 			if (message.trim().equals(""))
 				return CompletableFuture.completedStage(null); // this was just for interruption
 		}
+		message = message.replace("\\\n", "\n");
 		LlamaCppChatMessage userMsg = StandardRole.USER.msg(message);
 		String prompt;
 		if (usePreviousMessages) {

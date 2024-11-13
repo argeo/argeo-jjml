@@ -30,11 +30,12 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 
 	try {
 		int alloc_size = 0;
+		// TODO is it really necessary to go through the heap?
 		for (int i = 0; i < messages_size; i++) {
 			jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
 			std::u16string u16role = argeo::jni::jstring_to_utf16(env, roleStr);
 			std::string u8role = utf16_conv.to_bytes(u16role);
-			char *role = new char[u8role.length()];
+			char *role = new char[u8role.length() + 1];
 			strcpy(role, u8role.c_str());
 
 			jstring contentStr = (jstring) env->GetObjectArrayElement(contents,
@@ -42,11 +43,12 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 			std::u16string u16content = argeo::jni::jstring_to_utf16(env,
 					contentStr);
 			std::string u8content = utf16_conv.to_bytes(u16content);
-			char *content = new char[u8content.length()];
+			char *content = new char[u8content.length() + 1];
 			strcpy(content, u8content.c_str());
 
 			llama_chat_message message { role, content };
 			chat_messages.push_back(message);
+
 			// using the same factor as in common.cpp
 			alloc_size += (u8role.length() + u8content.length()) * 1.25;
 		}
