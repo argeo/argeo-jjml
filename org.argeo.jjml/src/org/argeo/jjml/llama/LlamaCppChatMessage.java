@@ -12,7 +12,7 @@ public class LlamaCppChatMessage {
 		this.content = content;
 	}
 
-	public LlamaCppChatMessage(StandardRole role, String content) {
+	public LlamaCppChatMessage(Supplier<String> role, String content) {
 		this(role.get(), content);
 	}
 
@@ -22,34 +22,5 @@ public class LlamaCppChatMessage {
 
 	public String getContent() {
 		return content;
-	}
-
-	/** Commonly used roles, for convenience. */
-	public static enum StandardRole implements Supplier<String> {
-		SYSTEM("system"), //
-		USER("user"), //
-		ASSISTANT("assistant"), //
-		;
-
-		private final String role;
-
-		private StandardRole(String role) {
-			this.role = role;
-		}
-
-		@Override
-		public String get() {
-			return role;
-		}
-
-		@Override
-		public String toString() {
-			return get();
-		}
-
-		/** Creates a new chat message with this role and the provided text. */
-		public LlamaCppChatMessage msg(String text) {
-			return new LlamaCppChatMessage(this, text);
-		}
 	}
 }

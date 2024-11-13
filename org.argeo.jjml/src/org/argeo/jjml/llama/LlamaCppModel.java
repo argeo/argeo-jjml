@@ -23,9 +23,9 @@ import java.util.function.DoublePredicate;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 
-import org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole;
 import org.argeo.jjml.llama.params.ModelParamName;
 import org.argeo.jjml.llama.params.ModelParams;
+import org.argeo.jjml.llama.util.StandardRole;
 
 /**
  * Access to a llama.cpp model
@@ -59,6 +59,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private final Map<String, String> metadata;
 	private final String description;
 	private final long modelSize;
+	private final int endOfGenerationToken;
 
 	LlamaCppModel(long pointer, Path localPath, ModelParams initParams) {
 		this.pointer = pointer;
@@ -82,6 +83,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		metadata = Collections.unmodifiableMap(map);
 		description = doGetDescription();
 		modelSize = doGetModelSize();
+		endOfGenerationToken = doGetEndOfGenerationToken();
 	}
 
 	/*
@@ -112,6 +114,8 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private native String doGetDescription();
 
 	private native long doGetModelSize();
+
+	private native int doGetEndOfGenerationToken();
 
 	/*
 	 * USABLE METHODS
@@ -204,6 +208,10 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	public long getModelSize() {
 		return modelSize;
+	}
+
+	public int getEndOfGenerationToken() {
+		return endOfGenerationToken;
 	}
 
 	/*

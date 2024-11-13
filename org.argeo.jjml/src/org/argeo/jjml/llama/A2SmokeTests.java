@@ -2,8 +2,8 @@ package org.argeo.jjml.llama;
 
 import static java.lang.System.Logger.Level.INFO;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole.SYSTEM;
-import static org.argeo.jjml.llama.LlamaCppChatMessage.StandardRole.USER;
+import static org.argeo.jjml.llama.util.StandardRole.SYSTEM;
+import static org.argeo.jjml.llama.util.StandardRole.USER;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
 import static org.argeo.jjml.llama.LlamaCppSamplers.newJavaSampler;
@@ -261,42 +261,16 @@ class A2SmokeTests {
 		) {
 			LlamaCppBatchProcessor processor = new LlamaCppBatchProcessor(context, chain);
 
-//			List<LlamaCppChatMessage> messages = new ArrayList<>();
-//			String previousPrompts = "";
-//			messages.add(SYSTEM.msg("You are a helpful assistant"));
-
-			String prompt;
-			String reply;
-
-			prompt = model.formatChatMessages( //
+			String prompt = model.formatChatMessages( //
 					SYSTEM.msg("You are a helpful assistant."), //
 					USER.msg("Briefly introduce the Java programming language."));
-			reply = processor.processSingleBatch(prompt);
+			String reply = processor.processSingleBatch(prompt);
 			logger.log(INFO, "\n" + prompt + reply);
 
-			prompt = model.formatChatMessages(USER.msg("Thank you!"));
+			prompt = model.formatChatMessages( //
+					USER.msg("Thank you!"));
 			reply = processor.processSingleBatch(prompt);
 			logger.log(INFO, "\n" + prompt + reply);
-
-//			messages.add(USER.msg("Briefly introduce the Java programming language."));
-//			logger.log(INFO, "=>\n" + messages.get(messages.size() - 1).getContent());
-//			prompt = ((BiFunction<String, String, String>) (p, s) //
-//			-> s.substring(p.length(), s.length()) //
-//			).apply(previousPrompts, model.formatChatMessages(messages));
-//			reply = processor.processSingleBatch(prompt, 0);
-//			messages.add(ASSISTANT.msg(reply));
-//			logger.log(INFO, "<=\n" + messages.get(messages.size() - 1).getContent());
-//			previousPrompts = model.formatChatMessages(messages);
-//
-//			messages.add(USER.msg("Thank you!"));
-//			logger.log(INFO, "=>\n" + messages.get(messages.size() - 1).getContent());
-//			prompt = ((BiFunction<String, String, String>) (p, s) //
-//			-> s.substring(p.length(), s.length()) //
-//			).apply(previousPrompts, model.formatChatMessages(messages));
-//			reply = processor.processSingleBatch(prompt, 0);
-//			messages.add(ASSISTANT.msg(reply));
-//			logger.log(INFO, "<=\n" + messages.get(messages.size() - 1).getContent());
-//			previousPrompts = model.formatChatMessages(messages);
 		}
 		logger.log(INFO, "Chat smoke tests PASSED");
 	}

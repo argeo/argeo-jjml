@@ -126,12 +126,12 @@ static jint jjml_llama_batch_processor_read(llama_context *ctx,
 
 		// sample the next token for each parallel sequence / stream
 		for (int32_t i = 0; i < n_parallel; ++i) {
-			if (output_ids[i] == NO_OUTPUT_ID) {
-				// the stream has already finished
+			if (seq_tokens[i] == nullptr) // no output available
 				continue;
-			}
+			if (output_ids[i] == NO_OUTPUT_ID) // already finished
+				continue;
 
-			//PERF_BEGIN();
+			PERF_BEGIN();
 			llama_token new_token_id;
 			if (grmr == nullptr) {
 				new_token_id = llama_sampler_sample(smpl, ctx, output_ids[i]);
@@ -146,12 +146,11 @@ static jint jjml_llama_batch_processor_read(llama_context *ctx,
 				llama_token candidate = cur_p.data[cur_p.selected].id;
 				new_token_id = jjml_check_grammar(ctx, output_ids[i], smpl,
 						grmr, candidate);
-//					new_token_id = candidate;
 
 				llama_sampler_accept(grmr, new_token_id);
 				llama_sampler_accept(smpl, new_token_id);
-			}
-			//PERF_END("sampling");
+			} //
+			PERF_END("sampling");
 
 			bool is_eog = llama_token_is_eog(model, new_token_id);
 

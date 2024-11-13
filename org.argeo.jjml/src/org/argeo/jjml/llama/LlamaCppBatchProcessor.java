@@ -1,5 +1,6 @@
 package org.argeo.jjml.llama;
 
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -15,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Processing capabilities based on llama.cpp's batch API.
+ * A lightweight object coordinating the processing of multiple sequences.
  * 
  * @see llama.h - llama_batch
  */
@@ -88,7 +89,47 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * LOW-LEVEL ACCESS
 	 */
-	synchronized void writeBatch(IntBuffer[] inputs, boolean lastLogits) {
+	/**
+	 * Convenience method for common input to all sequences, splitting the input in
+	 * inputs of the batch size, and calling
+	 * {@link #writeBatch(IntBuffer[], boolean)}.
+	 */
+	protected synchronized void writeBatch(IntBuffer buf, boolean thenLastLogits) {
+		int tokenCount = buf.remaining();
+		int batchSize = getContext().getBatchSize();
+		int batchCount = tokenCount / batchSize;
+		if (tokenCount % batchSize != 0)
+			batchCount = batchCount + 1;
+		for (int i = 0; i < batchCount; i++) {
+			IntBuffer input = buf.slice();
+			boolean lastLogits;
+			if (i == batchCount - 1) {
+				input.limit(tokenCount % batchSize == 0 ? batchSize : tokenCount % batchSize);
+				lastLogits = thenLastLogits;
+			} else {
+				input.limit(batchSize);
+				lastLogits = false;
+			}
+			buf.position(buf.position() + input.limit());
+			writeBatch(new IntBuffer[] { input }, lastLogits);
+		}
+
+		// writeBatch(new IntBuffer[] { input }, lastLogits);
+	}
+
+	/**
+	 * Write tokens to the context.
+	 * 
+	 * @param inputs     The inputs for each sequence, or a single input common to
+	 *                   all sequences. The size of this array must be either one or
+	 *                   {@link #getParallelCount()}.
+	 * @param lastLogits Whether the last logits should be computed, thus completing
+	 *                   the current write cycle.
+	 * @throws IllegalArgumentException If the inputs count is different of one
+	 *                                  (common to all sequences) or
+	 *                                  {@link #getParallelCount()}.
+	 */
+	protected synchronized void writeBatch(IntBuffer[] inputs, boolean lastLogits) throws IllegalArgumentException {
 		if (!(inputs.length == 1 || inputs.length == parallelCount))
 			throw new IllegalArgumentException("There must be"
 					+ (parallelCount > 1 ? " either one or " + parallelCount + " inputs" : " only one input"));
@@ -113,19 +154,56 @@ public class LlamaCppBatchProcessor {
 		}
 	}
 
-	synchronized void readBatch(IntBuffer[] outputs) {
-		if (!(outputs.length == 1 || outputs.length == parallelCount))
-			throw new IllegalArgumentException("There must be"
-					+ (parallelCount > 1 ? " either one or " + parallelCount + " inputs" : " only one input"));
+	/**
+	 * Convenience method when there is only one sequence, calling
+	 * {@link #readBatchAsync(IntBuffer[], CompletableFuture[])}.
+	 * 
+	 * @throws UnsupportedOperationException If there is more than one sequence.
+	 */
+	protected CompletableFuture<Boolean> readBatchAsync(IntBuffer output) {
+		if (getParallelCount() != 1)
+			throw new UnsupportedOperationException(
+					"There are " + getParallelCount() + " sequences, while only one is allowed");
+		return readBatchAsync(new IntBuffer[] { output }, null);
+	}
+
+	/**
+	 * Asynchronously read generated tokens from the context.
+	 * 
+	 * @param outputs             Where to write the tokens. It must be of size
+	 *                            {@link #getParallelCount()}.
+	 * @param generationCompleted an optional list of {@link CompletableFuture}
+	 *                            which will be completed when the related
+	 *                            individual sequence is completed. if the
+	 *                            completion value is <code>true</code> it means
+	 *                            that generation of this sequence was completed
+	 *                            properly, that is an end-og-generation token was
+	 *                            sampled. Can be <code>null</code>.
+	 * @return A {@link CompletableFuture} which will complete when all sequences
+	 *         have completed the reading of this batch. If the completion value is
+	 *         <code>true</code>, it means that all sequences have completed
+	 *         generation properly, that is, an end-of-generation was sampled.
+	 * @throws IllegalArgumentException If the outputs count is different from
+	 *                                  {@link #getParallelCount()}.
+	 */
+	protected CompletableFuture<Boolean> readBatchAsync(IntBuffer[] outputs,
+			CompletableFuture<Boolean>[] generationCompleted) throws IllegalArgumentException {
+		if (outputs.length != parallelCount)
+			throw new IllegalArgumentException("There must be " + parallelCount + " outputs");
+		if (generationCompleted != null && generationCompleted.length != parallelCount)
+			throw new IllegalArgumentException("There must be " + parallelCount + " callbacks");
 		int[] offsets = new int[outputs.length];
 		int[] lengths = new int[outputs.length];
 		boolean allDirect = areAllBuffersDirect(outputs, offsets, lengths);
 		int[][] arrays = allDirect ? null : new int[outputs.length][];
 
+		// this will be notified by each sequence when it is completed
 		CompletionHandler<Integer, Integer> completionHandler = new CompletionHandler<Integer, Integer>() {
 
 			@Override
-			public void failed(Throwable exc, Integer attachment) {
+			public void failed(Throwable exc, Integer sequenceIndex) {
+				if (generationCompleted != null)
+					generationCompleted[sequenceIndex].completeExceptionally(exc);
 			}
 
 			@Override
@@ -136,23 +214,42 @@ public class LlamaCppBatchProcessor {
 				} else {
 					output.position(output.position() + result);
 				}
-				int outputId = outputIds[sequenceIndex];
-				if (outputId == NO_OUTPUT_ID) {
-					// TODO notify generation completed for this sequence
+				if (generationCompleted != null) {
+					int outputId = outputIds[sequenceIndex];
+					// notify that generation is completed for this sequence
+					generationCompleted[sequenceIndex].complete(outputId == NO_OUTPUT_ID);
 				}
 			}
 		};
 
-		if (allDirect) {
-			contextPosition = doRead(context.getAsLong(), samplerChain.getAsLong(),
-					validatingSampler != null ? validatingSampler.getAsLong() : 0, contextPosition, outputs, offsets,
-					lengths, sequenceIds, outputIds, completionHandler);
-		} else {
-			buffersToArrays(outputs, offsets, lengths, arrays, false);
-			contextPosition = doReadToArrays(context.getAsLong(), samplerChain.getAsLong(),
-					validatingSampler != null ? validatingSampler.getAsLong() : 0, contextPosition, arrays, offsets,
-					lengths, sequenceIds, outputIds, completionHandler);
-		}
+		// this will complete when all sequences have been completed
+		CompletableFuture<Boolean> allCompleted = CompletableFuture.supplyAsync(() -> {
+			// We synchronize in order to make sure there won't be other write or read
+			// updating the state (contextPosition, output IDs etc.)
+			synchronized (LlamaCppBatchProcessor.this) {
+				if (allDirect) {
+					contextPosition = doRead(context.getAsLong(), samplerChain.getAsLong(),
+							validatingSampler != null ? validatingSampler.getAsLong() : 0, contextPosition, outputs,
+							offsets, lengths, sequenceIds, outputIds, completionHandler);
+				} else {
+					buffersToArrays(outputs, offsets, lengths, arrays, false);
+					contextPosition = doReadToArrays(context.getAsLong(), samplerChain.getAsLong(),
+							validatingSampler != null ? validatingSampler.getAsLong() : 0, contextPosition, arrays,
+							offsets, lengths, sequenceIds, outputIds, completionHandler);
+				}
+
+				// check whether generation is completed for all sequences
+				boolean allGenerationCompleted = true;
+				for (int i = 0; i < outputIds.length; i++) {
+					if (NO_OUTPUT_ID != outputIds[i]) {
+						allGenerationCompleted = false;
+						break;
+					}
+				}
+				return allGenerationCompleted;
+			}
+		});
+		return allCompleted;
 	}
 
 	/**
@@ -165,7 +262,10 @@ public class LlamaCppBatchProcessor {
 		boolean allDirect = true;
 		for (int i = 0; i < buffers.length; i++) {
 			IntBuffer buf = buffers[i];
-			if (buf.isDirect()) {
+			if (buf == null) {
+				offsets[i] = 0;
+				lengths[i] = 0;
+			} else if (buf.isDirect()) {
 				offsets[i] = buf.position();
 				lengths[i] = buf.remaining();
 			} else {
@@ -182,7 +282,11 @@ public class LlamaCppBatchProcessor {
 	private void buffersToArrays(IntBuffer[] buffers, int[] offsets, int[] lengths, int[][] arrays, boolean input) {
 		for (int i = 0; i < buffers.length; i++) {
 			IntBuffer buf = buffers[i];
-			if (buf.hasArray()) {
+			if (buf == null) {
+				offsets[i] = 0;
+				lengths[i] = 0;
+				arrays[i] = null;
+			} else if (buf.hasArray()) {
 				offsets[i] = buf.arrayOffset() + buf.position();
 				lengths[i] = buf.remaining();
 				arrays[i] = buf.array();
@@ -311,11 +415,6 @@ public class LlamaCppBatchProcessor {
 		for (int i = 0; i < outputStrings.length; i++)
 			outputStrings[i] = new StringBuffer();
 
-//		int currSequenceCount = parallelCount;
-//		int[] currSequenceIds = new int[currSequenceCount];
-//		System.arraycopy(sequenceIds, 0, currSequenceIds, 0, currSequenceIds.length);
-//		int[] currOutputIds = new int[currSequenceCount];
-//		System.arraycopy(outputIds, 0, currOutputIds, 0, currOutputIds.length);
 		boolean reading = true;
 		reads: while (reading) {
 			IntBuffer[] outputs = new IntBuffer[parallelCount];
@@ -333,8 +432,9 @@ public class LlamaCppBatchProcessor {
 
 			long begin = System.nanoTime();
 
-//		writeBatch(new IntBuffer[] { input }, sequenceIds, true);
-			readBatch(outputs);
+			CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
+			CompletableFuture<Boolean> allCompleted = readBatchAsync(outputs, generationCompleted);
+			allCompleted.join();
 
 			long end = System.nanoTime();
 			// System.out.println("Read batch in " + (end - begin) / 1 + " ns.");
@@ -344,9 +444,6 @@ public class LlamaCppBatchProcessor {
 				IntBuffer output = outputs[i];
 				if (output != null) {
 					output.flip();
-//					int[] newTokens = new int[output.remaining()];
-//					output.get(newTokens);
-//					String outputStr = vocabulary.deTokenize(IntBuffer.wrap(newTokens));
 					String outputStr = vocabulary.deTokenize(output);
 					outputStrings[i].append(outputStr);
 				}
@@ -380,7 +477,45 @@ public class LlamaCppBatchProcessor {
 	}
 
 	/*
-	 * Static utilities
+	 * ACCESSORS
+	 */
+
+	/** The number of sequences being processed in parallel. */
+	public int getParallelCount() {
+		return parallelCount;
+	}
+
+	/** The context currently being exclusively used by this processor. */
+	protected LlamaCppContext getContext() {
+		return context;
+	}
+
+	protected LlamaCppModel getModel() {
+		return context.getModel();
+	}
+
+	/*
+	 * UTILITIES
+	 */
+	protected CompletableFuture<Boolean>[] newGenerationCompletableFutures() {
+		@SuppressWarnings("unchecked") // required by type erasing
+		CompletableFuture<Boolean>[] generationCompleted = createArr(CompletableFuture.class);
+		for (int i = 0; i < generationCompleted.length; i++)
+			generationCompleted[i] = new CompletableFuture<Boolean>();
+		return generationCompleted;
+	}
+
+	/**
+	 * Instantiate an array with generics. A separate method is required in order to
+	 * capture the type.
+	 */
+	@SuppressWarnings("unchecked") // required by type erasing
+	private <T> T[] createArr(Class<T> clz) {
+		return (T[]) Array.newInstance(clz, getParallelCount());
+	}
+
+	/*
+	 * STATIC UTILITIES
 	 */
 	public static <T> CompletionStage<Object> anyOf(List<CompletionStage<T>> css) {
 		return CompletableFuture

@@ -68,6 +68,7 @@ static jint jjml_llama_batch_processor_write(llama_context *ctx,
 				n_parallel);
 
 		for (size_t i = 0; i < input_tokens_size; i++) {
+			// FIXME deal with null input
 			batch.token[batch.n_tokens] = seq_tokens[seq_idx][i];
 			batch.pos[batch.n_tokens] = cur_pos + i;
 			batch.n_seq_id[batch.n_tokens] = n_parallel;
@@ -132,6 +133,7 @@ static jint jjml_llama_batch_processor_write(llama_context *ctx,
 		try {
 			for (size_t j = 0; j < n_parallel; j++) {
 				for (size_t i = 0; i < seq_tokens_size[j]; i++) {
+					// FIXME deal with null input
 					batch.token[batch.n_tokens] = seq_tokens[j][i];
 					batch.pos[batch.n_tokens] = cur_pos;
 					batch.n_seq_id[batch.n_tokens] = 1;

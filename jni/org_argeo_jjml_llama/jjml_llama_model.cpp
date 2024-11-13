@@ -279,3 +279,10 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetModelSize(
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, obj);
 	return llama_model_size(model);
 }
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEndOfGenerationToken(
+		JNIEnv *env, jobject obj) {
+	auto *model = argeo::jni::as_pointer<llama_model*>(env, obj);
+	llama_token eot = llama_token_eot(model);
+	return eot == -1 ? llama_token_eos(model) : eot;
+}
