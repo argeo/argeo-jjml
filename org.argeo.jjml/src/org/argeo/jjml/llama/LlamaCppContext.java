@@ -1,11 +1,13 @@
 package org.argeo.jjml.llama;
 
+import static java.lang.System.Logger.Level.WARNING;
+
+import java.lang.System.Logger;
 import java.util.Objects;
 import java.util.function.LongSupplier;
 
 import org.argeo.jjml.llama.params.ContextParam;
 import org.argeo.jjml.llama.params.ContextParams;
-import org.argeo.jjml.llama.params.ModelParam;
 import org.argeo.jjml.llama.params.PoolingType;
 
 /**
@@ -14,6 +16,8 @@ import org.argeo.jjml.llama.params.PoolingType;
  * @see llama.h - llama_context
  */
 public class LlamaCppContext implements LongSupplier, AutoCloseable {
+	private final static Logger logger = System.getLogger(LlamaCppContext.class.getName());
+
 	private final static ContextParams DEFAULT_CONTEXT_PARAMS_NATIVE;
 
 	static {
@@ -41,6 +45,11 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	public LlamaCppContext(LlamaCppModel model, ContextParams initParams) {
 		Objects.requireNonNull(model);
 		Objects.requireNonNull(initParams);
+		if (initParams.embeddings() && initParams.n_ubatch() != initParams.n_batch()) {
+			initParams = initParams.with(ContextParam.n_batch, initParams.n_ubatch());
+			logger.log(WARNING, "Embeddings requires same logical and physical batch size, forcing n_batch to "
+					+ initParams.n_ubatch());
+		}
 		this.pointer = doInit(model, initParams);
 		this.model = model;
 		this.initParams = initParams;

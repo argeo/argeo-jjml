@@ -1,34 +1,41 @@
 package org.argeo.jjml.llama;
 
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.argeo.jjml.llama.params.PoolingType;
 
+/** Computes embeddings. */
 public class LlamaCppEmbeddingProcessor {
-	private LlamaCppContext context;
+	private final LlamaCppContext context;
+
+	public LlamaCppEmbeddingProcessor(LlamaCppContext context) {
+		this.context = context;
+	}
 
 	private static native void doProcessEmbeddings(long contextPointer, int[][] tokens, float[] emb);
 
-	public List<FloatBuffer> processEmbeddings(List<String> prompts) {
-		List<IntBuffer> tokenLists = new ArrayList<>(prompts.size());
-		for (String prompt : prompts) {
+	public float[][] processEmbeddings(List<String> prompts) {
+		IntBuffer[] tokenLists = new IntBuffer[prompts.size()];
+		for (int i = 0; i < prompts.size(); i++) {
+			String prompt = prompts.get(i);
 			IntBuffer tokenList = context.getModel().getVocabulary().tokenize(prompt);
-			tokenLists.add(tokenList);
+			tokenLists[i] = tokenList;
 		}
+		return processEmbeddings(tokenLists);
+	}
 
+	public float[][] processEmbeddings(IntBuffer[] inputs) {
 		// logic taken from llama.cpp's examples/embedding
 		PoolingType poolingType = context.getPoolingType();
 		int n_embd_count = 0;
 		if (PoolingType.LLAMA_POOLING_TYPE_NONE.equals(poolingType)) {
-			for (IntBuffer tokenList : tokenLists) {
+			for (IntBuffer tokenList : inputs) {
 				n_embd_count += tokenList.remaining();
 			}
 		} else {
-			n_embd_count = tokenLists.size();
+			n_embd_count = inputs.length;
 		}
 
 		int n_embd = context.getModel().getEmbeddingSize();
@@ -36,14 +43,15 @@ public class LlamaCppEmbeddingProcessor {
 		float[] emb = new float[n_embd_count * n_embd];
 		Arrays.fill(emb, 0);
 
-		int[][] tokens = new int[tokenLists.size()][];
-		for (int i = 0; i < tokenLists.size(); i++) {
-			tokens[i] = tokenLists.get(i).array();
+		int[][] tokens = new int[inputs.length][];
+		for (int i = 0; i < inputs.length; i++) {
+			// FIXME check buffer type
+			tokens[i] = inputs[i].array();
 		}
 		doProcessEmbeddings(context.getAsLong(), tokens, emb);
 
-		// TODO optimise storage, returned values, and copy
-		List<FloatBuffer> res = new ArrayList<>(n_embd_count);
+		// TODO optimize storage, returned values, and copy
+		float[][] res = new float[n_embd_count][];
 		for (int j = 0;;) { // at least one iteration (one prompt)
 			float[] arr = new float[n_embd];
 			for (int i = 0;;) { // at least one iteration (n_embd > 0)
@@ -52,7 +60,7 @@ public class LlamaCppEmbeddingProcessor {
 				if (i == n_embd)
 					break;
 			}
-			res.add(FloatBuffer.wrap(arr));
+			res[j] = arr;
 			j++;
 			if (j == n_embd_count)
 				break;
@@ -60,8 +68,10 @@ public class LlamaCppEmbeddingProcessor {
 		return res;
 	}
 
-	public void setContext(LlamaCppContext context) {
-		this.context = context;
+	/*
+	 * ACCESSORS
+	 */
+	protected LlamaCppContext getContext() {
+		return context;
 	}
-
 }

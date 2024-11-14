@@ -2,8 +2,6 @@ package org.argeo.jjml.llama;
 
 import static java.lang.System.Logger.Level.INFO;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.argeo.jjml.llama.util.StandardRole.SYSTEM;
-import static org.argeo.jjml.llama.util.StandardRole.USER;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
 import static org.argeo.jjml.llama.LlamaCppSamplers.newJavaSampler;
@@ -11,12 +9,13 @@ import static org.argeo.jjml.llama.params.ContextParam.embeddings;
 import static org.argeo.jjml.llama.params.ContextParam.n_batch;
 import static org.argeo.jjml.llama.params.ContextParam.n_ctx;
 import static org.argeo.jjml.llama.params.ContextParam.n_ubatch;
+import static org.argeo.jjml.llama.util.StandardRole.SYSTEM;
+import static org.argeo.jjml.llama.util.StandardRole.USER;
 
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -169,8 +168,7 @@ class A2SmokeTests {
 				.with(n_batch, batchSize) //
 				.with(n_ubatch, batchSize) // must be same for embeddings
 		);) {
-			LlamaCppEmbeddingProcessor embeddingProcessor = new LlamaCppEmbeddingProcessor();
-			embeddingProcessor.setContext(context);
+			LlamaCppEmbeddingProcessor embeddingProcessor = new LlamaCppEmbeddingProcessor(context);
 
 			List<String> prompts = new ArrayList<>();
 			prompts.add("Hello world!");
@@ -178,14 +176,11 @@ class A2SmokeTests {
 			for (String s : prompts)
 				logger.log(INFO, "=>\n" + s);
 
-			// long begin = System.currentTimeMillis();
-			List<FloatBuffer> embeddings = embeddingProcessor.processEmbeddings(prompts);
-			assert !embeddings.isEmpty();
-			// System.out.println("\n\n## Processing took " + (System.currentTimeMillis() -
-			// begin) + " ms");
+			float[][] embeddings = embeddingProcessor.processEmbeddings(prompts);
+			assert embeddings.length != 0;
 
-			for (FloatBuffer embedding : embeddings) {
-				logger.log(INFO, "<=\n" + embedding);
+			for (float[] embedding : embeddings) {
+				logger.log(INFO, "<=\n[ " + embedding[0] + ", " + embedding[1] + ", ... ]");
 			}
 		}
 		logger.log(INFO, "Embeddings smoke tests PASSED");

@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.IntBuffer;
+import java.util.List;
 import java.util.Objects;
 
 public class LlamaCppVocabulary {
@@ -135,6 +136,15 @@ public class LlamaCppVocabulary {
 	/*
 	 * DEFAULTS
 	 */
+	final public IntBuffer[] tokenizeMultiple(List<? extends CharSequence> prompts) {
+		IntBuffer[] tokenLists = new IntBuffer[prompts.size()];
+		for (int i = 0; i < prompts.size(); i++) {
+			CharSequence prompt = prompts.get(i);
+			IntBuffer tokenList = tokenize(prompt);
+			tokenLists[i] = tokenList;
+		}
+		return tokenLists;
+	}
 
 	final public IntBuffer tokenize(CharSequence str) {
 		return tokenize(str, false, true);

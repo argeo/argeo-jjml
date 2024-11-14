@@ -99,10 +99,10 @@ static void embd_batch_decode(llama_context *ctx, llama_batch &batch,
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppEmbeddingProcessor_doProcessEmbeddings(
 		JNIEnv *env, jclass, jlong contextPointer, jobjectArray tokenLists,
 		jfloatArray res) {
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
+
 	// TODO deal with normalization
 	int embd_normalize = -1;
-
-	auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
 
 	int n_embd = llama_n_embd(llama_get_model(ctx));
 	int n_batch = llama_n_batch(ctx);
