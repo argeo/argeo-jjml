@@ -3,7 +3,9 @@ package org.argeo.jjml.llama;
 import java.util.Objects;
 import java.util.function.LongSupplier;
 
+import org.argeo.jjml.llama.params.ContextParam;
 import org.argeo.jjml.llama.params.ContextParams;
+import org.argeo.jjml.llama.params.ModelParam;
 import org.argeo.jjml.llama.params.PoolingType;
 
 /**
@@ -12,10 +14,10 @@ import org.argeo.jjml.llama.params.PoolingType;
  * @see llama.h - llama_context
  */
 public class LlamaCppContext implements LongSupplier, AutoCloseable {
-	private final static ContextParams DEFAULT_PARAMS;
+	private final static ContextParams DEFAULT_CONTEXT_PARAMS_NATIVE;
 
 	static {
-		DEFAULT_PARAMS = LlamaCppBackend.newContextParams();
+		DEFAULT_CONTEXT_PARAMS_NATIVE = LlamaCppBackend.newContextParams();
 	}
 
 	private final long pointer;
@@ -33,7 +35,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	private LlamaCppBatchProcessor batchProcessor;
 
 	public LlamaCppContext(LlamaCppModel model) {
-		this(model, DEFAULT_PARAMS);
+		this(model, DEFAULT_CONTEXT_PARAMS_NATIVE);
 	}
 
 	public LlamaCppContext(LlamaCppModel model, ContextParams initParams) {
@@ -130,6 +132,12 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	 * STATIC UTILTIES
 	 */
 	public static ContextParams defaultContextParams() {
-		return DEFAULT_PARAMS;
+		ContextParams res = DEFAULT_CONTEXT_PARAMS_NATIVE;
+		for (ContextParam param : ContextParam.values()) {
+			String sysProp = System.getProperty(ContextParam.SYSTEM_PROPERTY_CONTEXT_PARAM_PREFIX + param.name());
+			if (sysProp != null)
+				res = res.with(param, sysProp);
+		}
+		return res;
 	}
 }

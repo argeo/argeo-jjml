@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 
+// used by Javadoc only
 import org.argeo.jjml.llama.LlamaCppModel;
 
 /**
@@ -25,8 +26,11 @@ public class ModelParams {
 	private final boolean use_mmap;
 	private final boolean use_mlock;
 
-	/** Record-like full constructor */
-	public ModelParams( //
+	/**
+	 * Record-like full constructor. Will be called by the native side to provide
+	 * the defaults.
+	 */
+	ModelParams( //
 			int n_gpu_layers, //
 			boolean vocab_only, //
 			boolean use_mmap, //
@@ -38,18 +42,18 @@ public class ModelParams {
 		this.use_mlock = use_mlock;
 	}
 
-	public ModelParams with(ModelParamName key, Object value) {
+	public ModelParams with(ModelParam key, Object value) {
 		Objects.requireNonNull(key);
 		Objects.requireNonNull(value);
 		return with(Collections.singletonMap(key, value.toString()));
 	}
 
-	public ModelParams with(Map<ModelParamName, String> p) {
+	public ModelParams with(Map<ModelParam, String> p) {
 		return new ModelParams( //
-				parseInt(p.getOrDefault(ModelParamName.n_gpu_layers, Integer.toString(this.n_gpu_layers))), //
-				parseBoolean(p.getOrDefault(ModelParamName.vocab_only, Boolean.toString(this.vocab_only))), //
-				parseBoolean(p.getOrDefault(ModelParamName.use_mmap, Boolean.toString(this.use_mmap))), //
-				parseBoolean(p.getOrDefault(ModelParamName.use_mlock, Boolean.toString(this.use_mlock))) //
+				parseInt(p.getOrDefault(ModelParam.n_gpu_layers, Integer.toString(this.n_gpu_layers))), //
+				parseBoolean(p.getOrDefault(ModelParam.vocab_only, Boolean.toString(this.vocab_only))), //
+				parseBoolean(p.getOrDefault(ModelParam.use_mmap, Boolean.toString(this.use_mmap))), //
+				parseBoolean(p.getOrDefault(ModelParam.use_mlock, Boolean.toString(this.use_mlock))) //
 		);
 	}
 

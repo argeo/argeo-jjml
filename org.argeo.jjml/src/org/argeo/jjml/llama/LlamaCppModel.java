@@ -23,7 +23,7 @@ import java.util.function.DoublePredicate;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 
-import org.argeo.jjml.llama.params.ModelParamName;
+import org.argeo.jjml.llama.params.ModelParam;
 import org.argeo.jjml.llama.params.ModelParams;
 import org.argeo.jjml.llama.util.StandardRole;
 
@@ -35,10 +35,10 @@ import org.argeo.jjml.llama.util.StandardRole;
 public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private final static Logger logger = System.getLogger(LlamaCppModel.class.getName());
 
-	private final static ModelParams DEFAULT_PARAMS;
+	private final static ModelParams DEFAULT_MODEL_PARAMS_NATIVE;
 
 	static {
-		DEFAULT_PARAMS = LlamaCppBackend.newModelParams();
+		DEFAULT_MODEL_PARAMS_NATIVE = LlamaCppBackend.newModelParams();
 	}
 
 	private final long pointer;
@@ -219,11 +219,17 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	 */
 
 	public static LlamaCppModel load(Path localPath) throws IOException {
-		return load(localPath, DEFAULT_PARAMS);
+		return load(localPath, DEFAULT_MODEL_PARAMS_NATIVE);
 	}
 
 	public static ModelParams defaultModelParams() {
-		return DEFAULT_PARAMS;
+		ModelParams res = DEFAULT_MODEL_PARAMS_NATIVE;
+		for (ModelParam param : ModelParam.values()) {
+			String sysProp = System.getProperty(ModelParam.SYSTEM_PROPERTY_MODEL_PARAM_PREFIX + param.name());
+			if (sysProp != null)
+				res = res.with(param, sysProp);
+		}
+		return res;
 	}
 
 	/**
@@ -277,13 +283,13 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	private static void checkInitParams(ModelParams initParams) {
 		if (initParams.n_gpu_layers() != 0 && !LlamaCppBackend.supportsGpuOffload())
-			logger.log(WARNING, "GPU offload is not available, but " + ModelParamName.n_gpu_layers + " is set to "
+			logger.log(WARNING, "GPU offload is not available, but " + ModelParam.n_gpu_layers + " is set to "
 					+ initParams.n_gpu_layers());
 		if (initParams.use_mmap() && !LlamaCppBackend.supportsMmap())
 			logger.log(WARNING,
-					"mmap is not available, but " + ModelParamName.use_mmap + " is set to " + initParams.use_mmap());
+					"mmap is not available, but " + ModelParam.use_mmap + " is set to " + initParams.use_mmap());
 		if (initParams.use_mlock() && !LlamaCppBackend.supportsMlock())
 			logger.log(WARNING,
-					"mlock is not available, but " + ModelParamName.use_mlock + " is set to " + initParams.use_mlock());
+					"mlock is not available, but " + ModelParam.use_mlock + " is set to " + initParams.use_mlock());
 	}
 }

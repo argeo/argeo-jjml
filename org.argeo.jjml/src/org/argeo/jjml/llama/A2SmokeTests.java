@@ -7,10 +7,10 @@ import static org.argeo.jjml.llama.util.StandardRole.USER;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
 import static org.argeo.jjml.llama.LlamaCppSamplers.newJavaSampler;
-import static org.argeo.jjml.llama.params.ContextParamName.embeddings;
-import static org.argeo.jjml.llama.params.ContextParamName.n_batch;
-import static org.argeo.jjml.llama.params.ContextParamName.n_ctx;
-import static org.argeo.jjml.llama.params.ContextParamName.n_ubatch;
+import static org.argeo.jjml.llama.params.ContextParam.embeddings;
+import static org.argeo.jjml.llama.params.ContextParam.n_batch;
+import static org.argeo.jjml.llama.params.ContextParam.n_ctx;
+import static org.argeo.jjml.llama.params.ContextParam.n_ubatch;
 
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;

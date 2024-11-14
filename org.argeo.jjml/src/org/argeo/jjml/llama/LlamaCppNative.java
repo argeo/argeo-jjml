@@ -17,17 +17,17 @@ public class LlamaCppNative {
 	 * System property to explicitly specify the path of the GGML shared library to
 	 * use.
 	 */
-	public final static String SYSTEM_PROPERTY_LIBPATH_GGML = "org.argeo.jjml.libpath.ggml";
+	public final static String SYSTEM_PROPERTY_LIBPATH_GGML = "jjml.libpath.ggml";
 	/**
 	 * System property to explicitly specify the path of the llama.cpp shared
 	 * library to use.
 	 */
-	public final static String SYSTEM_PROPERTY_LIBPATH_LLAMACPP = "org.argeo.jjml.libpath.llamacpp";
+	public final static String SYSTEM_PROPERTY_LIBPATH_LLAMACPP = "jjml.libpath.llamacpp";
 	/**
 	 * System property to explicitly specify the path of the JNI shared library to
 	 * use.
 	 */
-	public final static String SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA = "org.argeo.jjml.libpath.jjml.llama";
+	public final static String SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA = "jjml.libpath.jjml.llama";
 
 	private final static String JJML_LAMA_LIBRARY_NAME = "org_argeo_jjml_llama";
 

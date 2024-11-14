@@ -1,7 +1,7 @@
 package org.argeo.jjml.llama.params;
 
 /** Supported parameters. */
-public enum ContextParamName {
+public enum ContextParam {
 	n_ctx, //
 	n_batch, //
 	n_ubatch, //
@@ -26,4 +26,8 @@ public enum ContextParamName {
 //		flash_attn, //
 //		no_perf, //
 	;
+
+	/** System property to set the default context size. */
+	public final static String SYSTEM_PROPERTY_CONTEXT_PARAM_PREFIX = "jjml.llama.context.";
+
 }

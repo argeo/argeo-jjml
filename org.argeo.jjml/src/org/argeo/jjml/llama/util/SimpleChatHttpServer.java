@@ -2,8 +2,8 @@ package org.argeo.jjml.llama.util;
 
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
-import static org.argeo.jjml.llama.params.ContextParamName.n_ctx;
-import static org.argeo.jjml.llama.params.ModelParamName.n_gpu_layers;
+import static org.argeo.jjml.llama.params.ContextParam.n_ctx;
+import static org.argeo.jjml.llama.params.ModelParam.n_gpu_layers;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 import org.argeo.jjml.llama.LlamaCppContext;
 import org.argeo.jjml.llama.LlamaCppModel;
 import org.argeo.jjml.llama.LlamaCppSamplerChain;
-import org.argeo.jjml.llama.params.ContextParamName;
+import org.argeo.jjml.llama.params.ContextParam;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -130,7 +130,7 @@ public class SimpleChatHttpServer extends SimpleChat implements Runnable {
 				.with(n_gpu_layers, gpuLayers)); //
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
 						.with(n_ctx, contextSize) //
-						.with(ContextParamName.n_batch, 32) //
+						.with(ContextParam.n_batch, 32) //
 				); //
 		) {
 			SimpleChatHttpServer chatServer = new SimpleChatHttpServer(address, systemPrompt, context);

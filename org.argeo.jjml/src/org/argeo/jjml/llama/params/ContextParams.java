@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.IntSupplier;
 
+//used by Javadoc only
 import org.argeo.jjml.llama.LlamaCppContext;
 
 /**
@@ -49,8 +50,11 @@ public class ContextParams { //
 	private final boolean flash_attn; // whether to use flash attention [EXPERIMENTAL]
 	private final boolean no_perf; // whether to measure performance timings
 
-	/** Record-like full constructor */
-	public ContextParams(//
+	/**
+	 * Record-like full constructor. Will be called from the native side to provide
+	 * the defaults.
+	 */
+	ContextParams(//
 			int n_ctx, //
 			int n_batch, //
 			int n_ubatch, //
@@ -100,11 +104,12 @@ public class ContextParams { //
 		this.no_perf = no_perf;
 	}
 
-	public ContextParams with(ContextParamName key, Object value) {
+	public ContextParams with(ContextParam key, Object value) {
 		Objects.requireNonNull(key);
 		Objects.requireNonNull(value);
 		String str;
 		if (value instanceof IntSupplier) {
+			// Needed by parameters defined as enums
 			str = Integer.toString(((IntSupplier) value).getAsInt());
 		} else {
 			str = value.toString();
@@ -112,16 +117,16 @@ public class ContextParams { //
 		return with(Collections.singletonMap(key, str));
 	}
 
-	public ContextParams with(Map<ContextParamName, String> p) {
+	public ContextParams with(Map<ContextParam, String> p) {
 		return new ContextParams( //
-				parseInt(p.getOrDefault(ContextParamName.n_ctx, Integer.toString(this.n_ctx))), //
-				parseInt(p.getOrDefault(ContextParamName.n_batch, Integer.toString(this.n_batch))), //
-				parseInt(p.getOrDefault(ContextParamName.n_ubatch, Integer.toString(this.n_ubatch))), //
-				parseInt(p.getOrDefault(ContextParamName.n_seq_max, Integer.toString(this.n_seq_max))), //
-				parseInt(p.getOrDefault(ContextParamName.n_threads, Integer.toString(this.n_threads))), //
-				parseInt(p.getOrDefault(ContextParamName.n_threads_batch, Integer.toString(this.n_threads_batch))), //
+				parseInt(p.getOrDefault(ContextParam.n_ctx, Integer.toString(this.n_ctx))), //
+				parseInt(p.getOrDefault(ContextParam.n_batch, Integer.toString(this.n_batch))), //
+				parseInt(p.getOrDefault(ContextParam.n_ubatch, Integer.toString(this.n_ubatch))), //
+				parseInt(p.getOrDefault(ContextParam.n_seq_max, Integer.toString(this.n_seq_max))), //
+				parseInt(p.getOrDefault(ContextParam.n_threads, Integer.toString(this.n_threads))), //
+				parseInt(p.getOrDefault(ContextParam.n_threads_batch, Integer.toString(this.n_threads_batch))), //
 				this.rope_scaling_type, //
-				parseInt(p.getOrDefault(ContextParamName.pooling_type, Integer.toString(this.pooling_type))), //
+				parseInt(p.getOrDefault(ContextParam.pooling_type, Integer.toString(this.pooling_type))), //
 				this.attention_type, //
 				this.rope_freq_base, //
 				this.rope_freq_scale, //
@@ -133,7 +138,7 @@ public class ContextParams { //
 				this.defrag_thold, //
 				this.type_k, //
 				this.type_v, //
-				parseBoolean(p.getOrDefault(ContextParamName.embeddings, Boolean.toString(this.embeddings))), //
+				parseBoolean(p.getOrDefault(ContextParam.embeddings, Boolean.toString(this.embeddings))), //
 				this.offload_kqv, //
 				this.flash_attn, //
 				this.no_perf //

@@ -2,8 +2,6 @@ package org.argeo.jjml.llama.util;
 
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
-import static org.argeo.jjml.llama.params.ContextParamName.n_ctx;
-import static org.argeo.jjml.llama.params.ModelParamName.n_gpu_layers;
 import static org.argeo.jjml.llama.util.StandardRole.SYSTEM;
 
 import java.io.BufferedReader;
@@ -22,15 +20,18 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.FutureTask;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.argeo.jjml.llama.LlamaCppBatchProcessor;
 import org.argeo.jjml.llama.LlamaCppChatMessage;
 import org.argeo.jjml.llama.LlamaCppContext;
 import org.argeo.jjml.llama.LlamaCppModel;
+import org.argeo.jjml.llama.LlamaCppNative;
 import org.argeo.jjml.llama.LlamaCppSamplerChain;
 import org.argeo.jjml.llama.LlamaCppSamplers;
 import org.argeo.jjml.llama.LlamaCppVocabulary;
-import org.argeo.jjml.llama.params.ContextParamName;
+import org.argeo.jjml.llama.params.ContextParam;
+import org.argeo.jjml.llama.params.ModelParam;
 
 /**
  * A simple implementation of a chat system based on the low-level components.
@@ -76,7 +77,7 @@ public class SimpleChat extends LlamaCppBatchProcessor
 			if (message.trim().equals(""))
 				return CompletableFuture.completedStage(null); // this was just for interruption
 		}
-		message = message.replace("\\\n", "\n");
+//		message = message.replace("\\\n", "\n");
 		LlamaCppChatMessage userMsg = StandardRole.USER.msg(message);
 		String prompt;
 		if (usePreviousMessages) {
@@ -185,23 +186,17 @@ public class SimpleChat extends LlamaCppBatchProcessor
 			printUsage(System.err);
 			System.exit(1);
 		}
+		if ("--help".equals(args[0])) {
+			printUsage(System.out);
+			System.exit(0);
+		}
 		Path modelPath = Paths.get(args[0]);
 		String systemPrompt = "You are a helpful assistant.";
-		int gpuLayers = 0;
-		int contextSize = 4096;
 		if (args.length > 1)
 			systemPrompt = args[1];
-		if (args.length > 2)
-			gpuLayers = Integer.parseInt(args[2]);
-		if (args.length > 3)
-			contextSize = Integer.parseInt(args[3]);
 
-		try (LlamaCppModel model = LlamaCppModel.load(modelPath, defaultModelParams() //
-				.with(n_gpu_layers, gpuLayers)); //
-				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
-						.with(n_ctx, contextSize) //
-						.with(ContextParamName.n_batch, 32) //
-				); //
+		try (LlamaCppModel model = LlamaCppModel.load(modelPath, defaultModelParams()); //
+				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams()); //
 		) {
 			SimpleChat chat = new SimpleChat(systemPrompt, context);
 
@@ -215,37 +210,52 @@ public class SimpleChat extends LlamaCppBatchProcessor
 			CompletionStage<Void> reply = CompletableFuture.completedStage(null);
 			try (BufferedReader in = new BufferedReader(
 					console != null ? console.reader() : new InputStreamReader(System.in));) {
-				if (interactive)
+				if (interactive) {
 					System.out.print("> ");
-				String line;
-				while ((line = in.readLine()) != null) {
-					if (!interactive)
-						reply.toCompletableFuture().join();
-
-					// start chat cycle
-					reply = chat.apply(line, (str) -> {
+					String line;
+					while ((line = in.readLine()) != null) {
+						// start chat cycle
+						reply = chat.apply(line, (str) -> {
+							System.out.print(str);
+							System.out.flush();
+						}).thenAccept((v) -> {
+							System.out.print("\n> ");
+						});
+					}
+				} else {// batch
+					String input = in.lines().collect(Collectors.joining("\n"));
+					chat.apply(input, (str) -> {
 						System.out.print(str);
 						System.out.flush();
-					}).thenAccept((v) -> {
-						if (interactive)
-							System.out.print("\n> ");
-					});
-
-					if (!interactive)
-						reply.toCompletableFuture().join();
+					}).toCompletableFuture().join();
 				}
 			} finally {
-				// make sure that we are not reading before cleaning up
+				// make sure that we are not reading before cleaning up backend
 				chat.cancelCurrentRead();
 			}
 		}
 	}
 
 	private static void printUsage(PrintStream out) {
-		// TODO make it clearer and specify system properties
-		out.print("java " //
-				+ "-Djava.library.path=/path/to/jjml_dll:/path/to/llama_dlls" //
-				+ " -cp /path/to/org.argeo.jjml.jar " + SimpleChat.class.getName() //
-				+ " <path/to/model.gguf> [<system prompt>] [<n_gpu_layers>] [<n_ctx>]");
+		out.println("Usage: java " + SimpleChat.class.getName() //
+				+ " <path/to/model.gguf> [<system prompt>]");
+
+		out.println();
+		out.println("In a terminal, it will open an interactive chat.");
+		out.println("Piping input will disable interactivity and the additional characters in the output.");
+		out.println("The context does not auto-extend, that is, it will be full at some point.");
+
+		out.println();
+		out.println("System properties for supported parameters (see llama.h for details):");
+		for (ModelParam param : ModelParam.values())
+			out.println("-D" + ModelParam.SYSTEM_PROPERTY_MODEL_PARAM_PREFIX + param + "=");
+		for (ContextParam param : ContextParam.values())
+			out.println("-D" + ContextParam.SYSTEM_PROPERTY_CONTEXT_PARAM_PREFIX + param + "=");
+
+		out.println();
+		out.println("System properties for explicit paths to shared libraries:");
+		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA + "=");
+		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_LLAMACPP + "=");
+		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_GGML + "=");
 	}
 }
