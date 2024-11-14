@@ -1,13 +1,16 @@
 package org.argeo.jjml.llama.util;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
 
 import java.io.BufferedReader;
 import java.io.Console;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -31,8 +34,16 @@ public class SimpleCli {
 		}
 		Path modelPath = Paths.get(args[0]);
 		String systemPrompt = "You are a helpful assistant.";
-		if (args.length > 1)
+		if (args.length > 1) {
 			systemPrompt = args[1];
+			if (systemPrompt.contains(File.separator) || systemPrompt.contains("/")) {
+				try {// try to interpret as file
+					systemPrompt = Files.readString(Paths.get(systemPrompt), UTF_8);
+				} catch (IOException e) {
+					System.err.println("Could not interpret '" + systemPrompt + "' as a file, using it as value...");
+				}
+			}
+		}
 
 		try (LlamaCppModel model = LlamaCppModel.load(modelPath, defaultModelParams()); //
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams()); //
@@ -64,7 +75,7 @@ public class SimpleCli {
 					}
 				} else {// batch
 					String input;
-					try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+					try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in, UTF_8))) {
 						StringBuilder sb = new StringBuilder();
 						final int BUFFER_SIZE = 4 * 1024;
 						char[] buf = new char[BUFFER_SIZE];
@@ -91,19 +102,30 @@ public class SimpleCli {
 				+ " <path/to/model.gguf> [<system prompt>]");
 
 		out.println();
-		out.println("In a terminal, it will open an interactive chat.");
-		out.println("Piping input will disable interactivity and the additional characters in the output.");
-		out.println("The context does not auto-extend, that is, it will be full at some point.");
+		out.println("- In a terminal, this will open an interactive chat.");
+		out.println("- Piping input will disable interactivity and submit the whole input as a single user prompt.");
+		out.println("- The context does not auto-extend, that is, it will be full at some point.");
+		out.println("- All external inputs should be encoded with UTF-8.");
+		out.println("- If <system prompt> contains a file separator or /, it will be loaded as a file.");
 
 		out.println();
-		out.println("System properties for supported parameters (see llama.h for details):");
+		out.println("In interactive mode, use <<EOF for multi-line input. For example:");
+		out.println();
+		out.println("> Suggest improvements to this Java code: <<EOF");
+		out.println("public static void main(String[] args) {");
+		out.println("  System.out.println(\"Hello world!\");");
+		out.println("}");
+		out.println("EOF");
+
+		out.println();
+		out.println("# System properties for supported parameters (see llama.h for details):");
 		for (ModelParam param : ModelParam.values())
 			out.println("-D" + ModelParam.SYSTEM_PROPERTY_MODEL_PARAM_PREFIX + param + "=");
 		for (ContextParam param : ContextParam.values())
 			out.println("-D" + ContextParam.SYSTEM_PROPERTY_CONTEXT_PARAM_PREFIX + param + "=");
 
 		out.println();
-		out.println("System properties for explicit paths to shared libraries:");
+		out.println("# System properties for explicit paths to shared libraries:");
 		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA + "=");
 		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_LLAMACPP + "=");
 		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_GGML + "=");
