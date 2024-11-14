@@ -143,7 +143,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	public static ContextParams defaultContextParams() {
 		ContextParams res = DEFAULT_CONTEXT_PARAMS_NATIVE;
 		for (ContextParam param : ContextParam.values()) {
-			String sysProp = System.getProperty(ContextParam.SYSTEM_PROPERTY_CONTEXT_PARAM_PREFIX + param.name());
+			String sysProp = System.getProperty(param.asSystemProperty());
 			if (sysProp != null)
 				res = res.with(param, sysProp);
 		}

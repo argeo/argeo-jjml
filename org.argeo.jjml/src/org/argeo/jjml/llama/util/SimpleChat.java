@@ -32,6 +32,7 @@ public class SimpleChat extends LlamaCppBatchProcessor
 
 	private final LlamaCppChatMessage systemMsg;
 	private boolean firstMessage = true;
+	private final boolean formatMessages;
 
 	/*
 	 * In llama.cpp examples/main, a new user prompt is obtained via a substring of
@@ -46,12 +47,24 @@ public class SimpleChat extends LlamaCppBatchProcessor
 		this(systemPrompt, context, LlamaCppSamplers.newDefaultSampler(context.getModel(), true));
 	}
 
+	/**
+	 * Creates a simple chat processor.
+	 * 
+	 * @param systemPrompt The system prompt. If <code>null</code> or empty, it
+	 *                     disables chat templating.
+	 */
 	public SimpleChat(String systemPrompt, LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
 		super(context, samplerChain);
 		vocabulary = getModel().getVocabulary();
-		systemMsg = SYSTEM.msg(systemPrompt);
-
-		usePreviousMessages = true;
+		if (systemPrompt == null || "".equals(systemPrompt)) {
+			systemMsg = null;
+			formatMessages = false;
+			usePreviousMessages = false;
+		} else {
+			systemMsg = SYSTEM.msg(systemPrompt);
+			formatMessages = true;
+			usePreviousMessages = true;
+		}
 		messages = usePreviousMessages ? new ArrayList<>() : null;
 	}
 
@@ -65,26 +78,31 @@ public class SimpleChat extends LlamaCppBatchProcessor
 				return CompletableFuture.completedStage(null); // this was just for interruption
 		}
 //		message = message.replace("\\\n", "\n");
-		LlamaCppChatMessage userMsg = StandardRole.USER.msg(message);
 		String prompt;
-		if (usePreviousMessages) {
-			String previousPrompts = messages.size() == 0 ? "" : getModel().formatChatMessages(messages);
-			if (firstMessage) {
-				messages.add(systemMsg);
-				firstMessage = false;
+		if (formatMessages) {
+			LlamaCppChatMessage userMsg = StandardRole.USER.msg(message);
+			if (usePreviousMessages) {
+				String previousPrompts = messages.size() == 0 ? "" : getModel().formatChatMessages(messages);
+				if (firstMessage) {
+					if (systemMsg != null)
+						messages.add(systemMsg);
+					firstMessage = false;
+				}
+				messages.add(userMsg);
+				String newPrompts = getModel().formatChatMessages(messages);
+				assert previousPrompts.length() < newPrompts.length();
+				prompt = newPrompts.substring(previousPrompts.length(), newPrompts.length());
+			} else {
+				List<LlamaCppChatMessage> lst = new ArrayList<>();
+				if (firstMessage) {
+					lst.add(systemMsg);
+					firstMessage = false;
+				}
+				lst.add(userMsg);
+				prompt = getModel().formatChatMessages(lst);
 			}
-			messages.add(userMsg);
-			String newPrompts = getModel().formatChatMessages(messages);
-			assert previousPrompts.length() < newPrompts.length();
-			prompt = newPrompts.substring(previousPrompts.length(), newPrompts.length());
 		} else {
-			List<LlamaCppChatMessage> lst = new ArrayList<>();
-			if (firstMessage) {
-				lst.add(systemMsg);
-				firstMessage = false;
-			}
-			lst.add(userMsg);
-			prompt = getModel().formatChatMessages(lst);
+			prompt = message;
 		}
 
 		// tokenize

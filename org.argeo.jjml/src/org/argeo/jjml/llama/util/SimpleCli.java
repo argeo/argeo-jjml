@@ -2,7 +2,8 @@ package org.argeo.jjml.llama.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
-import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
+import static org.argeo.jjml.llama.LlamaCppNative.ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY;
+import static org.argeo.jjml.llama.params.ModelParam.n_gpu_layers;
 
 import java.io.BufferedReader;
 import java.io.Console;
@@ -18,14 +19,18 @@ import java.nio.file.Paths;
 import java.util.StringJoiner;
 import java.util.function.Supplier;
 
+import org.argeo.jjml.llama.LlamaCppBackend;
 import org.argeo.jjml.llama.LlamaCppContext;
 import org.argeo.jjml.llama.LlamaCppModel;
 import org.argeo.jjml.llama.LlamaCppNative;
 import org.argeo.jjml.llama.params.ContextParam;
 import org.argeo.jjml.llama.params.ModelParam;
+import org.argeo.jjml.llama.params.ModelParams;
 
 /** A minimal command line interface for batch processing and simple chat. */
 public class SimpleCli {
+	private final static String DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant.";
+
 	public static void main(String... args) throws Exception {
 		if (args.length == 0) {
 			System.err.println("A model must be specified");
@@ -36,13 +41,15 @@ public class SimpleCli {
 			printUsage(System.out);
 			System.exit(0);
 		}
+		/*
+		 * ARGUMENTS
+		 */
 		Path modelPath = Paths.get(args[0]);
 
-		boolean embeddings = Boolean.parseBoolean(
-				System.getProperty(ContextParam.SYSTEM_PROPERTY_CONTEXT_PARAM_PREFIX + ContextParam.embeddings));
+		boolean embeddings = Boolean.parseBoolean(System.getProperty(ContextParam.embeddings.asSystemProperty()));
 		int chunkSize = 0;
 		String embeddingsFormat = "csv";
-		String systemPrompt = "You are a helpful assistant.";
+		String systemPrompt = DEFAULT_SYSTEM_PROMPT;
 		if (embeddings) {
 			if (args.length > 1) {
 				chunkSize = Integer.parseInt(args[1]);
@@ -64,7 +71,20 @@ public class SimpleCli {
 			}
 		}
 
-		try (LlamaCppModel model = LlamaCppModel.load(modelPath, defaultModelParams()); //
+		/*
+		 * AUTOCONFIG
+		 */
+		ModelParams modelParams = LlamaCppModel.defaultModelParams();
+		if ("1".equals(System.getenv(ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY)) //
+				&& System.getProperty(n_gpu_layers.asSystemProperty()) == null //
+				&& LlamaCppBackend.supportsGpuOffload() //
+				&& modelParams.n_gpu_layers() == 0 //
+		) {
+			// we assume we want as many layers offloaded as possible
+			modelParams = modelParams.with(n_gpu_layers, 1024);
+		}
+
+		try (LlamaCppModel model = LlamaCppModel.load(modelPath, modelParams); //
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams()); //
 		) {
 			Object processor;
@@ -149,7 +169,9 @@ public class SimpleCli {
 		out.println("- The context does not auto-extend, that is, it will be full at some point.");
 		out.println("- All external inputs should be encoded with UTF-8.");
 		out.println("- If <system prompt> contains a file separator or /, it will be loaded as a file.");
-		out.println("- For embeddings, a <chunk size> of 0 disable chunking.");
+		out.println("- <system prompt> default is '" + DEFAULT_SYSTEM_PROMPT + "'.");
+		out.println("- If <system prompt> is set to \"\", message formatting with chat template is disabled.");
+		out.println("- For embeddings, a <chunk size> of 0 (default) disable chunking.");
 		out.println("- For embeddings, default output format is 'csv', while 'pgvector' generates VALUES.");
 
 		out.println();
@@ -165,9 +187,9 @@ public class SimpleCli {
 		out.println("# System properties for supported parameters (see llama.h for details):");
 		out.println();
 		for (ModelParam param : ModelParam.values())
-			out.println("-D" + ModelParam.SYSTEM_PROPERTY_MODEL_PARAM_PREFIX + param + "=");
+			out.println("-D" + param.asSystemProperty() + "=");
 		for (ContextParam param : ContextParam.values())
-			out.println("-D" + ContextParam.SYSTEM_PROPERTY_CONTEXT_PARAM_PREFIX + param + "=");
+			out.println("-D" + param.asSystemProperty() + "=");
 
 		out.println();
 		out.println("# System properties for explicit paths to shared libraries:");

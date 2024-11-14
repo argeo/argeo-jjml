@@ -28,6 +28,11 @@ public enum ContextParam {
 	;
 
 	/** System property to set the default context size. */
-	public final static String SYSTEM_PROPERTY_CONTEXT_PARAM_PREFIX = "jjml.llama.context.";
+	final static String SYSTEM_PROPERTY_CONTEXT_PARAM_PREFIX = "jjml.llama.context.";
+
+	/** As a system property used to override default value. */
+	public String asSystemProperty() {
+		return SYSTEM_PROPERTY_CONTEXT_PARAM_PREFIX + name();
+	}
 
 }

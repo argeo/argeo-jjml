@@ -225,7 +225,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	public static ModelParams defaultModelParams() {
 		ModelParams res = DEFAULT_MODEL_PARAMS_NATIVE;
 		for (ModelParam param : ModelParam.values()) {
-			String sysProp = System.getProperty(ModelParam.SYSTEM_PROPERTY_MODEL_PARAM_PREFIX + param.name());
+			String sysProp = System.getProperty(param.asSystemProperty());
 			if (sysProp != null)
 				res = res.with(param, sysProp);
 		}
