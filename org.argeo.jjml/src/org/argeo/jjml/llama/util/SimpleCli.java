@@ -129,6 +129,8 @@ public class SimpleCli {
 		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA + "=");
 		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_LLAMACPP + "=");
 		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_GGML + "=");
+		out.println();
+		out.println("# WARNING: This is a suboptimal implementation. JJML is meant to be used as a library.");
 	}
 
 	private static String handleHereDocument(String line, BufferedReader reader) throws IOException {
