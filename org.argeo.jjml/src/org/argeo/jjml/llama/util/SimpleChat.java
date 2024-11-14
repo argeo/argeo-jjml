@@ -1,16 +1,8 @@
 package org.argeo.jjml.llama.util;
 
-import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
-import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
 import static org.argeo.jjml.llama.util.StandardRole.SYSTEM;
 
-import java.io.BufferedReader;
-import java.io.Console;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.nio.IntBuffer;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -20,18 +12,13 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.FutureTask;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.argeo.jjml.llama.LlamaCppBatchProcessor;
 import org.argeo.jjml.llama.LlamaCppChatMessage;
 import org.argeo.jjml.llama.LlamaCppContext;
-import org.argeo.jjml.llama.LlamaCppModel;
-import org.argeo.jjml.llama.LlamaCppNative;
 import org.argeo.jjml.llama.LlamaCppSamplerChain;
 import org.argeo.jjml.llama.LlamaCppSamplers;
 import org.argeo.jjml.llama.LlamaCppVocabulary;
-import org.argeo.jjml.llama.params.ContextParam;
-import org.argeo.jjml.llama.params.ModelParam;
 
 /**
  * A simple implementation of a chat system based on the low-level components.
@@ -178,84 +165,5 @@ public class SimpleChat extends LlamaCppBatchProcessor
 
 	private void setCurrentRead(FutureTask<Void> currentRead) {
 		this.currentRead = currentRead;
-	}
-
-	public static void main(String... args) throws Exception {
-		if (args.length == 0) {
-			System.err.println("A model must be specified");
-			printUsage(System.err);
-			System.exit(1);
-		}
-		if ("--help".equals(args[0])) {
-			printUsage(System.out);
-			System.exit(0);
-		}
-		Path modelPath = Paths.get(args[0]);
-		String systemPrompt = "You are a helpful assistant.";
-		if (args.length > 1)
-			systemPrompt = args[1];
-
-		try (LlamaCppModel model = LlamaCppModel.load(modelPath, defaultModelParams()); //
-				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams()); //
-		) {
-			SimpleChat chat = new SimpleChat(systemPrompt, context);
-
-			Console console = System.console();
-			final boolean isConsoleTerminal = console != null;
-			// From Java 22, it will be:
-			// boolean interactive = console.isTerminal();
-			final boolean developing = false; // force true in IDE while developing
-			final boolean interactive = developing || isConsoleTerminal;
-
-			CompletionStage<Void> reply = CompletableFuture.completedStage(null);
-			try (BufferedReader in = new BufferedReader(
-					console != null ? console.reader() : new InputStreamReader(System.in));) {
-				if (interactive) {
-					System.out.print("> ");
-					String line;
-					while ((line = in.readLine()) != null) {
-						// start chat cycle
-						reply = chat.apply(line, (str) -> {
-							System.out.print(str);
-							System.out.flush();
-						}).thenAccept((v) -> {
-							System.out.print("\n> ");
-						});
-					}
-				} else {// batch
-					String input = in.lines().collect(Collectors.joining("\n"));
-					chat.apply(input, (str) -> {
-						System.out.print(str);
-						System.out.flush();
-					}).toCompletableFuture().join();
-				}
-			} finally {
-				// make sure that we are not reading before cleaning up backend
-				chat.cancelCurrentRead();
-			}
-		}
-	}
-
-	private static void printUsage(PrintStream out) {
-		out.println("Usage: java " + SimpleChat.class.getName() //
-				+ " <path/to/model.gguf> [<system prompt>]");
-
-		out.println();
-		out.println("In a terminal, it will open an interactive chat.");
-		out.println("Piping input will disable interactivity and the additional characters in the output.");
-		out.println("The context does not auto-extend, that is, it will be full at some point.");
-
-		out.println();
-		out.println("System properties for supported parameters (see llama.h for details):");
-		for (ModelParam param : ModelParam.values())
-			out.println("-D" + ModelParam.SYSTEM_PROPERTY_MODEL_PARAM_PREFIX + param + "=");
-		for (ContextParam param : ContextParam.values())
-			out.println("-D" + ContextParam.SYSTEM_PROPERTY_CONTEXT_PARAM_PREFIX + param + "=");
-
-		out.println();
-		out.println("System properties for explicit paths to shared libraries:");
-		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA + "=");
-		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_LLAMACPP + "=");
-		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_GGML + "=");
 	}
 }
