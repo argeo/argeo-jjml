@@ -1,4 +1,4 @@
-set(TARGET org_argeo_jjml_llama)
+set(TARGET Java_org_argeo_jjml_llama)
 
 add_library(${TARGET} SHARED 
 	org_argeo_jjml_llama_.cpp
