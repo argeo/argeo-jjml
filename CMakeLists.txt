@@ -17,4 +17,4 @@ org.argeo.jjml
 )
 
 a2_build_bundles(${BUNDLES})
-add_subdirectory(jni)
+add_subdirectory(native)
