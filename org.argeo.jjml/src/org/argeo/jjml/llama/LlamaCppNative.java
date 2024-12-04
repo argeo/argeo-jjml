@@ -38,7 +38,8 @@ public class LlamaCppNative {
 	 */
 	public final static String ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
 
-	private final static String JJML_LAMA_LIBRARY_NAME = "Java_org_argeo_jjml_llama";
+	private final static String JJML_LAMA_LIBRARY_NAME = "Java_"
+			+ LlamaCppNative.class.getPackageName().replace('.', '_');
 
 	private final static Logger logger = System.getLogger(LlamaCppNative.class.getName());
 
