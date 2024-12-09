@@ -1,5 +1,7 @@
 # Convenience Makefile based on default Argeo SDK conventions
 
+export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8 # Required on Windows
+
 BUILD_BASE=$(abspath ../output/$(notdir $(CURDIR)))
 
 all:
