@@ -5,13 +5,11 @@ DESCRIPTION "Java bindings for GGML-based libraries"
 VERSION 0.1.0
 )
 set(A2_JAVA_RELEASE 11)
+set(A2_CATEGORY org.argeo.jjml)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/sdk/argeo-build")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/sdk/argeo-build/cmake")
 find_package(ArgeoBuild)
 
-include(GNUInstallDirs)
-
-set(A2_CATEGORY org.argeo.jjml)
 set(BUNDLES 
 org.argeo.jjml
 )
