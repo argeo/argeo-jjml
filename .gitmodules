@@ -2,3 +2,7 @@
 	path = sdk/argeo-build
 	url = https://github.com/argeo/argeo-build.git
 	branch = unstable
+[submodule "sdk/tp/native/llama.cpp"]
+	path = sdk/tp/native/llama.cpp
+	url = https://github.com/ggerganov/llama.cpp.git
+	branch = master
