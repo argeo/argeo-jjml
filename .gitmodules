@@ -6,3 +6,7 @@
 	path = sdk/tp/native/llama.cpp
 	url = https://github.com/ggerganov/llama.cpp.git
 	branch = master
+[submodule "sdk/tp/native/ggml"]
+	path = sdk/tp/native/ggml
+	url = https://github.com/ggerganov/ggml.git
+	branch = master
