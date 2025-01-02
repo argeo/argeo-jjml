@@ -35,6 +35,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/include/org.argeo.jjml}&quot;"/>
 									<listOptionValue builtIn="false" value="/usr/lib/jvm/java-17-openjdk-amd64/include/"/>
 									<listOptionValue builtIn="false" value="/usr/lib/jvm/java-17-openjdk-amd64/include/linux"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/argeo-jjml/sdk/tp/native/ggml/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/argeo-jjml/sdk/tp/native/llama.cpp/include}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.99991119" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>

@@ -25,10 +25,8 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitPenalti
 		jfloat penalty_repeat, jfloat penalty_freq, jfloat penalty_present,
 		jboolean penalize_nl, jboolean ignore_eos) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, modelObj);
-	llama_sampler *smpl = llama_sampler_init_penalties(llama_n_vocab(model),
-			llama_token_eos(model), llama_token_nl(model), penalty_last_n,
-			penalty_repeat, penalty_freq, penalty_present, penalize_nl,
-			ignore_eos);
+	llama_sampler *smpl = llama_sampler_init_penalties(penalty_last_n,
+			penalty_repeat, penalty_freq, penalty_present);
 	return reinterpret_cast<jlong>(smpl);
 }
 
@@ -47,10 +45,12 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitMinP(
 	return reinterpret_cast<jlong>(llama_sampler_init_min_p(min_p, min_keep));
 }
 
-JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTailFree(
-		JNIEnv*, jclass, jfloat tfs_z, jlong min_keep) {
-	return reinterpret_cast<jlong>(llama_sampler_init_tail_free(tfs_z, min_keep));
-}
+//JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTailFree(
+//		JNIEnv*, jclass, jfloat tfs_z, jlong min_keep) {
+//	// has been removed
+//	//return reinterpret_cast<jlong>(llama_sampler_init_tail_free(tfs_z, min_keep));
+//	return NULL;
+//}
 
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTypicalP(
 		JNIEnv*, jclass, jfloat typ_p, jlong min_keep) {
@@ -69,10 +69,10 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitTemp(
 	return reinterpret_cast<jlong>(llama_sampler_init_temp(temp));
 }
 
-JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitSoftMax(
-		JNIEnv*, jclass) {
-	return reinterpret_cast<jlong>(llama_sampler_init_softmax());
-}
+//JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitSoftMax(
+//		JNIEnv*, jclass) {
+//	return reinterpret_cast<jlong>(llama_sampler_init_softmax());
+//}
 
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitDist__(
 		JNIEnv*, jclass) {
