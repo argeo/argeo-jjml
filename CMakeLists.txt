@@ -20,6 +20,9 @@ a2_build_bundles(${BUNDLES})
 set(JJML_FORCE_BUILD_TP ON)
 set(GGML_LLAMAFILE OFF)
 
+# Reproducibility
+set(GGML_CCACHE OFF)
+
 # Optimizations
 set(GGML_NATIVE ON)
 
@@ -33,7 +36,6 @@ set(GGML_BLAS ON)
 set(GGML_BLAS_VENDOR OpenBLAS)
 
 ## multiple backends dlls
-# TODO Is it really used? Could not find it in code
 #set(GGML_BACKEND_DL ON)
 
 # NATIVE
