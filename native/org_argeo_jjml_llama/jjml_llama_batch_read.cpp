@@ -16,7 +16,8 @@ static std::vector<llama_token_data> jjml_get_logits(llama_context *ctx,
 		int idx) {
 	const auto *logits = llama_get_logits_ith(ctx, idx);
 
-	const int n_vocab = llama_n_vocab(llama_get_model(ctx));
+	const llama_vocab *vocab = llama_model_get_vocab(llama_get_model(ctx));
+	const int n_vocab = llama_vocab_n_tokens(vocab);
 
 	std::vector<llama_token_data> cur;
 	cur.resize(n_vocab);
@@ -66,7 +67,7 @@ static jint jjml_llama_batch_processor_read(llama_context *ctx,
 		jintArray lengths, jintArray sequenceIds, jintArray outputIds,
 		jobject completionHandler) {
 
-	const llama_model *model = llama_get_model(ctx);
+	const llama_vocab *vocab = llama_model_get_vocab(llama_get_model(ctx));
 
 	const uint32_t NO_OUTPUT_ID = llama_n_batch(ctx);
 
@@ -152,7 +153,7 @@ static jint jjml_llama_batch_processor_read(llama_context *ctx,
 			} //
 			PERF_END("sampling");
 
-			bool is_eog = llama_token_is_eog(model, new_token_id);
+			bool is_eog = llama_vocab_is_eog(vocab, new_token_id);
 
 			// is it an end of generation? -> mark the stream as finished
 			if (is_eog //

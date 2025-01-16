@@ -21,7 +21,7 @@ set(JJML_FORCE_BUILD_TP ON)
 set(GGML_LLAMAFILE OFF)
 
 # Reproducibility
-set(GGML_CCACHE OFF)
+set(GGML_CCACHE ON)
 
 # Optimizations
 set(GGML_NATIVE ON)
@@ -29,7 +29,7 @@ set(GGML_NATIVE ON)
 set(CMAKE_BUILD_TYPE Release)
 
 #set(GGML_CUDA ON)
-set(GGML_VULKAN OFF)
+set(GGML_VULKAN ON)
 #set(GGML_OPENCL ON)
 
 set(GGML_BLAS ON)
@@ -53,6 +53,7 @@ set_target_properties(ggml PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/
 set_target_properties(ggml-base PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 set_target_properties(ggml-cpu PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 set_target_properties(ggml-blas PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
+set_target_properties(ggml-vulkan PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 #set_target_properties(ggml-cuda PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 message (STATUS "Will build ggml library") 
 endif()

@@ -25,6 +25,7 @@ static jint jjml_llama_batch_processor_write(llama_context *ctx,
 	const int n_parallel = env->GetArrayLength(sequenceIds);
 
 	const llama_model *model = llama_get_model(ctx);
+	const llama_vocab *vocab = llama_model_get_vocab(model);
 
 	auto *sequence_ids =
 			reinterpret_cast<llama_seq_id*>(env->GetIntArrayElements(
@@ -98,7 +99,7 @@ static jint jjml_llama_batch_processor_write(llama_context *ctx,
 			llama_token decoder_start_token_id =
 					llama_model_decoder_start_token(model);
 			if (decoder_start_token_id == -1) {
-				decoder_start_token_id = llama_token_bos(model);
+				decoder_start_token_id = llama_vocab_bos(vocab);
 			}
 
 			jjml_llama_batch_clear(batch);

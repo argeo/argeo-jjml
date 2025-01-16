@@ -88,6 +88,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitGrammar
 		JNIEnv *env, jclass, jobject modelObj, jstring grammarStr,
 		jstring rootStr) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, modelObj);
+	const llama_vocab *vocab = llama_model_get_vocab(model);
 
 //	const char *grammar_str = env->GetStringUTFChars(grammarStr, nullptr);
 //	const char *grammar_root = env->GetStringUTFChars(rootStr, nullptr);
@@ -96,7 +97,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppSamplers_doInitGrammar
 			&utf16_conv);
 	std::string grammar_root = argeo::jni::to_string(env, rootStr, &utf16_conv);
 
-	llama_sampler *smpl = llama_sampler_init_grammar(model, grammar_str.c_str(),
+	llama_sampler *smpl = llama_sampler_init_grammar(vocab, grammar_str.c_str(),
 			grammar_root.c_str());
 
 	// clean up

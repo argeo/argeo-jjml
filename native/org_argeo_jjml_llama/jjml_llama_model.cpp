@@ -23,7 +23,8 @@ static argeo::jni::utf16_convert utf16_conv;
 JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMessages(
 		JNIEnv *env, jobject, jlong pointer, jobjectArray roles,
 		jobjectArray contents, jboolean addAssistantTokens) {
-	auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
+	// TODO change method signature as model is not needed anymore
+	//auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 
 	const jsize messages_size = env->GetArrayLength(roles);
 	std::vector<llama_chat_message> chat_messages;
@@ -55,7 +56,7 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 
 		const char *ptr_tmpl = nullptr; // TODO custom template
 		std::vector<char> buf(alloc_size);
-		int32_t resLength = llama_chat_apply_template(model, ptr_tmpl,
+		int32_t resLength = llama_chat_apply_template(ptr_tmpl,
 				chat_messages.data(), chat_messages.size(), addAssistantTokens,
 				buf.data(), buf.size());
 
@@ -70,7 +71,7 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doFormatChatMe
 		// if it turns out that our buffer is too small, we resize it
 		if ((size_t) resLength > buf.size()) {
 			buf.resize(resLength);
-			resLength = llama_chat_apply_template(model, ptr_tmpl,
+			resLength = llama_chat_apply_template(ptr_tmpl,
 					chat_messages.data(), chat_messages.size(),
 					addAssistantTokens, buf.data(), buf.size());
 		}
@@ -172,8 +173,8 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy(
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetVocabularySize(
 		JNIEnv *env, jobject obj) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, obj);
-	return llama_n_vocab(model);
-
+	const llama_vocab *vocab = llama_model_get_vocab(model);
+	return llama_vocab_n_tokens(vocab);
 }
 
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetContextTrainingSize(
@@ -285,6 +286,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetModelSize(
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEndOfGenerationToken(
 		JNIEnv *env, jobject obj) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, obj);
-	llama_token eot = llama_token_eot(model);
-	return eot == -1 ? llama_token_eos(model) : eot;
+	const llama_vocab *vocab = llama_model_get_vocab(model);
+	llama_token eot = llama_vocab_eot(vocab);
+	return eot == -1 ? llama_vocab_eos(vocab) : eot;
 }
