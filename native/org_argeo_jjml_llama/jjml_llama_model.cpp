@@ -151,7 +151,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
 		};
 	}
 
-	llama_model *model = llama_load_model_from_file(path_model, mparams);
+	llama_model *model = llama_model_load_from_file(path_model, mparams);
 
 	// free callback global reference
 	if (progress_data.callback != nullptr)
@@ -164,7 +164,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doInit(
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doDestroy(
 		JNIEnv *env, jobject obj) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, obj);
-	llama_free_model(model);
+	llama_model_free(model);
 }
 
 /*
@@ -180,19 +180,19 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetVocabularySi
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetContextTrainingSize(
 		JNIEnv *env, jobject obj) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, obj);
-	return llama_n_ctx_train(model);
+	return llama_model_n_ctx_train(model);
 }
 
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetEmbeddingSize(
 		JNIEnv *env, jobject obj) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, obj);
-	return llama_n_embd(model);
+	return llama_model_n_embd(model);
 }
 
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llama_LlamaCppModel_doGetLayerCount(
 		JNIEnv *env, jobject obj) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, obj);
-	return llama_n_layer(model);
+	return llama_model_n_layer(model);
 }
 
 static jobjectArray jjml_lama_get_meta(JNIEnv *env, llama_model *model,
