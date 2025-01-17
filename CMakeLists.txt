@@ -23,9 +23,6 @@ set(GGML_LLAMAFILE OFF)
 # Reproducibility
 set(GGML_CCACHE ON)
 
-# Optimizations
-set(GGML_NATIVE ON)
-
 set(CMAKE_BUILD_TYPE Release)
 
 #set(GGML_CUDA ON)
@@ -36,40 +33,46 @@ set(GGML_BLAS ON)
 set(GGML_BLAS_VENDOR OpenBLAS)
 
 ## multiple backends dlls
-#set(GGML_BACKEND_DL ON)
+if(GGML_BACKEND_DL)
+set(GGML_NATIVE OFF)
+set(GGML_BACKEND_DL ON)
+set(GGML_CPU_ALL_VARIANTS ON)
+endif()
 
 # NATIVE
 if(NOT MINGW)
 
-# libggml as external library
+# ggml as external library
 find_library(GGML_LOCATION ggml)
 if(EXISTS ${GGML_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
-add_library(ggml SHARED IMPORTED GLOBAL)
-set_target_properties(ggml PROPERTIES IMPORTED_LOCATION ${GGML_LOCATION})
-message (STATUS "Found GGML library: ${GGML_LOCATION}") 
+	add_library(ggml SHARED IMPORTED GLOBAL)
+	set_target_properties(ggml PROPERTIES IMPORTED_LOCATION ${GGML_LOCATION})
+	message (STATUS "Found GGML library: ${GGML_LOCATION}") 
 else()
-add_subdirectory(sdk/tp/native/ggml) # build locally
-set_target_properties(ggml PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-set_target_properties(ggml-base PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-set_target_properties(ggml-cpu PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-set_target_properties(ggml-blas PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-set_target_properties(ggml-vulkan PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-#set_target_properties(ggml-cuda PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-message (STATUS "Will build ggml library") 
+	# copied from root of ggml otherwise
+	# standalone build of GGML with GGML_BACKEND_DL fails 
+	set(GGML_STANDALONE ON)
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
+	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
+
+	add_subdirectory(sdk/tp/native/ggml) # build locally
+	message (STATUS "Will build ggml library") 
 endif()
 
-# libllama as external library
+# llama.cpp as external library
 find_library(LLAMA_LOCATION llama)
 if(EXISTS ${LLAMA_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
-add_library(llama SHARED IMPORTED GLOBAL)
-set_target_properties(llama PROPERTIES IMPORTED_LOCATION ${LLAMA_LOCATION})
-target_link_libraries(llama INTERFACE ${GGML_LOCATION})
-message (STATUS "Found LLAMA library: ${LLAMA_LOCATION}") 
+	add_library(llama SHARED IMPORTED GLOBAL)
+	set_target_properties(llama PROPERTIES IMPORTED_LOCATION ${LLAMA_LOCATION})
+	target_link_libraries(llama INTERFACE ${GGML_LOCATION})
+	message (STATUS "Found LLAMA library: ${LLAMA_LOCATION}") 
 else()
-add_subdirectory(sdk/tp/native/llama.cpp) # build locally
-#add_subdirectory(sdk/tp/native) # build locally
-set_target_properties(llama PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-message (STATUS "Will build llama.cpp library") 
+	set(LLAMA_STANDALONE ON)
+
+	add_subdirectory(sdk/tp/native/llama.cpp) # build locally
+	#add_subdirectory(sdk/tp/native) # build locally
+	set_target_properties(llama PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
+	message (STATUS "Will build llama.cpp library") 
 endif()
 
 endif()
