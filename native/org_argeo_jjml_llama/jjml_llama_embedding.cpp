@@ -104,7 +104,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppEmbeddingProcessor_doPr
 	// TODO deal with normalization
 	int embd_normalize = -1;
 
-	int n_embd = llama_n_embd(llama_get_model(ctx));
+	int n_embd = llama_model_n_embd(llama_get_model(ctx));
 	int n_batch = llama_n_batch(ctx);
 	const enum llama_pooling_type pooling_type = llama_pooling_type(ctx);
 

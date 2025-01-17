@@ -104,7 +104,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 		llama_context_params ctx_params = llama_context_default_params();
 		get_context_params(env, contextParams, &ctx_params);
 
-		llama_context *ctx = llama_new_context_with_model(model, ctx_params);
+		llama_context *ctx = llama_init_from_model(model, ctx_params);
 		if (ctx == NULL) {
 			throw std::runtime_error("Failed to create llama.cpp context");
 		}
