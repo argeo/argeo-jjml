@@ -3,10 +3,10 @@
 	url = https://github.com/argeo/argeo-build.git
 	branch = unstable
 [submodule "sdk/tp/native/llama.cpp"]
-	path = sdk/tp/native/llama.cpp
+	path = native/tp/llama.cpp
 	url = https://github.com/ggerganov/llama.cpp.git
 	branch = master
 [submodule "sdk/tp/native/ggml"]
-	path = sdk/tp/native/ggml
+	path = native/tp/ggml
 	url = https://github.com/ggerganov/ggml.git
 	branch = master

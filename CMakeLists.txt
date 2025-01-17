@@ -17,8 +17,8 @@ org.argeo.jjml
 
 a2_build_bundles(${BUNDLES})
 
-set(JJML_FORCE_BUILD_TP ON)
-set(GGML_LLAMAFILE OFF)
+#set(JJML_FORCE_BUILD_TP OFF)
+#set(GGML_LLAMAFILE OFF)
 
 # Reproducibility
 set(GGML_CCACHE ON)
@@ -55,7 +55,7 @@ else()
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 
-	add_subdirectory(sdk/tp/native/ggml) # build locally
+	add_subdirectory(native/tp/ggml) # build locally
 	message (STATUS "Will build ggml library") 
 endif()
 
@@ -69,8 +69,7 @@ if(EXISTS ${LLAMA_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
 else()
 	set(LLAMA_STANDALONE ON)
 
-	add_subdirectory(sdk/tp/native/llama.cpp) # build locally
-	#add_subdirectory(sdk/tp/native) # build locally
+	add_subdirectory(native/tp/llama.cpp) # build locally
 	set_target_properties(llama PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 	message (STATUS "Will build llama.cpp library") 
 endif()
