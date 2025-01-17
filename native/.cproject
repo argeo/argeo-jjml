@@ -91,7 +91,7 @@
 					<folderInfo id="cdt.managedbuild.config.gnu.so.debug.1460275451.620111777." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.so.debug.197574830" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.so.debug">
 							<targetPlatform id="cdt.managedbuild.target.gnu.platform.so.debug.1490943890" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.so.debug"/>
-							<builder buildPath="${workspace_loc:/argeo-jjml}/../output/argeo-jjml/native" enableAutoBuild="true" id="cdt.managedbuild.target.gnu.builder.so.debug.455505656" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="cdt.managedbuild.target.gnu.builder.so.debug"/>
+							<builder buildPath="${workspace_loc:/argeo-jjml}/../output/argeo-jjml/native" enableAutoBuild="false" id="cdt.managedbuild.target.gnu.builder.so.debug.455505656" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="cdt.managedbuild.target.gnu.builder.so.debug"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1469037257" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.so.debug.2134381860" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.so.debug">
 								<option id="gnu.cpp.compiler.so.debug.option.optimization.level.751787308" name="Optimization Level" superClass="gnu.cpp.compiler.so.debug.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
@@ -147,6 +147,7 @@
 		<configuration configurationName="x86_64-linux-gnu">
 			<resource resourceType="PROJECT" workspacePath="/argeo-jjml-native"/>
 		</configuration>
+		<configuration configurationName="x86_64-linux-gnu+tp"/>
 		<configuration configurationName="argeo-jjml">
 			<resource resourceType="PROJECT" workspacePath="/argeo-jjml-jni"/>
 		</configuration>
