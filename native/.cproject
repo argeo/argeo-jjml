@@ -91,7 +91,7 @@
 					<folderInfo id="cdt.managedbuild.config.gnu.so.debug.1460275451.620111777." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.so.debug.197574830" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.so.debug">
 							<targetPlatform id="cdt.managedbuild.target.gnu.platform.so.debug.1490943890" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.so.debug"/>
-							<builder buildPath="${workspace_loc:/argeo-jjml}/../output/argeo-jjml/native" enableAutoBuild="false" id="cdt.managedbuild.target.gnu.builder.so.debug.455505656" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="cdt.managedbuild.target.gnu.builder.so.debug"/>
+							<builder buildPath="${workspace_loc:/argeo-jjml}/../output/argeo-jjml/native" enableAutoBuild="true" id="cdt.managedbuild.target.gnu.builder.so.debug.455505656" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="cdt.managedbuild.target.gnu.builder.so.debug"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1469037257" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.so.debug.2134381860" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.so.debug">
 								<option id="gnu.cpp.compiler.so.debug.option.optimization.level.751787308" name="Optimization Level" superClass="gnu.cpp.compiler.so.debug.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
@@ -103,6 +103,9 @@
 									<listOptionValue builtIn="false" value="/usr/lib/jvm/java-17-openjdk-amd64/include/linux"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/tp/ggml/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/tp/llama.cpp/include}&quot;"/>
+								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.79353764" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="GGML_BACKEND_DL"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.295163651" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -132,6 +135,8 @@
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="org_argeo_jjml_llama"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/ggml/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/examples/simple"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/examples/simple-chat"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/src"/>
 					</sourceEntries>
 				</configuration>

@@ -12,6 +12,7 @@ jjml-force-tp:
 		-DGGML_VULKAN=ON \
 		-DGGML_CUDA=OFF \
 		-DGGML_OPENCL=OFF \
+		-DGGML_OPENCL_USE_ADRENO_KERNELS=OFF \
 		-DGGML_BACKEND_DL=ON
 	cmake --build $(BUILD_BASE) -j $(shell nproc)
 	
