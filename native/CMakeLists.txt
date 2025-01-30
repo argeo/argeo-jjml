@@ -45,4 +45,5 @@ endif() # MINGW
 #
 # JJML NATIVE BUILD
 #
+add_subdirectory(org_argeo_jjml_ggml)
 add_subdirectory(org_argeo_jjml_llama)

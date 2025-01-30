@@ -7,6 +7,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import org.argeo.jjml.ggml.GgmlBackend;
+
 /**
  * Loads the shared libraries, possibly using system properties explicitly
  * setting them. If it is used to set them programmatically, it must be done
@@ -24,10 +26,15 @@ public class LlamaCppNative {
 	 */
 	public final static String SYSTEM_PROPERTY_LIBPATH_LLAMACPP = "jjml.libpath.llamacpp";
 	/**
-	 * System property to explicitly specify the path of the JNI shared library to
-	 * use.
+	 * System property to explicitly specify the path of the llama JNI shared
+	 * library to use.
 	 */
 	public final static String SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA = "jjml.libpath.jjml.llama";
+	/**
+	 * System property to explicitly specify the path of the GGML JNI shared library
+	 * to use.
+	 */
+	public final static String SYSTEM_PROPERTY_LIBPATH_JJML_GGML = "jjml.libpath.jjml.ggml";
 
 	/**
 	 * Environment properties enabling to swap NVRAM to physical memory if needed.
@@ -38,6 +45,7 @@ public class LlamaCppNative {
 	 */
 	public final static String ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
 
+	private final static String JJML_GGML_LIBRARY_NAME = "Java_" + GgmlBackend.class.getPackageName().replace('.', '_');
 	private final static String JJML_LAMA_LIBRARY_NAME = "Java_"
 			+ LlamaCppNative.class.getPackageName().replace('.', '_');
 
@@ -48,6 +56,7 @@ public class LlamaCppNative {
 	private static Path ggmlLibraryPath;
 	private static Path llamaLibraryPath;
 	private static Path jjmlLlamaLibraryPath;
+	private static Path jjmlGgmlLibraryPath;
 
 	/*
 	 * STATIC UTILITIES
@@ -83,6 +92,12 @@ public class LlamaCppNative {
 				throw new IllegalArgumentException(
 						SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA + " " + jjmlLlamaLibraryPath + " does not exist");
 		});
+		Optional.ofNullable(System.getProperty(SYSTEM_PROPERTY_LIBPATH_JJML_GGML)).ifPresent((path) -> {
+			jjmlGgmlLibraryPath = Paths.get(path);
+			if (!Files.exists(jjmlLlamaLibraryPath))
+				throw new IllegalArgumentException(
+						SYSTEM_PROPERTY_LIBPATH_JJML_GGML + " " + jjmlLlamaLibraryPath + " does not exist");
+		});
 
 		if (ggmlLibraryPath != null) {
 			System.load(ggmlLibraryPath.toAbsolutePath().toString());
@@ -93,6 +108,17 @@ public class LlamaCppNative {
 			logger.log(Level.WARNING, "llama.cpp library loaded from " + llamaLibraryPath);
 		}
 
+		// GGML
+		// TODO move it to GGML package
+		if (jjmlGgmlLibraryPath != null) {
+			System.load(jjmlGgmlLibraryPath.toAbsolutePath().toString());
+		} else {
+			// default behavior
+			System.loadLibrary(JJML_GGML_LIBRARY_NAME);
+		}
+		GgmlBackend.loadAllBackends();
+
+		// llama.cpp
 		if (jjmlLlamaLibraryPath != null) {
 			System.load(jjmlLlamaLibraryPath.toAbsolutePath().toString());
 		} else {
