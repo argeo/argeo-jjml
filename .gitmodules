@@ -1,6 +1,6 @@
 [submodule "sdk/argeo-build"]
 	path = sdk/argeo-build
-	url = https://github.com/argeo/argeo-build.git
+	url = ../argeo-build
 	branch = unstable
 [submodule "sdk/tp/native/llama.cpp"]
 	path = native/tp/llama.cpp
