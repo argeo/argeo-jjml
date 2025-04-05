@@ -32,11 +32,11 @@ public class GgmlBackend {
 		List<Path> basePaths = new ArrayList<>();
 		// java.library.path
 		String javaLibraryPath = System.getProperty("java.library.path");
-//		if (javaLibraryPath != null && !"".equals(javaLibraryPath.trim())) {
-//			String[] paths = javaLibraryPath.split(File.pathSeparator);
-//			for (String p : paths)
-//				basePaths.add(Paths.get(p));
-//		}
+		if (javaLibraryPath != null && !"".equals(javaLibraryPath.trim())) {
+			String[] paths = javaLibraryPath.split(File.pathSeparator);
+			for (String p : paths)
+				basePaths.add(Paths.get(p));
+		}
 
 		// "standard" deployment paths
 		basePaths.add(Paths.get("/usr/libexec/x86_64-linux-gnu/ggml"));
