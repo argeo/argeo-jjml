@@ -8,6 +8,7 @@ import static org.argeo.jjml.llama.params.ModelParam.n_gpu_layers;
 import java.io.BufferedReader;
 import java.io.Console;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -45,6 +46,8 @@ public class SimpleCli {
 		 * ARGUMENTS
 		 */
 		Path modelPath = Paths.get(args[0]);
+		if (!Files.exists(modelPath))
+			throw new FileNotFoundException("Model " + modelPath + " does not exist");
 
 		boolean embeddings = Boolean.parseBoolean(System.getProperty(ContextParam.embeddings.asSystemProperty()));
 		int chunkSize = 0;

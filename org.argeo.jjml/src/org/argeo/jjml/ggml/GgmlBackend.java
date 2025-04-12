@@ -1,6 +1,10 @@
 package org.argeo.jjml.ggml;
 
+import static java.lang.System.Logger.Level.INFO;
+import static java.lang.System.Logger.Level.WARNING;
+
 import java.io.File;
+import java.lang.System.Logger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -9,6 +13,8 @@ import java.util.List;
 
 /** A registered GGML backend. */
 public class GgmlBackend {
+	private final static Logger logger = System.getLogger(GgmlBackend.class.getName());
+
 	private final static String GGML_DL_PREFIX = "ggml-";
 	// TODO rather rely on native-side registration
 	private final static List<GgmlBackend> loadedBackends = new ArrayList<>();
@@ -39,12 +45,13 @@ public class GgmlBackend {
 		}
 
 		// "standard" deployment paths
-		basePaths.add(Paths.get("/usr/libexec/x86_64-linux-gnu/ggml"));
+		if (basePaths.isEmpty())
+			basePaths.add(Paths.get("/usr/libexec/x86_64-linux-gnu/ggml"));
 
 		// load
 		for (Path basePath : basePaths) {
 			if (Files.exists(basePath)) {
-				// loadBackends(basePath);
+				//loadBackends(basePath);
 				doLoadAllBackends(basePath.toString());
 			}
 		}
@@ -65,8 +72,11 @@ public class GgmlBackend {
 		backendNames: for (StandardBackend backendName : StandardBackend.values()) {
 			// skip backends whose names are already loaded
 			for (GgmlBackend backend : loadedBackends) {
-				if (backendName.name().equals(backend.getName()))
+				if (backendName.name().equals(backend.getName())) {
+					logger.log(WARNING, backendName.name() + " already loaded from " + backend.getPath());
+					System.err.println(backendName.name() + " already loaded from " + backend.getPath());
 					continue backendNames;
+				}
 			}
 
 			String dllName;
@@ -83,6 +93,8 @@ public class GgmlBackend {
 					// TODO log it
 					GgmlBackend backend = new GgmlBackend(pointer, backendName.name(), backendPath);
 					loadedBackends.add(backend);
+					logger.log(INFO, "Loaded backend " + backendName.name() + " from " + backend.getPath());
+					System.out.println("Loaded backend " + backendName.name() + " from " + backend.getPath());
 				}
 			}
 		}
