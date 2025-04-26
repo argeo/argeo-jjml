@@ -4,21 +4,23 @@ include  sdk/argeo-build/cmake/default.mk
 jjml-force-tp:
 	$(RM) -rf $(BUILD_BASE)
 	mkdir -p $(BUILD_BASE)
-	# Debug builds are too slow to be usable. TODO find out why
 	cmake -B $(BUILD_BASE) . \
-		-DCMAKE_BUILD_TYPE=Release \
+		-DJJML_FORCE_BUILD_TP=ON \
+		-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+		-DGGML_CCACHE=ON \
 		-DBUILD_SHARED_LIBS=ON \
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
-		-DJJML_FORCE_BUILD_TP=ON \
+		\
+		-DGGML_NATIVE=ON \
 		-DGGML_CPU_ALL_VARIANTS=OFF \
-		-DGGML_NATIVE=OFF \
-		-DGGML_BACKEND_DL=ON \
+		-DGGML_BACKEND_DL=OFF \
+		\
 		-DGGML_BLAS=ON \
 		-DGGML_BLAS_VENDOR=OpenBLAS \
 		-DGGML_VULKAN=OFF \
 		-DGGML_CUDA=ON \
-		-DGGML_OPENCL=OFF \
-		-DGGML_OPENCL_USE_ADRENO_KERNELS=OFF \
+		-DGGML_CUDA_FORCE_MMQ=ON \
+		-DGGML_CUDA_FA_ALL_QUANTS=OFF \
 	
 	cmake --build $(BUILD_BASE) -j $(shell nproc)
 	
