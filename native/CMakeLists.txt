@@ -1,7 +1,7 @@
 #
 # THIRD PARTIES
 #
-if(NOT MINGW)
+#if(NOT MINGW)
 
 # ggml as external library
 find_library(GGML_LOCATION ggml)
@@ -37,10 +37,12 @@ else()
 	set(LLAMA_STANDALONE ON)
 	add_subdirectory(tp/llama.cpp) # build locally
 	set_target_properties(llama PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
+	# Required by MSYS
+	set_target_properties(llama PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 	message (STATUS "Will build llama.cpp library") 
 endif()
 
-endif() # MINGW
+#endif() # MINGW
 
 #
 # JJML NATIVE BUILD
