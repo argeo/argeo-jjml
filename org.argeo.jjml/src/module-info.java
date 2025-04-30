@@ -1,4 +1,4 @@
-module org.argeo.jjml.llama {
+module org.argeo.jjml {
 	exports org.argeo.jjml.ggml;
 	exports org.argeo.jjml.ggml.params;
 	exports org.argeo.jjml.llama;
