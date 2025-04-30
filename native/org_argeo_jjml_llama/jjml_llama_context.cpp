@@ -7,8 +7,11 @@
 #include <cassert>
 #include <stdexcept>
 #include <string>
+#include <thread>
 
 #include "org_argeo_jjml_llama_.h"
+
+static struct ggml_threadpool *threadpool = NULL;
 
 /*
  * PARAMETERS
@@ -108,6 +111,46 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 		if (ctx == NULL) {
 			throw std::runtime_error("Failed to create llama.cpp context");
 		}
+
+		// Thread pool
+		auto *reg = ggml_backend_dev_backend_reg(
+				ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU));
+		auto *ggml_threadpool_new_fn =
+				(decltype(ggml_threadpool_new)*) ggml_backend_reg_get_proc_address(
+						reg, "ggml_threadpool_new");
+		auto *ggml_threadpool_free_fn =
+				(decltype(ggml_threadpool_free)*) ggml_backend_reg_get_proc_address(
+						reg, "ggml_threadpool_free");
+
+	    unsigned int n_threads_os = std::thread::hardware_concurrency();
+//		struct ggml_threadpool_params tpp_batch;
+//	    ggml_threadpool_params_init(&tpp_batch, n_threads);
+		struct ggml_threadpool_params tpp;
+		ggml_threadpool_params_init(&tpp, n_threads_os);
+
+		//set_process_priority(params.cpuparams.priority);
+
+//		struct ggml_threadpool *threadpool_batch = NULL;
+//		if (!ggml_threadpool_params_match(&tpp, &tpp_batch)) {
+//			threadpool_batch = ggml_threadpool_new_fn(&tpp_batch);
+//			if (!threadpool_batch) {
+//				// FIXME throw exception
+//			}
+//
+//			// Start the non-batch threadpool in the paused state
+//			tpp.paused = true;
+//		}
+
+//		struct ggml_threadpool *threadpool = ggml_threadpool_new_fn(&tpp);
+		if (!threadpool) {
+			threadpool = ggml_threadpool_new_fn(&tpp);
+			if (!threadpool) {
+				// FIXME throw exception
+			}
+		}
+
+		llama_attach_threadpool(ctx, threadpool, NULL);
+
 		return (jlong) ctx;
 	} catch (const std::exception &ex) {
 		argeo::jni::throw_to_java(env, ex);
@@ -118,6 +161,8 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doDestroy(
 		JNIEnv *env, jobject obj) {
 	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
+
+	llama_detach_threadpool(ctx);
 	llama_free(ctx);
 }
 
