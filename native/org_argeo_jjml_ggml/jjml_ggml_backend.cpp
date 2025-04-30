@@ -10,7 +10,7 @@
 static argeo::jni::utf16_convert utf16_conv;
 
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_ggml_GgmlBackend_doLoadBackend(
-		JNIEnv* env, jclass, jstring path) {
+		JNIEnv *env, jclass, jstring path) {
 	std::string p = argeo::jni::to_string(env, path, &utf16_conv);
 	ggml_backend_load(p.c_str());
 	return 0;
