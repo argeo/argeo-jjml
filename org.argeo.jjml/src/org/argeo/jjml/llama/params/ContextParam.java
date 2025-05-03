@@ -19,11 +19,11 @@ public enum ContextParam {
 //		yarn_beta_slow, //
 //		yarn_orig_ctx, //
 //		defrag_thold, //
-//		type_k, //
-//		type_v, //
+	type_k, // only Q4_0 and Q8_0 supported at this stage
+	type_v, // only Q4_0 and Q8_0 supported at this stage
 	embeddings, //
-//		offload_kqv, //
-//		flash_attn, //
+	offload_kqv, //
+	flash_attn, //
 //		no_perf, //
 	;
 

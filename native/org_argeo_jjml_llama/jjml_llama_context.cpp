@@ -1,15 +1,16 @@
-#include <argeo/jni/argeo_jni.h>
-#include <jni.h>
-#include <jni_md.h>
-#include <llama.h>
-#include "org_argeo_jjml_llama_LlamaCppBackend.h" // IWYU pragma: keep
-#include "org_argeo_jjml_llama_LlamaCppContext.h" // IWYU pragma: keep
 #include <cassert>
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <iostream>
+
+#include <llama.h>
+
+#include <argeo/jni/argeo_jni.h>
 
 #include "org_argeo_jjml_llama_.h"
+#include "org_argeo_jjml_llama_LlamaCppBackend.h" // IWYU pragma: keep
+#include "org_argeo_jjml_llama_LlamaCppContext.h" // IWYU pragma: keep
 
 static struct ggml_threadpool *threadpool = NULL;
 
@@ -57,9 +58,40 @@ static void get_context_params(JNIEnv *env, jobject params,
 		break;
 	}
 
+	// TODO support more types
+	switch (env->CallIntMethod(params,
+			env->GetMethodID(clss, "type_k", "()I"))) {
+	case GGML_TYPE_Q4_0:
+		ctx_params->type_k = GGML_TYPE_Q4_0;
+		break;
+	case GGML_TYPE_Q8_0:
+		ctx_params->type_k = GGML_TYPE_Q8_0;
+		break;
+	default:
+		assert(!"Unsupported type_k type value");
+		break;
+	}
+
+	switch (env->CallIntMethod(params,
+			env->GetMethodID(clss, "type_v", "()I"))) {
+	case GGML_TYPE_Q4_0:
+		ctx_params->type_v = GGML_TYPE_Q4_0;
+		break;
+	case GGML_TYPE_Q8_0:
+		ctx_params->type_v = GGML_TYPE_Q8_0;
+		break;
+	default:
+		assert(!"Unsupported type_k type value");
+		break;
+	}
+
 	// booleans
 	ctx_params->embeddings = env->CallBooleanMethod(params,
 			env->GetMethodID(clss, "embeddings", "()Z"));
+	ctx_params->offload_kqv = env->CallBooleanMethod(params,
+			env->GetMethodID(clss, "offload_kqv", "()Z"));
+	ctx_params->flash_attn = env->CallBooleanMethod(params,
+			env->GetMethodID(clss, "flash_attn", "()Z"));
 }
 
 JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_newContextParams(
@@ -92,7 +124,6 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llama_LlamaCppBackend_newContextPa
 			ctx_params.flash_attn, //
 			ctx_params.no_perf //
 			);
-//	set_context_params(env, res, ctx_params);
 	return res;
 }
 
@@ -106,6 +137,8 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 
 		llama_context_params ctx_params = llama_context_default_params();
 		get_context_params(env, contextParams, &ctx_params);
+
+		std::cout << "type_k=" << ctx_params.type_k << std::endl;
 
 		llama_context *ctx = llama_init_from_model(model, ctx_params);
 		if (ctx == NULL) {

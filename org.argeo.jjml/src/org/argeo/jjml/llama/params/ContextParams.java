@@ -46,7 +46,11 @@ public class ContextParams { //
 	private final int type_v; // data type for V cache [EXPERIMENTAL]
 
 	private final boolean embeddings; // if true, extract embeddings (together with logits)
+
+	// Note: lamma.cpp common uses the inverse param 'no_kv_offload' which is then
+	// false by default
 	private final boolean offload_kqv; // whether to offload the KQV ops (including the KV cache) to GPU
+
 	private final boolean flash_attn; // whether to use flash attention [EXPERIMENTAL]
 	private final boolean no_perf; // whether to measure performance timings
 
@@ -136,11 +140,11 @@ public class ContextParams { //
 				this.yarn_beta_slow, //
 				this.yarn_orig_ctx, //
 				this.defrag_thold, //
-				this.type_k, //
-				this.type_v, //
+				parseInt(p.getOrDefault(ContextParam.type_k, Integer.toString(this.type_k))), //
+				parseInt(p.getOrDefault(ContextParam.type_v, Integer.toString(this.type_v))), //
 				parseBoolean(p.getOrDefault(ContextParam.embeddings, Boolean.toString(this.embeddings))), //
-				this.offload_kqv, //
-				this.flash_attn, //
+				parseBoolean(p.getOrDefault(ContextParam.offload_kqv, Boolean.toString(this.offload_kqv))), //
+				parseBoolean(p.getOrDefault(ContextParam.flash_attn, Boolean.toString(this.flash_attn))), //
 				this.no_perf //
 		);
 	}

@@ -39,9 +39,9 @@ public enum GgmlType implements IntSupplier {
 	GGML_TYPE_F64(28), //
 	GGML_TYPE_IQ1_M(29), //
 	GGML_TYPE_BF16(30), //
-	GGML_TYPE_Q4_0_4_4(31), //
-	GGML_TYPE_Q4_0_4_8(32), //
-	GGML_TYPE_Q4_0_8_8(33), //
+	// GGML_TYPE_Q4_0_4_4(31), // support has been removed from gguf files
+	// GGML_TYPE_Q4_0_4_8(32), //
+	// GGML_TYPE_Q4_0_8_8(33), //
 	GGML_TYPE_TQ1_0(34), //
 	GGML_TYPE_TQ2_0(35), //
 	;
