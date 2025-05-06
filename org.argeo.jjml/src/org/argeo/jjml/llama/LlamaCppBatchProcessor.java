@@ -363,7 +363,10 @@ public class LlamaCppBatchProcessor {
 				input.put(promptArr, i * batchSize, input.limit());
 				input.flip();
 
+				long begin = System.nanoTime();
 				writeBatch(new IntBuffer[] { input }, lastLogits);
+				long end = System.nanoTime();
+				System.out.println("Wrote batch in " + (end - begin) / 1000000 + " ms.");
 			}
 
 			if (parameters != null) {
@@ -437,7 +440,7 @@ public class LlamaCppBatchProcessor {
 			allCompleted.join();
 
 			long end = System.nanoTime();
-			// System.out.println("Read batch in " + (end - begin) / 1 + " ns.");
+			System.out.println("Read  batch in " + (end - begin) / 1000000 + " ms.");
 
 			int sequencesLeft = 0;
 			for (int i = 0; i < outputIds.length; i++) {
