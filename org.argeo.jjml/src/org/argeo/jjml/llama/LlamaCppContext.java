@@ -100,7 +100,6 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	
 	void readState(ByteBuffer buf) {
 		byte[] arr = doGetStateDataAsBytes();
-		System.out.println("State size: "+arr.length);
 		buf.put(arr);
 	}
 

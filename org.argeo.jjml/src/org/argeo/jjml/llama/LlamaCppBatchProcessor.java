@@ -322,7 +322,7 @@ public class LlamaCppBatchProcessor {
 		int[] promptArr = promptTokens.array();
 
 		int outputMax = context.getBatchSize();
-		
+
 		// TODO check whether it makes sense (pattern was taken from llama.cpp code)
 		int requiredContextSize = tokenCount + outputMax * parallelCount * 10;
 
@@ -380,9 +380,10 @@ public class LlamaCppBatchProcessor {
 					System.out.println("Wrote batch in " + (end - begin) / 1000000 + " ms.");
 				}
 				if (savedState == null) {
-					int stateSize = (int)context.getStateSize();
+					int stateSize = (int) context.getStateSize();
 					savedState = ByteBuffer.allocate(stateSize);
 					context.readState(savedState);
+					System.out.println("Saved context state (" + stateSize / (1024 * 1024) + " MiB)");
 					savedContextPosition = contextPosition;
 				}
 			}
