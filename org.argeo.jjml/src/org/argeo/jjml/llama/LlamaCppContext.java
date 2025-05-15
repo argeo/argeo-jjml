@@ -3,6 +3,7 @@ package org.argeo.jjml.llama;
 import static java.lang.System.Logger.Level.WARNING;
 
 import java.lang.System.Logger;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.function.LongSupplier;
 
@@ -36,7 +37,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	private final int physicalBatchSize;
 	private final int maxSequenceCount;
 
-	private LlamaCppBatchProcessor batchProcessor;
+//	private LlamaCppBatchProcessor batchProcessor;
 
 	public LlamaCppContext(LlamaCppModel model) {
 		this(model, DEFAULT_CONTEXT_PARAMS_NATIVE);
@@ -80,6 +81,34 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 
 	private native int doGetMaxSequenceCount();
 
+	private native long doGetStateSize();
+
+	private native byte[] doGetStateDataAsBytes();
+
+	private native void doGetStateData(ByteBuffer buf, int offset);
+
+	private native void doSetStateDataBytes(byte[] arr, int offset, int length);
+
+	private native void doSetStateData(ByteBuffer buf, int offset, int length);
+
+	/*
+	 * STATE
+	 */
+	long getStateSize() {
+		return doGetStateSize();
+	}
+	
+	void readState(ByteBuffer buf) {
+		byte[] arr = doGetStateDataAsBytes();
+		System.out.println("State size: "+arr.length);
+		buf.put(arr);
+	}
+
+	void writeState(ByteBuffer buf) {
+		byte[] arr = buf.array();
+		doSetStateDataBytes(arr, 0, arr.length);
+	}
+
 	/*
 	 * LIFECYCLE
 	 */
@@ -91,11 +120,11 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	/*
 	 * PACKAGE COORDINATION
 	 */
-	void setBatchProcessor(LlamaCppBatchProcessor batchProcessor) {
-		if (batchProcessor != null)
-			throw new IllegalArgumentException("A batch processor is already active for this context");
-		this.batchProcessor = batchProcessor;
-	}
+//	void setBatchProcessor(LlamaCppBatchProcessor batchProcessor) {
+//		if (batchProcessor != null)
+//			throw new IllegalArgumentException("A batch processor is already active for this context");
+//		this.batchProcessor = batchProcessor;
+//	}
 
 	/*
 	 * ACCESSORS
@@ -125,9 +154,9 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 		return batchSize;
 	}
 
-	public LlamaCppBatchProcessor getBatchProcessor() {
-		return batchProcessor;
-	}
+//	public LlamaCppBatchProcessor getBatchProcessor() {
+//		return batchProcessor;
+//	}
 
 	public int getPhysicalBatchSize() {
 		return physicalBatchSize;

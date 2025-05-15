@@ -15,6 +15,51 @@
 static struct ggml_threadpool *threadpool = NULL;
 
 /*
+ * STATE
+ */
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetStateSize(
+		JNIEnv *env, jobject obj) {
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
+	return static_cast<jlong>(llama_state_get_size(ctx));
+	//return llama_get_state_size(ctx);// deprecated
+}
+
+JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetStateDataAsBytes(
+		JNIEnv *env, jobject obj) {
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
+	size_t size = llama_state_get_size(ctx);
+	jbyteArray res = env->NewByteArray(size);
+	void *dst = env->GetPrimitiveArrayCritical(res, NULL);
+	size_t n_bytes = llama_state_get_data(ctx, static_cast<uint8_t*>(dst),
+			size);
+	env->ReleasePrimitiveArrayCritical(res, dst, 0);
+	// TODO check n_bytes
+	return res;
+}
+
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doGetStateData(
+		JNIEnv *env, jobject obj, jobject, jint) {
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
+	// FIXME implement it
+}
+
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doSetStateDataBytes(
+		JNIEnv *env, jobject obj, jbyteArray arr, jint offset, jint length) {
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
+	void *src = env->GetPrimitiveArrayCritical(arr, NULL);
+	size_t n_bytes = llama_state_set_data(ctx,
+			static_cast<uint8_t*>(src) + offset, length);
+	env->ReleasePrimitiveArrayCritical(arr, src, 0);
+	// TODO check n_bytes
+}
+
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doSetStateData(
+		JNIEnv *env, jobject obj, jobject, jint, jint) {
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
+	// FIXME implement it
+}
+
+/*
  * PARAMETERS
  */
 /** @brief Get context parameters from Java to native.*/
@@ -61,8 +106,7 @@ static void get_context_params(JNIEnv *env, jobject params,
 	// TODO support more types
 	int type_k = env->CallIntMethod(params,
 			env->GetMethodID(clss, "type_k", "()I"));
-	switch (env->CallIntMethod(params,
-			env->GetMethodID(clss, "type_k", "()I"))) {
+	switch (env->CallIntMethod(params, env->GetMethodID(clss, "type_k", "()I"))) {
 	case GGML_TYPE_F16:
 		ctx_params->type_k = GGML_TYPE_F16;
 		break;
@@ -77,8 +121,7 @@ static void get_context_params(JNIEnv *env, jobject params,
 		break;
 	}
 
-	switch (env->CallIntMethod(params,
-			env->GetMethodID(clss, "type_v", "()I"))) {
+	switch (env->CallIntMethod(params, env->GetMethodID(clss, "type_v", "()I"))) {
 	case GGML_TYPE_F16:
 		ctx_params->type_v = GGML_TYPE_F16;
 		break;
@@ -161,7 +204,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llama_LlamaCppContext_doInit(
 				(decltype(ggml_threadpool_free)*) ggml_backend_reg_get_proc_address(
 						reg, "ggml_threadpool_free");
 
-	    unsigned int n_threads_os = std::thread::hardware_concurrency();
+		unsigned int n_threads_os = std::thread::hardware_concurrency();
 //		struct ggml_threadpool_params tpp_batch;
 //	    ggml_threadpool_params_init(&tpp_batch, n_threads);
 		struct ggml_threadpool_params tpp;

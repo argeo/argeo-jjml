@@ -27,6 +27,9 @@ public class LlamaCppBatchProcessor {
 	private LlamaCppSamplerChain samplerChain;
 	private LlamaCppNativeSampler validatingSampler;
 
+	private ByteBuffer savedState;
+	private int savedContextPosition;
+
 	/** Marker that end-of-generation has been reached for this sequence. */
 	private final int NO_OUTPUT_ID;
 
@@ -319,6 +322,8 @@ public class LlamaCppBatchProcessor {
 		int[] promptArr = promptTokens.array();
 
 		int outputMax = context.getBatchSize();
+		
+		// TODO check whether it makes sense (pattern was taken from llama.cpp code)
 		int requiredContextSize = tokenCount + outputMax * parallelCount * 10;
 
 		int contextSize = context.getContextSize();
@@ -363,10 +368,23 @@ public class LlamaCppBatchProcessor {
 				input.put(promptArr, i * batchSize, input.limit());
 				input.flip();
 
-				long begin = System.nanoTime();
-				writeBatch(new IntBuffer[] { input }, lastLogits);
-				long end = System.nanoTime();
-				System.out.println("Wrote batch in " + (end - begin) / 1000000 + " ms.");
+				if (savedState != null) {
+					context.writeState(savedState);
+					contextPosition = savedContextPosition;
+					Arrays.fill(outputIds, savedContextPosition - 1);
+					System.out.println("Loaded saved context state.");
+				} else {
+					long begin = System.nanoTime();
+					writeBatch(new IntBuffer[] { input }, lastLogits);
+					long end = System.nanoTime();
+					System.out.println("Wrote batch in " + (end - begin) / 1000000 + " ms.");
+				}
+				if (savedState == null) {
+					int stateSize = (int)context.getStateSize();
+					savedState = ByteBuffer.allocate(stateSize);
+					context.readState(savedState);
+					savedContextPosition = contextPosition;
+				}
 			}
 
 			if (parameters != null) {
@@ -495,6 +513,22 @@ public class LlamaCppBatchProcessor {
 
 	protected LlamaCppModel getModel() {
 		return context.getModel();
+	}
+
+	/*
+	 * STATE
+	 */
+	public ByteBuffer getSavedState() {
+		return savedState;
+	}
+
+	public int getSavedContextPosition() {
+		return savedContextPosition;
+	}
+
+	public void setSavedState(ByteBuffer systemPromptState, int savedContextPosition) {
+		this.savedState = systemPromptState;
+		this.savedContextPosition = savedContextPosition;
 	}
 
 	/*
