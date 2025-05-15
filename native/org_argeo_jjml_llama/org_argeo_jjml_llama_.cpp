@@ -91,6 +91,12 @@ static void jjml_llama_init_backend() {
 	if (!backend_initialized) {
 		llama_backend_init();
 		backend_initialized = true;
+
+		// disable llama logging
+		// FIXME make it configurable
+	    llama_log_set([](ggml_log_level /*level*/, const char * /*text*/, void * /*user_data*/) {
+	        // noop
+	    }, NULL);
 	}
 }
 
