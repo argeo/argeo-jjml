@@ -59,8 +59,13 @@ static void get_context_params(JNIEnv *env, jobject params,
 	}
 
 	// TODO support more types
+	int type_k = env->CallIntMethod(params,
+			env->GetMethodID(clss, "type_k", "()I"));
 	switch (env->CallIntMethod(params,
 			env->GetMethodID(clss, "type_k", "()I"))) {
+	case GGML_TYPE_F16:
+		ctx_params->type_k = GGML_TYPE_F16;
+		break;
 	case GGML_TYPE_Q4_0:
 		ctx_params->type_k = GGML_TYPE_Q4_0;
 		break;
@@ -74,6 +79,9 @@ static void get_context_params(JNIEnv *env, jobject params,
 
 	switch (env->CallIntMethod(params,
 			env->GetMethodID(clss, "type_v", "()I"))) {
+	case GGML_TYPE_F16:
+		ctx_params->type_v = GGML_TYPE_F16;
+		break;
 	case GGML_TYPE_Q4_0:
 		ctx_params->type_v = GGML_TYPE_Q4_0;
 		break;
