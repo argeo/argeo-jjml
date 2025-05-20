@@ -1,5 +1,6 @@
 package org.argeo.jjml.llama;
 
+import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
@@ -36,18 +37,22 @@ import org.argeo.jjml.llama.params.ModelParams;
 class A2SmokeTests {
 	private final static Logger logger = System.getLogger(A2SmokeTests.class.getName());
 
-	static {
-		assert ((BooleanSupplier) () -> {
-			LlamaCppNative.ensureLibrariesLoaded();
-			return true;
-		}).getAsBoolean();
-	}
-
 	public void main(List<String> args) throws Exception, AssertionError {
 		try {
-			if (args.isEmpty())
+			if (!getClass().desiredAssertionStatus()) {
+				logger.log(ERROR, "Assertions must be anbled. Call Java with the -ea option.");
 				return;
+			}
+			if (args.isEmpty()) {
+				logger.log(ERROR, "Usage: " + getClass().getSimpleName() + " <path to GGUF model>");
+				return;
+			}
 			Path modelPath = Paths.get(args.get(0));
+
+			assert ((BooleanSupplier) () -> {
+				LlamaCppNative.ensureLibrariesLoaded();
+				return true;
+			}).getAsBoolean();
 
 			ModelParams modelParams = defaultModelParams();
 			Future<LlamaCppModel> loaded = LlamaCppModel.loadAsync(modelPath, modelParams,
@@ -197,7 +202,7 @@ class A2SmokeTests {
 						"root ::= [ \\t\\n]* \"TEST\"", "root");//
 		) {
 //			long begin = System.currentTimeMillis();
-			LlamaCppBatchProcessor processor = new LlamaCppBatchProcessor(context, chain, validatingSampler,
+			LlamaCppTextProcessor processor = new LlamaCppTextProcessor(context, chain, validatingSampler,
 					Set.of(sequenceIds));
 
 			String prompt = "Write HELLO\n"//
@@ -228,14 +233,14 @@ class A2SmokeTests {
 						"root ::= [ \\t\\n]* \"TEST\"", "root");//
 		) {
 //			long begin = System.currentTimeMillis();
-			LlamaCppBatchProcessor processor = new LlamaCppBatchProcessor(context, chain, validatingSampler,
+			LlamaCppTextProcessor processor = new LlamaCppTextProcessor(context, chain, validatingSampler,
 					Set.of(sequenceIds));
 
 			String prompt = "Write HELLO\n"//
-					+ "HELLO\n"//
-					+ "Write WORLD\n"//
+					+ "Hello\n"//
+					+ "Write World\n"//
 					+ "WORLD\n"//
-					+ "Write TEST\n" //
+					+ "Write test\n" //
 			;
 			logger.log(INFO, "=>\n" + prompt);
 			String str = processor.processBatch(prompt);
@@ -254,7 +259,7 @@ class A2SmokeTests {
 						.with(n_batch, 1024)); //
 				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, true); //
 		) {
-			LlamaCppBatchProcessor processor = new LlamaCppBatchProcessor(context, chain);
+			LlamaCppTextProcessor processor = new LlamaCppTextProcessor(context, chain);
 
 			String prompt = model.formatChatMessages( //
 					SYSTEM.msg("You are a helpful assistant."), //

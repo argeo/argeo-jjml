@@ -1,8 +1,6 @@
 package org.argeo.jjml.llama;
 
 import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
@@ -11,7 +9,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -22,13 +19,9 @@ import java.util.concurrent.CompletionStage;
  */
 public class LlamaCppBatchProcessor {
 	private final LlamaCppContext context;
-	private final LlamaCppVocabulary vocabulary;
 
 	private LlamaCppSamplerChain samplerChain;
 	private LlamaCppNativeSampler validatingSampler;
-
-	private ByteBuffer savedState;
-	private int savedContextPosition;
 
 	/** Marker that end-of-generation has been reached for this sequence. */
 	private final int NO_OUTPUT_ID;
@@ -52,7 +45,6 @@ public class LlamaCppBatchProcessor {
 		Objects.requireNonNull(sequenceIds);
 
 		this.context = context;
-		this.vocabulary = context.getModel().getVocabulary();
 		this.samplerChain = samplerChain;
 		this.validatingSampler = validatingSampler;
 
@@ -305,200 +297,6 @@ public class LlamaCppBatchProcessor {
 	}
 
 	/*
-	 * USABLE METHODS
-	 */
-	public String processSingleBatch(String systemPrompt) {
-		return processBatch(systemPrompt);
-	}
-
-	public String processBatch(String prompt) {
-		return processBatch(prompt, null, null);
-	}
-
-	public String processBatch(String prompt, String[] parameters, String postPrompt) {
-		IntBuffer promptTokens = vocabulary.tokenize(prompt);
-		assert promptTokens.position() == 0;
-		int tokenCount = promptTokens.limit();
-		int[] promptArr = promptTokens.array();
-
-		int outputMax = context.getBatchSize();
-
-		// TODO check whether it makes sense (pattern was taken from llama.cpp code)
-		int requiredContextSize = tokenCount + outputMax * parallelCount * 10;
-
-		int contextSize = context.getContextSize();
-//		System.out.println("Context size: " + contextSize);
-		if (context.getContextSize() < requiredContextSize)
-			throw new IllegalArgumentException(
-					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
-							+ " available. Reduce parallel or increase context size.");
-
-		boolean direct = false;
-		// direct buffer area
-		IntBuffer buf;
-		if (direct) {
-			ByteBuffer directBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
-			directBuf.order(ByteOrder.nativeOrder());// IMPORTANT!
-			buf = directBuf.asIntBuffer();
-		} else {
-			buf = IntBuffer.allocate(requiredContextSize);
-		}
-
-		int batchSize = context.getBatchSize();
-
-		boolean tokenList = true;
-
-		if (tokenList) {
-			int batchCount = tokenCount / batchSize;
-			if (tokenCount % batchSize != 0)
-				batchCount = batchCount + 1;
-			for (int i = 0; i < batchCount; i++) {
-				IntBuffer input = buf.slice();
-				boolean lastLogits;
-				if (i == batchCount - 1) {
-					input.limit(tokenCount % batchSize == 0 ? batchSize : tokenCount % batchSize);
-					lastLogits = parameters == null;
-				} else {
-					input.limit(batchSize);
-					lastLogits = false;
-				}
-				buf.position(buf.position() + input.limit());
-
-				// copy data
-				input.put(promptArr, i * batchSize, input.limit());
-				input.flip();
-
-				if (savedState != null) {
-					context.writeState(savedState);
-					contextPosition = savedContextPosition;
-					Arrays.fill(outputIds, savedContextPosition - 1);
-					System.out.println("Loaded saved context state.");
-				} else {
-					long begin = System.nanoTime();
-					writeBatch(new IntBuffer[] { input }, lastLogits);
-					long end = System.nanoTime();
-					System.out.println("Wrote batch in " + (end - begin) / 1000000 + " ms.");
-				}
-				if (savedState == null) {
-					int stateSize = (int) context.getStateSize();
-					savedState = ByteBuffer.allocate(stateSize);
-					context.readState(savedState);
-					System.out.println("Saved context state (" + stateSize / (1024 * 1024) + " MiB)");
-					savedContextPosition = contextPosition;
-				}
-			}
-
-			if (parameters != null) {
-				if (parameters.length != parallelCount)
-					throw new IllegalArgumentException("Parameters count different from sequence count");
-
-				IntBuffer[] inputs = new IntBuffer[parallelCount];
-				for (int i = 0; i < parallelCount; i++) {
-//					LlamaCppTokenList parameterTL = model.tokenizeAsArray(parameters[i], true);
-					IntBuffer parametersTokens = vocabulary.tokenize(parameters[i]);
-					if (parametersTokens.remaining() * parallelCount > batchSize)// TODO be more precise / robust
-						throw new IllegalArgumentException("Parameter '" + parameters[i] + "' is too long.");
-					inputs[i] = buf.slice();
-					inputs[i].limit(parametersTokens.remaining());
-					buf.position(buf.position() + inputs[i].limit());
-
-					// copy data
-					inputs[i].put(parametersTokens.array(), 0, inputs[i].limit());
-					inputs[i].flip();
-				}
-				writeBatch(inputs, postPrompt == null);
-			}
-
-			if (postPrompt != null) {
-//				LlamaCppTokenList postPromptTL = model.tokenizeAsArray(postPrompt, true);
-				IntBuffer postPromptTokens = vocabulary.tokenize(postPrompt);
-				if (postPromptTokens.remaining() > batchSize)// TODO be more precise / robust
-					throw new IllegalArgumentException("Post prompt '" + postPrompt + "' is too long.");
-				IntBuffer input = buf.slice();
-				input.limit(postPromptTokens.remaining());
-				buf.position(buf.position() + input.limit());
-
-				// copy data
-				input.put(postPromptTokens.array(), 0, input.limit());
-				input.flip();
-
-				writeBatch(new IntBuffer[] { input }, true);
-			}
-		} else {
-			IntBuffer input = buf.slice();
-			vocabulary.tokenize(prompt, input, true, true);
-			buf.position(input.position());
-
-			input.flip();
-			writeBatch(new IntBuffer[] { input }, true);
-		}
-
-		StringBuffer[] outputStrings = new StringBuffer[parallelCount];
-		for (int i = 0; i < outputStrings.length; i++)
-			outputStrings[i] = new StringBuffer();
-
-		boolean reading = true;
-		reads: while (reading) {
-			IntBuffer[] outputs = new IntBuffer[parallelCount];
-			outputs: for (int i = 0; i < parallelCount; i++) {
-				if (outputIds[i] == NO_OUTPUT_ID) {
-					outputs[i] = null;
-					continue outputs;
-				}
-//			IntBuffer output = buf.slice(buf.position(), outputMax); // Java 17
-				IntBuffer output = buf.slice();
-				output.limit(outputMax);
-				outputs[i] = output;
-				buf.position(buf.position() + output.limit());
-			}
-
-			long begin = System.nanoTime();
-
-			CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
-			CompletableFuture<Boolean> allCompleted = readBatchAsync(outputs, generationCompleted);
-			allCompleted.join();
-
-			long end = System.nanoTime();
-			System.out.println("Read  batch in " + (end - begin) / 1000000 + " ms.");
-
-			int sequencesLeft = 0;
-			for (int i = 0; i < outputIds.length; i++) {
-				IntBuffer output = outputs[i];
-				if (output != null) {
-					output.flip();
-					String outputStr = vocabulary.deTokenize(output);
-					outputStrings[i].append(outputStr);
-				}
-
-				if (outputIds[i] != NO_OUTPUT_ID) {
-					sequencesLeft++;
-				} else {
-
-				}
-			}
-
-			if (sequencesLeft == 0)
-				break reads;
-
-			System.out.println(sequencesLeft + " sequences left");
-
-			if (buf.position() + sequencesLeft * outputMax > buf.capacity()) {
-				System.err.println("Main buffer will be full, aborting...");
-				break reads;
-			}
-
-			// TODO check context size and break the loop
-			// TODO timeout?
-		}
-		StringJoiner res = new StringJoiner(
-				"\n\n\n---------------------------------------------------------------\n\n\n");
-		for (int i = 0; i < outputStrings.length; i++)
-			res.add(outputStrings[i]);
-		return res.toString();
-
-	}
-
-	/*
 	 * ACCESSORS
 	 */
 
@@ -517,20 +315,38 @@ public class LlamaCppBatchProcessor {
 	}
 
 	/*
+	 * OUTPUT STATUS
+	 */
+	protected boolean isGenerationCompleted(int sequenceIndex) {
+		// TODO synchronize?
+		return outputIds[sequenceIndex] == NO_OUTPUT_ID;
+	}
+
+	/*
 	 * STATE
 	 */
-	public ByteBuffer getSavedState() {
-		return savedState;
+	public void saveContextState(LlamaCppContextState savedState) {
+		savedState.save(context, contextPosition);
 	}
 
-	public int getSavedContextPosition() {
-		return savedContextPosition;
+	public void loadContextState(LlamaCppContextState savedState) {
+		int savedContextPosition = savedState.load(context);
+		contextPosition = savedContextPosition;
+		Arrays.fill(outputIds, savedContextPosition - 1);
 	}
-
-	public void setSavedState(ByteBuffer systemPromptState, int savedContextPosition) {
-		this.savedState = systemPromptState;
-		this.savedContextPosition = savedContextPosition;
-	}
+//	
+//	public ByteBuffer getSavedState() {
+//		return savedState;
+//	}
+//
+//	public int getSavedContextPosition() {
+//		return savedContextPosition;
+//	}
+//
+//	public void setSavedState(ByteBuffer systemPromptState, int savedContextPosition) {
+//		this.savedState = systemPromptState;
+//		this.savedContextPosition = savedContextPosition;
+//	}
 
 	/*
 	 * UTILITIES
