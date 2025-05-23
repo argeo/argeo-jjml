@@ -40,7 +40,7 @@ class A2SmokeTests {
 	public void main(List<String> args) throws Exception, AssertionError {
 		try {
 			if (!getClass().desiredAssertionStatus()) {
-				logger.log(ERROR, "Assertions must be anbled. Call Java with the -ea option.");
+				logger.log(ERROR, "Assertions must be enabled. Please call Java with the -ea option.");
 				return;
 			}
 			if (args.isEmpty()) {
