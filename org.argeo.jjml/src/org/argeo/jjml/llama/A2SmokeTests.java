@@ -13,6 +13,7 @@ import static org.argeo.jjml.llama.params.ContextParam.n_ubatch;
 import static org.argeo.jjml.llama.util.StandardRole.SYSTEM;
 import static org.argeo.jjml.llama.util.StandardRole.USER;
 
+import java.io.IOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
@@ -252,25 +253,31 @@ class A2SmokeTests {
 		logger.log(INFO, "Java sampler smoke tests PASSED");
 	}
 
-	void assertChat(LlamaCppModel model) {
+	void assertChat(LlamaCppModel model) throws IOException {
 		try (//
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
 						.with(n_ctx, 20480) //
 						.with(n_batch, 1024)); //
 				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, true); //
 		) {
-			LlamaCppTextProcessor processor = new LlamaCppTextProcessor(context, chain);
+			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
 
-			String prompt = model.formatChatMessages( //
-					SYSTEM.msg("You are a helpful assistant."), //
-					USER.msg("Briefly introduce the Java programming language."));
-			String reply = processor.processSingleBatch(prompt);
-			logger.log(INFO, "\n" + prompt + reply);
+			String systemMsg = "You are a helpful assistant, which answer as briefly as possible.";
+			logger.log(INFO, SYSTEM.name() + " : " + systemMsg);
+			processor.write(SYSTEM, systemMsg);
 
-			prompt = model.formatChatMessages( //
-					USER.msg("Thank you!"));
-			reply = processor.processSingleBatch(prompt);
-			logger.log(INFO, "\n" + prompt + reply);
+			String userMsg01 = "Introduce the Java programming language in no more than two sentences.";
+			logger.log(INFO, USER.name() + " : " + userMsg01);
+			processor.write(USER, userMsg01);
+
+			processor.readMessage(System.out);
+
+			// make sure it can deal with a second message
+			String userMsg02 = "Thank you!";
+			logger.log(INFO, USER.name() + " : " + userMsg02);
+			processor.write(USER, userMsg02);
+
+			processor.readMessage(System.out);
 		}
 		logger.log(INFO, "Chat smoke tests PASSED");
 	}
