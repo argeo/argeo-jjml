@@ -1,7 +1,6 @@
 #
 # THIRD PARTIES
 #
-#if(NOT MINGW)
 
 # ggml as external library
 find_library(GGML_LOCATION ggml)
@@ -18,12 +17,11 @@ else()
 
 	# copied from root of ggml, otherwise
 	# standalone build of GGML with GGML_BACKEND_DL fails 
-	set(GGML_STANDALONE ON)
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 
 	add_subdirectory(tp/ggml) # build locally
-	message (STATUS "Will build ggml library") 
+	message (STATUS "Will locally build ggml from submodule native/tp/ggml") 
 endif()
 
 # llama.cpp as external library
@@ -39,10 +37,9 @@ else()
 	set_target_properties(llama PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 	# Required by MSYS
 	set_target_properties(llama PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-	message (STATUS "Will build llama.cpp library") 
+	message (STATUS "Will locally build llama.cpp from submodule native/tp/llama.cpp") 
 endif()
 
-#endif() # MINGW
 
 #
 # JJML NATIVE BUILD
