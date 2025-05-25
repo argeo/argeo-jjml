@@ -2,6 +2,7 @@ package org.argeo.jjml.llama;
 
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
+import static java.lang.System.Logger.Level.DEBUG;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
@@ -72,7 +73,7 @@ class A2SmokeTests {
 				StringBuilder sb = new StringBuilder();
 				for (String key : model.getMetadata().keySet())
 					sb.append(key + "=" + model.getMetadata().get(key) + "\n");
-				logger.log(INFO, "Metadata:\n" + sb);
+				logger.log(DEBUG, "Metadata:\n" + sb);
 
 				model.getVocabulary().setStringMode(false);
 				assertVocabulary(model.getVocabulary());
@@ -133,7 +134,7 @@ class A2SmokeTests {
 		assert testTokenizeDetokenize(vocabulary, in, out, "ἔορθoι χθόνιοι"); // according to olmoe-1b-7b-0924
 		assert testTokenizeDetokenize(vocabulary, in, out, "السلام عليكم"); // according to olmoe-1b-7b-0924
 		assert testTokenizeDetokenize(vocabulary, in, out, "¡Hola и أَشْكَرُ мир! 👋🏼🌍");
-		logger.log(INFO, "Vocabulary smoke tests PASSED");
+		logger.log(INFO, "Vocabulary smoke tests variant PASSED");
 	}
 
 	boolean testTokenizeDetokenize(LlamaCppVocabulary vocabulary, ByteBuffer in, IntBuffer buf, String msg) {
@@ -141,7 +142,7 @@ class A2SmokeTests {
 			in.clear();
 		buf.clear();
 
-		logger.log(INFO, msg);
+		logger.log(DEBUG, msg);
 		if (in == null) {
 			IntBuffer tokens = vocabulary.tokenize(msg);
 			buf.put(tokens);
@@ -151,7 +152,7 @@ class A2SmokeTests {
 			vocabulary.tokenize(msg, buf);
 		}
 		buf.flip();
-		logger.log(INFO, LlamaCppVocabulary.logIntegers(buf, 32, ", "));
+		logger.log(DEBUG, LlamaCppVocabulary.logIntegers(buf, 32, ", "));
 		String str;
 		if (in == null) {
 			str = vocabulary.deTokenize(buf);
@@ -186,13 +187,13 @@ class A2SmokeTests {
 			prompts.add("Hello world!");
 			prompts.add("Good night and good luck.");
 			for (String s : prompts)
-				logger.log(INFO, "=>\n" + s);
+				logger.log(DEBUG, "=>\n" + s);
 
 			float[][] embeddings = embeddingProcessor.processEmbeddings(prompts);
 			assert embeddings.length != 0;
 
 			for (float[] embedding : embeddings) {
-				logger.log(INFO, "<=\n[ " + embedding[0] + ", " + embedding[1] + ", ... ]");
+				logger.log(DEBUG, "<=\n[ " + embedding[0] + ", " + embedding[1] + ", ... ]");
 			}
 		}
 		logger.log(INFO, "Embeddings smoke tests PASSED");
