@@ -8,13 +8,6 @@ include  sdk/argeo-build/cmake/default.mk
 # Use make rebuild-force-to (see below) in order to force a local build. 
 ##
 
-# Remove locally built libraries
-clean-local:
-	$(RM) -rf $(BUILD_BASE)
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libggml*.so
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libllama*.so
-	@$(RM) $(TARGET_NATIVE_OUTPUT)/vulkan-shaders-gen
-
 GGML_VULKAN ?= OFF
 GGML_CUDA ?= OFF
 # To be used for "heavy" C++ development,
@@ -52,3 +45,25 @@ rebuild-force-tp: clean-local
 	cmake --build $(BUILD_BASE) -j $(shell nproc)
 
 	@$(RM) $(TARGET_NATIVE_OUTPUT)/vulkan-shaders-gen
+
+# Remove locally built libraries
+clean-local:
+	$(RM) -rf $(BUILD_BASE)
+	echo $(TARGET_NATIVE_OUTPUT)
+ifeq ($(MSYS_VERSION),0)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libggml*.so
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libllama*.so
+	@$(RM) $(TARGET_NATIVE_OUTPUT)/vulkan-shaders-gen
+else
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/ggml*.dll
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/llama*.dll
+endif
+
+install-deps:
+ifeq ($(MSYS_VERSION),0)
+else
+	pacman -S --needed git make mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-cmake
+	pacman -S --needed mingw-w64-ucrt-x86_64-ccache
+	# Vulkan
+	pacman -S --needed mingw-w64-ucrt-x86_64-vulkan-devel mingw-w64-ucrt-x86_64-shaderc
+endif

@@ -3,9 +3,14 @@
 #
 
 # ggml as external library
+#set(CMAKE_FIND_LIBRARY_SUFFIXES .dll ${CMAKE_FIND_LIBRARY_SUFFIXES})
 find_library(GGML_LOCATION ggml)
 if(EXISTS ${GGML_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
-	add_library(ggml SHARED IMPORTED GLOBAL)
+	if(MINGW)
+		add_library(ggml STATIC IMPORTED GLOBAL)
+	else()
+		add_library(ggml SHARED IMPORTED GLOBAL)
+	endif()
 	set_target_properties(ggml PROPERTIES IMPORTED_LOCATION ${GGML_LOCATION})
 	message (STATUS "Found GGML library: ${GGML_LOCATION}") 
 else()
@@ -27,7 +32,11 @@ endif()
 # llama.cpp as external library
 find_library(LLAMA_LOCATION llama)
 if(EXISTS ${LLAMA_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
-	add_library(llama SHARED IMPORTED GLOBAL)
+	if(MINGW)
+		add_library(llama STATIC IMPORTED GLOBAL)
+	else()
+		add_library(llama SHARED IMPORTED GLOBAL)
+	endif()
 	set_target_properties(llama PROPERTIES IMPORTED_LOCATION ${LLAMA_LOCATION})
 	target_link_libraries(llama INTERFACE ${GGML_LOCATION})
 	message (STATUS "Found LLAMA library: ${LLAMA_LOCATION}") 
