@@ -14,6 +14,7 @@ import static org.argeo.jjml.llama.util.StandardRole.SYSTEM;
 import static org.argeo.jjml.llama.util.StandardRole.USER;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
@@ -21,14 +22,17 @@ import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 
+import org.argeo.jjml.llama.params.ContextParams;
 import org.argeo.jjml.llama.params.ModelParams;
 
 /**
@@ -56,6 +60,7 @@ class A2SmokeTests {
 			}).getAsBoolean();
 
 			ModelParams modelParams = defaultModelParams();
+			logger.log(INFO, "Loading model " + modelPath + " ...");
 			Future<LlamaCppModel> loaded = LlamaCppModel.loadAsync(modelPath, modelParams,
 					new LoadModelProgressCallback(), null);
 			try (LlamaCppModel model = loaded.get();) {
@@ -83,6 +88,7 @@ class A2SmokeTests {
 				assertBatch(model);
 				assertJavaSampler(model);
 				assertChat(model);
+				assertSavedContextState(model);
 			}
 		} catch (Exception | AssertionError e) {
 			logger.log(Level.ERROR, "Smoke tests failed", e);
@@ -258,7 +264,7 @@ class A2SmokeTests {
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
 						.with(n_ctx, 20480) //
 						.with(n_batch, 1024)); //
-				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, true); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
 		) {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
 
@@ -280,6 +286,76 @@ class A2SmokeTests {
 			processor.readMessage(System.out);
 		}
 		logger.log(INFO, "Chat smoke tests PASSED");
+	}
+
+	void assertSavedContextState(LlamaCppModel model) throws IOException {
+		ContextParams contextParams = LlamaCppContext.defaultContextParams() //
+				.with(n_ctx, 20480) //
+				.with(n_batch, 1024) //
+		; //
+
+		final LlamaCppContextState savedState;
+		try (//
+				LlamaCppContext context = new LlamaCppContext(model, contextParams); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
+		) {
+			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
+
+			long begin = System.currentTimeMillis();
+			String systemMsg = "You are a travel agent helping the user to chose the best holiday destination.\n"
+					+ "You answer with a city name, and one sentence explanation of your choice, nothing else.";
+			logger.log(INFO, SYSTEM.name() + " : " + systemMsg);
+			processor.write(SYSTEM, systemMsg);
+
+			String userMsg01 = "I want to spend my vacations in Europe.\n"
+					+ "I like Italy, but I am open to other destinations, as long as there is nature and culture.\n"
+					+ "I have never been to Scandinavia, but it can wait.\n"
+					+ "I would like to avoid the usual touristic destinations, so be creative!\n"
+					+ "I will travel in autumn, so it should not be too hot.\n"
+					+ "Also please consider that I speak French and German in addition to English.\n"
+					+ "And I definitely don't like holiday on the beach...";
+			logger.log(INFO, USER.name() + " : " + userMsg01);
+			processor.write(USER, userMsg01);
+
+			savedState = new LlamaCppContextState.ByteBufferSavedState();
+			processor.saveContextState(savedState);
+			logger.log(INFO, "Wrote and saved context in " + (System.currentTimeMillis() - begin) + " ms");
+		}
+
+		String userMsg02 = "Current Date: " + LocalDateTime.now();
+
+		Consumer<LlamaCppInstructProcessor> process = (processor) -> {
+			long beginLoad = System.currentTimeMillis();
+			processor.loadContextState(savedState);
+			logger.log(INFO, "Loaded context in " + (System.currentTimeMillis() - beginLoad) + " ms");
+
+			logger.log(INFO, USER.name() + " : " + userMsg02);
+			processor.write(USER, userMsg02);
+
+			long begin = System.currentTimeMillis();
+			try {
+				processor.readMessage(System.out);
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
+			logger.log(INFO, "Generation took " + +(System.currentTimeMillis() - begin) + " ms\n\n");
+		};
+
+		// deterministic answer
+		try (LlamaCppContext context = new LlamaCppContext(model, contextParams); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
+		) {
+			process.accept(new LlamaCppInstructProcessor(context, chain));
+		}
+
+		// with temperature
+		try (LlamaCppContext context = new LlamaCppContext(model, contextParams); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, true); //
+		) {
+			process.accept(new LlamaCppInstructProcessor(context, chain));
+		}
+
+		logger.log(INFO, "Saved context state smoke tests PASSED");
 	}
 
 	/*
