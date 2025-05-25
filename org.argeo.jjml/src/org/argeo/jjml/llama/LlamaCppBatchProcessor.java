@@ -325,14 +325,20 @@ public class LlamaCppBatchProcessor {
 	/*
 	 * STATE
 	 */
-	public void saveContextState(LlamaCppContextState savedState) {
-		savedState.save(context, contextPosition);
+	public synchronized void saveContextState(LlamaCppContextState savedState) {
+		synchronized (context) {
+			savedState.save(context, contextPosition);
+		}
 	}
 
-	public void loadContextState(LlamaCppContextState savedState) {
-		int savedContextPosition = savedState.load(context);
-		contextPosition = savedContextPosition;
-		Arrays.fill(outputIds, savedContextPosition - 1);
+	public synchronized void loadContextState(LlamaCppContextState savedState) {
+		synchronized (context) {
+			int savedContextPosition = savedState.load(context);
+			contextPosition = savedContextPosition;
+			Arrays.fill(outputIds, savedContextPosition - 1);
+		}
+		// FIXME load or compute last logits,
+		// otherwise we need to write something else before it is usable
 	}
 //	
 //	public ByteBuffer getSavedState() {

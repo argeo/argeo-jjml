@@ -16,7 +16,7 @@ public interface LlamaCppContextState {
 			int stateSize = (int) context.getStateSize();
 			savedState = ByteBuffer.allocate(stateSize);
 			context.readState(savedState);
-			System.out.println("Saved context state (" + stateSize / (1024 * 1024) + " MiB)");
+			//System.out.println("Saved context state (" + stateSize / (1024 * 1024) + " MiB)");
 			savedContextPosition = contextPosition;
 
 		}

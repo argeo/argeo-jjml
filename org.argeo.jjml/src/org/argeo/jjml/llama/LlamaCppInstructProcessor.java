@@ -79,6 +79,7 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 	}
 
 	public void readMessage(PrintStream out) throws IOException {
+		out.flush();
 		// FIXME deal properly with charset, esp. on Windows
 		readMessage(new PrintWriter(out, false, StandardCharsets.UTF_8));
 	}

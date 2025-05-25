@@ -1,8 +1,8 @@
 package org.argeo.jjml.llama;
 
+import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
-import static java.lang.System.Logger.Level.DEBUG;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llama.LlamaCppModel.defaultModelParams;
@@ -11,6 +11,7 @@ import static org.argeo.jjml.llama.params.ContextParam.embeddings;
 import static org.argeo.jjml.llama.params.ContextParam.n_batch;
 import static org.argeo.jjml.llama.params.ContextParam.n_ctx;
 import static org.argeo.jjml.llama.params.ContextParam.n_ubatch;
+import static org.argeo.jjml.llama.util.StandardRole.ASSISTANT;
 import static org.argeo.jjml.llama.util.StandardRole.SYSTEM;
 import static org.argeo.jjml.llama.util.StandardRole.USER;
 
@@ -23,7 +24,6 @@ import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -219,9 +219,9 @@ class A2SmokeTests {
 					+ "WORLD\n"//
 					+ "Write TEST\n" //
 			;
-			logger.log(INFO, "=>\n" + prompt);
+			System.out.println("=>\n" + prompt);
 			String str = processor.processBatch(prompt);
-			logger.log(INFO, "<=\n" + str);
+			System.out.println("<=\n" + str);
 			// System.out.println("\n\n## Processing took " + (System.currentTimeMillis() -
 			// begin) + " ms");
 
@@ -250,9 +250,9 @@ class A2SmokeTests {
 					+ "WORLD\n"//
 					+ "Write test\n" //
 			;
-			logger.log(INFO, "=>\n" + prompt);
+			System.out.println("=>\n" + prompt);
 			String str = processor.processBatch(prompt);
-			logger.log(INFO, "<=\n" + str);
+			System.out.println("<=\n" + str);
 			// System.out.println("\n\n## Processing took " + (System.currentTimeMillis() -
 			// begin) + " ms");
 
@@ -270,20 +270,22 @@ class A2SmokeTests {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
 
 			String systemMsg = "You are a helpful assistant, which answer as briefly as possible.";
-			logger.log(INFO, SYSTEM.name() + " : " + systemMsg);
+			System.out.println(SYSTEM.name() + " :\n" + systemMsg);
 			processor.write(SYSTEM, systemMsg);
 
 			String userMsg01 = "Introduce the Java programming language in no more than two sentences.";
-			logger.log(INFO, USER.name() + " : " + userMsg01);
+			System.out.println(USER.name() + " :\n" + userMsg01);
 			processor.write(USER, userMsg01);
 
+			System.out.println(ASSISTANT.name() + " :\n");
 			processor.readMessage(System.out);
 
 			// make sure it can deal with a second message
 			String userMsg02 = "Thank you!";
-			logger.log(INFO, USER.name() + " : " + userMsg02);
+			System.out.println(USER.name() + " :\n" + userMsg02);
 			processor.write(USER, userMsg02);
 
+			System.out.println(ASSISTANT.name() + " :\n");
 			processor.readMessage(System.out);
 		}
 		logger.log(INFO, "Chat smoke tests PASSED");
@@ -305,7 +307,7 @@ class A2SmokeTests {
 			long begin = System.currentTimeMillis();
 			String systemMsg = "You are a travel agent helping the user to chose the best holiday destination.\n"
 					+ "You answer with a city name, and one sentence explanation of your choice, nothing else.";
-			logger.log(INFO, SYSTEM.name() + " : " + systemMsg);
+			System.out.println(SYSTEM.name() + " :\n" + systemMsg);
 			processor.write(SYSTEM, systemMsg);
 
 			String userMsg01 = "I want to spend my vacations in Europe.\n"
@@ -315,7 +317,7 @@ class A2SmokeTests {
 					+ "I will travel in autumn, so it should not be too hot.\n"
 					+ "Also please consider that I speak French and German in addition to English.\n"
 					+ "And I definitely don't like holiday on the beach...";
-			logger.log(INFO, USER.name() + " : " + userMsg01);
+			System.out.println(USER.name() + " :\n" + userMsg01);
 			processor.write(USER, userMsg01);
 
 			savedState = new LlamaCppContextState.ByteBufferSavedState();
@@ -323,23 +325,24 @@ class A2SmokeTests {
 			logger.log(INFO, "Wrote and saved context in " + (System.currentTimeMillis() - begin) + " ms");
 		}
 
-		String userMsg02 = "Current Date: " + LocalDateTime.now();
+		String userMsg02 = "Current Date: March 13th 2020.";
 
 		Consumer<LlamaCppInstructProcessor> process = (processor) -> {
 			long beginLoad = System.currentTimeMillis();
 			processor.loadContextState(savedState);
 			logger.log(INFO, "Loaded context in " + (System.currentTimeMillis() - beginLoad) + " ms");
 
-			logger.log(INFO, USER.name() + " : " + userMsg02);
+			System.out.println(USER.name() + " :\n" + userMsg02);
 			processor.write(USER, userMsg02);
 
+			System.out.println(ASSISTANT.name() + " :\n");
 			long begin = System.currentTimeMillis();
 			try {
 				processor.readMessage(System.out);
 			} catch (IOException e) {
 				throw new UncheckedIOException(e);
 			}
-			logger.log(INFO, "Generation took " + +(System.currentTimeMillis() - begin) + " ms\n\n");
+			logger.log(INFO, "Generation took " + +(System.currentTimeMillis() - begin) + " ms");
 		};
 
 		// deterministic answer
