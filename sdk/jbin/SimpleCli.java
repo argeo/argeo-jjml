@@ -1,4 +1,4 @@
-package org.argeo.jjml.llama.util;
+
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.parseBoolean;
@@ -49,6 +49,7 @@ import org.argeo.jjml.llama.params.ContextParam;
 import org.argeo.jjml.llama.params.ModelParam;
 import org.argeo.jjml.llama.params.ModelParams;
 import org.argeo.jjml.llama.params.PoolingType;
+import org.argeo.jjml.llama.util.StandardRole;
 
 /** A minimal command line interface for batch processing and simple chat. */
 public class SimpleCli {
