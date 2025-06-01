@@ -30,6 +30,7 @@ public interface LlamaCppJavaSampler {
 		return getClass().getName();
 	}
 
+	/** Trivial Java implementation of a greedy sampler. */
 	static class SimpleGreedy implements LlamaCppJavaSampler {
 
 		@Override

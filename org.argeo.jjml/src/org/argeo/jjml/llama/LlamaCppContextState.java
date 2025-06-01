@@ -2,11 +2,13 @@ package org.argeo.jjml.llama;
 
 import java.nio.ByteBuffer;
 
+/** Access to a serialized context state. */
 public interface LlamaCppContextState {
 	void save(LlamaCppContext context, int contextPosition);
 
 	int load(LlamaCppContext context);
 
+	/** Serialized context state based on a {@link ByteBuffer}. */
 	static class ByteBufferSavedState implements LlamaCppContextState {
 		private ByteBuffer savedState;
 		private int savedContextPosition;
@@ -16,7 +18,8 @@ public interface LlamaCppContextState {
 			int stateSize = (int) context.getStateSize();
 			savedState = ByteBuffer.allocate(stateSize);
 			context.readState(savedState);
-			//System.out.println("Saved context state (" + stateSize / (1024 * 1024) + " MiB)");
+			// System.out.println("Saved context state (" + stateSize / (1024 * 1024) + "
+			// MiB)");
 			savedContextPosition = contextPosition;
 
 		}
