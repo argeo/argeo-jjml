@@ -1,5 +1,3 @@
-package org.argeo.jjml.llama;
-
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
@@ -33,6 +31,19 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 
+import org.argeo.jjml.llama.LlamaCppBackend;
+import org.argeo.jjml.llama.LlamaCppContext;
+import org.argeo.jjml.llama.LlamaCppContextState;
+import org.argeo.jjml.llama.LlamaCppEmbeddingProcessor;
+import org.argeo.jjml.llama.LlamaCppInstructProcessor;
+import org.argeo.jjml.llama.LlamaCppJavaSampler;
+import org.argeo.jjml.llama.LlamaCppModel;
+import org.argeo.jjml.llama.LlamaCppNative;
+import org.argeo.jjml.llama.LlamaCppNativeSampler;
+import org.argeo.jjml.llama.LlamaCppSamplerChain;
+import org.argeo.jjml.llama.LlamaCppSamplers;
+import org.argeo.jjml.llama.LlamaCppTextProcessor;
+import org.argeo.jjml.llama.LlamaCppVocabulary;
 import org.argeo.jjml.llama.params.ContextParams;
 import org.argeo.jjml.llama.params.ModelParams;
 
@@ -40,8 +51,8 @@ import org.argeo.jjml.llama.params.ModelParams;
  * Minimal set of non-destructive in-memory tests, in order to check that a
  * given deployment and/or model are working. Java assertions must be enabled.
  */
-class A2SmokeTests {
-	private final static Logger logger = System.getLogger(A2SmokeTests.class.getName());
+class SmokeTests {
+	private final static Logger logger = System.getLogger(SmokeTests.class.getName());
 
 	public void main(List<String> args) throws Exception, AssertionError {
 		try {
@@ -152,7 +163,7 @@ class A2SmokeTests {
 			vocabulary.tokenize(msg, buf);
 		}
 		buf.flip();
-		logger.log(DEBUG, LlamaCppVocabulary.logIntegers(buf, 32, ", "));
+		logger.log(DEBUG, logIntegers(buf, 32, ", "));
 		String str;
 		if (in == null) {
 			str = vocabulary.deTokenize(buf);
@@ -363,11 +374,29 @@ class A2SmokeTests {
 	}
 
 	/*
-	 * UTILITIES
+	 * STATIC UTILITIES
 	 */
-
+	/** CLI entry point. */
 	public static void main(String[] args) throws Exception {
-		new A2SmokeTests().main(Arrays.asList(args));
+		new SmokeTests().main(Arrays.asList(args));
+	}
+
+	/**
+	 * Writes the beginning of an integer buffer as a string. It has no side effect
+	 * on the input buffer.
+	 */
+	static String logIntegers(IntBuffer in, int max, String separator) {
+		StringBuilder sb = new StringBuilder();
+		integers: for (int i = in.position(); i < in.limit(); i++) {
+			if (i != in.position())
+				sb.append(separator);
+			if (i == max) {
+				sb.append("...");
+				break integers;
+			}
+			sb.append(Integer.toString(in.get(i)));
+		}
+		return sb.toString();
 	}
 
 	/*
