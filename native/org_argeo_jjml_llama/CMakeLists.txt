@@ -12,5 +12,9 @@ add_library(${TARGET} SHARED
 	jjml_llama_embedding.cpp
 )
 target_link_libraries(${TARGET} PRIVATE	ggml llama)
-	
+
+target_compile_definitions(${TARGET} PRIVATE
+_JJML_PRE_LLAMA_0_0_4881
+)
+
 a2_jni_target(${TARGET})

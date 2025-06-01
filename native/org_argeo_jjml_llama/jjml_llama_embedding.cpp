@@ -54,7 +54,11 @@ static void embd_batch_decode(llama_context *ctx, llama_batch &batch,
 	const struct llama_model *model = llama_get_model(ctx);
 
 	// clear previous kv_cache values (irrelevant for embeddings)
+#ifndef JJML_PRE_LLAMA_0_0_4881
 	llama_kv_self_clear(ctx);
+#else
+	llama_kv_cache_clear(ctx);
+#endif
 
 	// run model
 //    LOG_INF("%s: n_tokens = %d, n_seq = %d\n", __func__, batch.n_tokens, n_seq);
