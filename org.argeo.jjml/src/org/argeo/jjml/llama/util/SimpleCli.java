@@ -1,5 +1,7 @@
 package org.argeo.jjml.llama.util;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.parseBoolean;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llama.LlamaCppNative.ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY;
@@ -31,6 +33,9 @@ import org.argeo.jjml.llama.params.ModelParams;
 /** A minimal command line interface for batch processing and simple chat. */
 public class SimpleCli {
 	private final static String DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant.";
+
+	/** Force chat mode in (Eclipse) IDE, when no proper console is available. */
+	final static boolean developing = parseBoolean(System.getProperty("SimpleCli.ide", FALSE.toString()));
 
 	public static void main(String... args) throws Exception {
 		if (args.length == 0) {
@@ -101,7 +106,6 @@ public class SimpleCli {
 			final boolean isConsoleTerminal = console != null;
 			// From Java 22, it will be:
 			// boolean interactive = console.isTerminal();
-			final boolean developing = false; // force true in IDE while developing
 			final boolean interactive = developing || isConsoleTerminal;
 
 			try {
