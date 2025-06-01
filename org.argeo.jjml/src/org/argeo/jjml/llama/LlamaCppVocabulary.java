@@ -10,6 +10,7 @@ import java.nio.IntBuffer;
 import java.util.List;
 import java.util.Objects;
 
+/** Performs de/tokenization natively. */
 public class LlamaCppVocabulary {
 	/**
 	 * Whether Java <-> UTF-8 conversion happens on the native side (true) or on the
@@ -68,7 +69,7 @@ public class LlamaCppVocabulary {
 	 */
 
 	public void tokenize(CharSequence str, IntBuffer tokens, boolean addSpecial, boolean parseSpecial) {
-		if (stringMode) {
+		if (isStringMode()) {
 			tokenizeUtf16(str, tokens, addSpecial, parseSpecial);
 		} else {
 			CharBuffer chars = CharBuffer.wrap(str);
@@ -79,7 +80,7 @@ public class LlamaCppVocabulary {
 
 	public IntBuffer tokenize(CharSequence str, boolean addSpecial, boolean parseSpecial) {
 		int[] arr;
-		if (stringMode) {
+		if (isStringMode()) {
 			arr = tokenizeUtf16(str.toString(), addSpecial, parseSpecial);
 		} else {
 			CharBuffer chars = CharBuffer.wrap(str);
@@ -92,7 +93,7 @@ public class LlamaCppVocabulary {
 
 	public void tokenize(ByteBuffer utf8, IntBuffer tokens, boolean addSpecial, boolean parseSpecial)
 			throws IndexOutOfBoundsException {
-		if (stringMode) {
+		if (isStringMode()) {
 			CharBuffer chars = UTF_8.decode(utf8);
 			tokenizeUtf16(chars.toString(), tokens, addSpecial, parseSpecial);
 		} else {
@@ -102,7 +103,7 @@ public class LlamaCppVocabulary {
 
 	public IntBuffer tokenize(ByteBuffer utf8, boolean addSpecial, boolean parseSpecial) {
 		int[] arr;
-		if (stringMode) {
+		if (isStringMode()) {
 			CharBuffer chars = UTF_8.decode(utf8);
 			arr = tokenizeUtf16(chars.toString(), addSpecial, parseSpecial);
 		} else {
@@ -113,7 +114,7 @@ public class LlamaCppVocabulary {
 
 	public void deTokenize(IntBuffer in, ByteBuffer utf8, boolean removeSpecial, boolean unparseSpecial)
 			throws IndexOutOfBoundsException {
-		if (stringMode) {
+		if (isStringMode()) {
 			String s = deTokenizeUtf16(in, removeSpecial, unparseSpecial);
 			byte[] bytes = s.getBytes(UTF_8);
 			if (bytes.length > utf8.remaining())
@@ -125,7 +126,7 @@ public class LlamaCppVocabulary {
 	}
 
 	public String deTokenize(IntBuffer in, boolean removeSpecial, boolean unparseSpecial) {
-		if (stringMode) {
+		if (isStringMode()) {
 			return deTokenizeUtf16(in, removeSpecial, unparseSpecial);
 		} else {
 			byte[] bytes = deTokenizeUtf8(in, removeSpecial, unparseSpecial);
@@ -324,33 +325,11 @@ public class LlamaCppVocabulary {
 	 * ACCESSORS
 	 */
 
-	synchronized boolean isStringMode() {
+	public synchronized boolean isStringMode() {
 		return stringMode;
 	}
 
-	synchronized void setStringMode(boolean stringMode) {
+	public synchronized void setStringMode(boolean stringMode) {
 		this.stringMode = stringMode;
 	}
-
-	/*
-	 * STATIC UTILITIES
-	 */
-	/**
-	 * Write the beginning of an integer buffer as a string. It has no side effect
-	 * on the input buffer.
-	 */
-	static String logIntegers(IntBuffer in, int max, String separator) {
-		StringBuilder sb = new StringBuilder();
-		integers: for (int i = in.position(); i < in.limit(); i++) {
-			if (i != in.position())
-				sb.append(separator);
-			if (i == max) {
-				sb.append("...");
-				break integers;
-			}
-			sb.append(Integer.toString(in.get(i)));
-		}
-		return sb.toString();
-	}
-
 }

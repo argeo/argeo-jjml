@@ -1,9 +1,12 @@
-package org.argeo.jjml.llama.util;
 
+
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.parseBoolean;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llama.LlamaCppNative.ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY;
 import static org.argeo.jjml.llama.params.ModelParam.n_gpu_layers;
+import static org.argeo.jjml.llama.util.StandardRole.SYSTEM;
 
 import java.io.BufferedReader;
 import java.io.Console;
@@ -13,24 +16,47 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.StringJoiner;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.FutureTask;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.argeo.jjml.llama.LlamaCppBackend;
+import org.argeo.jjml.llama.LlamaCppBatchProcessor;
+import org.argeo.jjml.llama.LlamaCppChatMessage;
 import org.argeo.jjml.llama.LlamaCppContext;
+import org.argeo.jjml.llama.LlamaCppEmbeddingProcessor;
 import org.argeo.jjml.llama.LlamaCppModel;
 import org.argeo.jjml.llama.LlamaCppNative;
+import org.argeo.jjml.llama.LlamaCppSamplerChain;
+import org.argeo.jjml.llama.LlamaCppSamplers;
+import org.argeo.jjml.llama.LlamaCppVocabulary;
 import org.argeo.jjml.llama.params.ContextParam;
 import org.argeo.jjml.llama.params.ModelParam;
 import org.argeo.jjml.llama.params.ModelParams;
+import org.argeo.jjml.llama.params.PoolingType;
+import org.argeo.jjml.llama.util.StandardRole;
 
 /** A minimal command line interface for batch processing and simple chat. */
 public class SimpleCli {
 	private final static String DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant.";
+
+	/** Force chat mode in (Eclipse) IDE, when no proper console is available. */
+	final static boolean developing = parseBoolean(System.getProperty("SimpleCli.ide", FALSE.toString()));
 
 	public static void main(String... args) throws Exception {
 		if (args.length == 0) {
@@ -101,7 +127,6 @@ public class SimpleCli {
 			final boolean isConsoleTerminal = console != null;
 			// From Java 22, it will be:
 			// boolean interactive = console.isTerminal();
-			final boolean developing = false; // force true in IDE while developing
 			final boolean interactive = developing || isConsoleTerminal;
 
 			try {
@@ -251,4 +276,209 @@ public class SimpleCli {
 			out.print(sj);
 		}
 	}
+}
+
+/**
+ * A simple implementation of a chat system based on the low-level components.
+ */
+class SimpleChat extends LlamaCppBatchProcessor implements BiFunction<String, Consumer<String>, CompletionStage<Void>> {
+	private final LlamaCppVocabulary vocabulary;
+
+	private volatile boolean reading = false;
+	private FutureTask<Void> currentRead = null;
+
+	private final LlamaCppChatMessage systemMsg;
+	private boolean firstMessage = true;
+	private final boolean formatMessages;
+
+	/*
+	 * In llama.cpp examples/main, a new user prompt is obtained via a substring of
+	 * the previous messages. We reproduce this behavior here, even though it is not
+	 * clear yet whether it is useful.
+	 */
+	// TODO: check in details and remove this as it would greatly simplify the code
+	private final boolean usePreviousMessages;
+	private final List<LlamaCppChatMessage> messages;
+
+	public SimpleChat(String systemPrompt, LlamaCppContext context) {
+		this(systemPrompt, context, LlamaCppSamplers.newDefaultSampler(context.getModel(), true));
+	}
+
+	/**
+	 * Creates a simple chat processor.
+	 * 
+	 * @param systemPrompt The system prompt. If <code>null</code> or empty, it
+	 *                     disables chat templating.
+	 */
+	public SimpleChat(String systemPrompt, LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
+		super(context, samplerChain);
+		vocabulary = getModel().getVocabulary();
+		if (systemPrompt == null || "".equals(systemPrompt)) {
+			systemMsg = null;
+			formatMessages = false;
+			usePreviousMessages = false;
+		} else {
+			systemMsg = SYSTEM.msg(systemPrompt);
+			formatMessages = true;
+			usePreviousMessages = true;
+		}
+		messages = usePreviousMessages ? new ArrayList<>() : null;
+	}
+
+	@Override
+	public CompletionStage<Void> apply(String message, Consumer<String> consumer) {
+		if (currentRead != null && !currentRead.isDone()) {
+			// throw new ConcurrentModificationException("Currently interacting, use
+			// cancel.");
+			cancelCurrentRead();
+			if (message.trim().equals(""))
+				return CompletableFuture.completedStage(null); // this was just for interruption
+		}
+//		message = message.replace("\\\n", "\n");
+		String prompt;
+		if (formatMessages) {
+			LlamaCppChatMessage userMsg = StandardRole.USER.msg(message);
+			if (usePreviousMessages) {
+				String previousPrompts = messages.size() == 0 ? "" : getModel().formatChatMessages(messages);
+				if (firstMessage) {
+					if (systemMsg != null)
+						messages.add(systemMsg);
+					firstMessage = false;
+				}
+				messages.add(userMsg);
+				String newPrompts = getModel().formatChatMessages(messages);
+				assert previousPrompts.length() < newPrompts.length();
+				prompt = newPrompts.substring(previousPrompts.length(), newPrompts.length());
+			} else {
+				List<LlamaCppChatMessage> lst = new ArrayList<>();
+				if (firstMessage) {
+					lst.add(systemMsg);
+					firstMessage = false;
+				}
+				lst.add(userMsg);
+				prompt = getModel().formatChatMessages(lst);
+			}
+		} else {
+			prompt = message;
+		}
+
+		// tokenize
+		IntBuffer input = vocabulary.tokenize(prompt);
+		writeBatch(input, true);
+		FutureTask<Void> future = new FutureTask<>(() -> {
+			String reply = readAll(consumer);
+			if (usePreviousMessages) {
+				LlamaCppChatMessage assistantMsg = StandardRole.ASSISTANT.msg(reply);
+				messages.add(assistantMsg);
+			}
+			return null;
+		});
+		setCurrentRead(future);
+		ForkJoinPool.commonPool().execute(future);
+		return CompletableFuture.runAsync(() -> {
+			try {
+				future.get();
+			} catch (InterruptedException | ExecutionException e) {
+				// TODO deal with it
+			}
+		});
+	}
+
+	protected String readAll(Consumer<String> consumer) {
+		try {
+			StringBuffer sb = new StringBuffer();
+			reading = true;
+			running: while (reading) {
+				IntBuffer output = IntBuffer.allocate(getContext().getBatchSize());
+				CompletableFuture<Boolean> done = SimpleChat.this.readBatchAsync(output);
+				boolean generationCompleted = done.join();
+				output.flip();
+				String str = vocabulary.deTokenize(output);
+				consumer.accept(str);
+				if (usePreviousMessages)
+					sb.append(str);
+
+				output.clear();
+				if (generationCompleted) {// generation completed as expected
+					break running;
+				}
+				if (Thread.interrupted()) {// generation was interrupted
+					int endOfGenerationToken = getContext().getModel().getEndOfGenerationToken();
+					IntBuffer input = IntBuffer.allocate(1);
+					input.put(endOfGenerationToken);
+					input.flip();
+					writeBatch(input, false);
+					if (usePreviousMessages)
+						sb.append(vocabulary.deTokenize(input));
+					consumer.accept("");// flush
+					break running;
+				}
+			}
+			return sb.toString();
+		} finally {
+			reading = false;
+		}
+	}
+
+	protected boolean isReading() {
+		return reading;
+	}
+
+	protected void cancelCurrentRead() {
+		if (currentRead == null)
+			return;
+		if (!currentRead.isDone()) {
+			currentRead.cancel(true);
+			while (isReading()) // wait for reading to complete
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					return;
+				}
+		}
+	}
+
+	private void setCurrentRead(FutureTask<Void> currentRead) {
+		this.currentRead = currentRead;
+	}
+}
+
+/** Computes embeddings based on chunks of a given size. */
+class SimpleEmbedding extends LlamaCppEmbeddingProcessor implements Function<String, float[][]> {
+	private final LlamaCppVocabulary vocabulary;
+
+	private final int chunkSize;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param context   The context used to initialize this processor.
+	 * @param chunkSize The size of the chunks. If <=0, the strings will be
+	 *                  processed as a whole.
+	 */
+	public SimpleEmbedding(LlamaCppContext context, int chunkSize) {
+		super(context);
+		this.vocabulary = getContext().getModel().getVocabulary();
+		this.chunkSize = chunkSize;
+	}
+
+	@Override
+	public float[][] apply(String str) {
+		if (chunkSize <= 0 || PoolingType.LLAMA_POOLING_TYPE_NONE.equals(getContext().getPoolingType())) {
+			return processEmbeddings(Collections.singletonList(str));
+		}
+		int totalLength = str.length();
+		IntBuffer[] inputs = new IntBuffer[totalLength / chunkSize + (totalLength % chunkSize == 0 ? 0 : 1)];
+		for (int i = 0; i < inputs.length; i++) {
+			String chunk;
+			if (i == inputs.length - 1) {
+				chunk = str.substring(i * chunkSize);
+			} else {
+				chunk = str.substring(i * chunkSize, (i + 1) * chunkSize);
+			}
+			inputs[i] = vocabulary.tokenize(chunk);
+		}
+		return processEmbeddings(inputs);
+	}
+
 }

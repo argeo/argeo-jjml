@@ -62,7 +62,7 @@ public class LlamaCppNative {
 	 * STATIC UTILITIES
 	 */
 
-	static void ensureLibrariesLoaded() {
+	public static void ensureLibrariesLoaded() {
 		if (librariesLoaded)
 			return;
 		loadLibraries();

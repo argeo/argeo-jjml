@@ -28,10 +28,10 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 
 	public void write(LlamaCppChatMessage message) {
 		String prompt = getModel().formatChatMessages(message);
-		write(prompt);
+		writeFormatted(prompt);
 	}
 
-	protected void write(String prompt) {
+	protected void writeFormatted(String prompt) {
 		IntBuffer promptTokens = vocabulary.tokenize(prompt);
 		assert promptTokens.position() == 0;
 		int tokenCount = promptTokens.limit();
@@ -71,14 +71,15 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 			input.put(promptArr, i * batchSize, input.limit());
 			input.flip();
 
-			long begin = System.nanoTime();
+//			long begin = System.nanoTime();
 			writeBatch(new IntBuffer[] { input }, lastLogits);
-			long end = System.nanoTime();
+//			long end = System.nanoTime();
 //			System.out.println("Wrote batch in " + (end - begin) / 1000000 + " ms.");
 		}
 	}
 
 	public void readMessage(PrintStream out) throws IOException {
+		out.flush();
 		// FIXME deal properly with charset, esp. on Windows
 		readMessage(new PrintWriter(out, false, StandardCharsets.UTF_8));
 	}
@@ -89,13 +90,13 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		reads: while (reading) {
 			IntBuffer output = IntBuffer.allocate(1);
 
-			long begin = System.nanoTime();
+//			long begin = System.nanoTime();
 
 			CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
 			CompletableFuture<Boolean> allCompleted = readBatchAsync(new IntBuffer[] { output }, generationCompleted);
 			allCompleted.join();
 
-			long end = System.nanoTime();
+//			long end = System.nanoTime();
 			// System.out.println("Read batch in " + (end - begin) / 1000000 + " ms.");
 
 			output.flip();

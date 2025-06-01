@@ -1,5 +1,4 @@
-package org.argeo.jjml.llama;
-
+import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -10,9 +9,12 @@ import static org.argeo.jjml.llama.params.ContextParam.embeddings;
 import static org.argeo.jjml.llama.params.ContextParam.n_batch;
 import static org.argeo.jjml.llama.params.ContextParam.n_ctx;
 import static org.argeo.jjml.llama.params.ContextParam.n_ubatch;
+import static org.argeo.jjml.llama.util.StandardRole.ASSISTANT;
 import static org.argeo.jjml.llama.util.StandardRole.SYSTEM;
 import static org.argeo.jjml.llama.util.StandardRole.USER;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
@@ -26,21 +28,36 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 
+import org.argeo.jjml.llama.LlamaCppBackend;
+import org.argeo.jjml.llama.LlamaCppContext;
+import org.argeo.jjml.llama.LlamaCppContextState;
+import org.argeo.jjml.llama.LlamaCppEmbeddingProcessor;
+import org.argeo.jjml.llama.LlamaCppInstructProcessor;
+import org.argeo.jjml.llama.LlamaCppJavaSampler;
+import org.argeo.jjml.llama.LlamaCppModel;
+import org.argeo.jjml.llama.LlamaCppNative;
+import org.argeo.jjml.llama.LlamaCppNativeSampler;
+import org.argeo.jjml.llama.LlamaCppSamplerChain;
+import org.argeo.jjml.llama.LlamaCppSamplers;
+import org.argeo.jjml.llama.LlamaCppTextProcessor;
+import org.argeo.jjml.llama.LlamaCppVocabulary;
+import org.argeo.jjml.llama.params.ContextParams;
 import org.argeo.jjml.llama.params.ModelParams;
 
 /**
  * Minimal set of non-destructive in-memory tests, in order to check that a
  * given deployment and/or model are working. Java assertions must be enabled.
  */
-class A2SmokeTests {
-	private final static Logger logger = System.getLogger(A2SmokeTests.class.getName());
+class SmokeTests {
+	private final static Logger logger = System.getLogger(SmokeTests.class.getName());
 
 	public void main(List<String> args) throws Exception, AssertionError {
 		try {
 			if (!getClass().desiredAssertionStatus()) {
-				logger.log(ERROR, "Assertions must be anbled. Call Java with the -ea option.");
+				logger.log(ERROR, "Assertions must be enabled. Please call Java with the -ea option.");
 				return;
 			}
 			if (args.isEmpty()) {
@@ -55,6 +72,7 @@ class A2SmokeTests {
 			}).getAsBoolean();
 
 			ModelParams modelParams = defaultModelParams();
+			logger.log(INFO, "Loading model " + modelPath + " ...");
 			Future<LlamaCppModel> loaded = LlamaCppModel.loadAsync(modelPath, modelParams,
 					new LoadModelProgressCallback(), null);
 			try (LlamaCppModel model = loaded.get();) {
@@ -66,7 +84,7 @@ class A2SmokeTests {
 				StringBuilder sb = new StringBuilder();
 				for (String key : model.getMetadata().keySet())
 					sb.append(key + "=" + model.getMetadata().get(key) + "\n");
-				logger.log(INFO, "Metadata:\n" + sb);
+				logger.log(DEBUG, "Metadata:\n" + sb);
 
 				model.getVocabulary().setStringMode(false);
 				assertVocabulary(model.getVocabulary());
@@ -82,6 +100,7 @@ class A2SmokeTests {
 				assertBatch(model);
 				assertJavaSampler(model);
 				assertChat(model);
+				assertSavedContextState(model);
 			}
 		} catch (Exception | AssertionError e) {
 			logger.log(Level.ERROR, "Smoke tests failed", e);
@@ -126,7 +145,7 @@ class A2SmokeTests {
 		assert testTokenizeDetokenize(vocabulary, in, out, "ἔορθoι χθόνιοι"); // according to olmoe-1b-7b-0924
 		assert testTokenizeDetokenize(vocabulary, in, out, "السلام عليكم"); // according to olmoe-1b-7b-0924
 		assert testTokenizeDetokenize(vocabulary, in, out, "¡Hola и أَشْكَرُ мир! 👋🏼🌍");
-		logger.log(INFO, "Vocabulary smoke tests PASSED");
+		logger.log(INFO, "Vocabulary smoke tests variant PASSED");
 	}
 
 	boolean testTokenizeDetokenize(LlamaCppVocabulary vocabulary, ByteBuffer in, IntBuffer buf, String msg) {
@@ -134,7 +153,7 @@ class A2SmokeTests {
 			in.clear();
 		buf.clear();
 
-		logger.log(INFO, msg);
+		logger.log(DEBUG, msg);
 		if (in == null) {
 			IntBuffer tokens = vocabulary.tokenize(msg);
 			buf.put(tokens);
@@ -144,7 +163,7 @@ class A2SmokeTests {
 			vocabulary.tokenize(msg, buf);
 		}
 		buf.flip();
-		logger.log(INFO, LlamaCppVocabulary.logIntegers(buf, 32, ", "));
+		logger.log(DEBUG, logIntegers(buf, 32, ", "));
 		String str;
 		if (in == null) {
 			str = vocabulary.deTokenize(buf);
@@ -179,13 +198,13 @@ class A2SmokeTests {
 			prompts.add("Hello world!");
 			prompts.add("Good night and good luck.");
 			for (String s : prompts)
-				logger.log(INFO, "=>\n" + s);
+				logger.log(DEBUG, "=>\n" + s);
 
 			float[][] embeddings = embeddingProcessor.processEmbeddings(prompts);
 			assert embeddings.length != 0;
 
 			for (float[] embedding : embeddings) {
-				logger.log(INFO, "<=\n[ " + embedding[0] + ", " + embedding[1] + ", ... ]");
+				logger.log(DEBUG, "<=\n[ " + embedding[0] + ", " + embedding[1] + ", ... ]");
 			}
 		}
 		logger.log(INFO, "Embeddings smoke tests PASSED");
@@ -211,9 +230,9 @@ class A2SmokeTests {
 					+ "WORLD\n"//
 					+ "Write TEST\n" //
 			;
-			logger.log(INFO, "=>\n" + prompt);
+			System.out.println("=>\n" + prompt);
 			String str = processor.processBatch(prompt);
-			logger.log(INFO, "<=\n" + str);
+			System.out.println("<=\n" + str);
 			// System.out.println("\n\n## Processing took " + (System.currentTimeMillis() -
 			// begin) + " ms");
 
@@ -242,9 +261,9 @@ class A2SmokeTests {
 					+ "WORLD\n"//
 					+ "Write test\n" //
 			;
-			logger.log(INFO, "=>\n" + prompt);
+			System.out.println("=>\n" + prompt);
 			String str = processor.processBatch(prompt);
-			logger.log(INFO, "<=\n" + str);
+			System.out.println("<=\n" + str);
 			// System.out.println("\n\n## Processing took " + (System.currentTimeMillis() -
 			// begin) + " ms");
 
@@ -252,35 +271,132 @@ class A2SmokeTests {
 		logger.log(INFO, "Java sampler smoke tests PASSED");
 	}
 
-	void assertChat(LlamaCppModel model) {
+	void assertChat(LlamaCppModel model) throws IOException {
 		try (//
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
 						.with(n_ctx, 20480) //
 						.with(n_batch, 1024)); //
-				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, true); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
 		) {
-			LlamaCppTextProcessor processor = new LlamaCppTextProcessor(context, chain);
+			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
 
-			String prompt = model.formatChatMessages( //
-					SYSTEM.msg("You are a helpful assistant."), //
-					USER.msg("Briefly introduce the Java programming language."));
-			String reply = processor.processSingleBatch(prompt);
-			logger.log(INFO, "\n" + prompt + reply);
+			String systemMsg = "You are a helpful assistant, which answer as briefly as possible.";
+			System.out.println(SYSTEM.name() + " :\n" + systemMsg);
+			processor.write(SYSTEM, systemMsg);
 
-			prompt = model.formatChatMessages( //
-					USER.msg("Thank you!"));
-			reply = processor.processSingleBatch(prompt);
-			logger.log(INFO, "\n" + prompt + reply);
+			String userMsg01 = "Introduce the Java programming language in no more than two sentences.";
+			System.out.println(USER.name() + " :\n" + userMsg01);
+			processor.write(USER, userMsg01);
+
+			System.out.println(ASSISTANT.name() + " :\n");
+			processor.readMessage(System.out);
+
+			// make sure it can deal with a second message
+			String userMsg02 = "Thank you!";
+			System.out.println(USER.name() + " :\n" + userMsg02);
+			processor.write(USER, userMsg02);
+
+			System.out.println(ASSISTANT.name() + " :\n");
+			processor.readMessage(System.out);
 		}
 		logger.log(INFO, "Chat smoke tests PASSED");
 	}
 
-	/*
-	 * UTILITIES
-	 */
+	void assertSavedContextState(LlamaCppModel model) throws IOException {
+		ContextParams contextParams = LlamaCppContext.defaultContextParams() //
+				.with(n_ctx, 20480) //
+				.with(n_batch, 1024) //
+		; //
 
+		final LlamaCppContextState savedState;
+		try (//
+				LlamaCppContext context = new LlamaCppContext(model, contextParams); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
+		) {
+			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
+
+			long begin = System.currentTimeMillis();
+			String systemMsg = "You are a travel agent helping the user to chose the best holiday destination.\n"
+					+ "You answer with a city name, and one sentence explanation of your choice, nothing else.";
+			System.out.println(SYSTEM.name() + " :\n" + systemMsg);
+			processor.write(SYSTEM, systemMsg);
+
+			String userMsg01 = "I want to spend my vacations in Europe.\n"
+					+ "I like Italy, but I am open to other destinations, as long as there is nature and culture.\n"
+					+ "I have never been to Scandinavia, but it can wait.\n"
+					+ "I would like to avoid the usual touristic destinations, so be creative!\n"
+					+ "I will travel in autumn, so it should not be too hot.\n"
+					+ "Also please consider that I speak French and German in addition to English.\n"
+					+ "And I definitely don't like holiday on the beach...";
+			System.out.println(USER.name() + " :\n" + userMsg01);
+			processor.write(USER, userMsg01);
+
+			savedState = new LlamaCppContextState.ByteBufferSavedState();
+			processor.saveContextState(savedState);
+			logger.log(INFO, "Wrote and saved context in " + (System.currentTimeMillis() - begin) + " ms");
+		}
+
+		String userMsg02 = "Current Date: March 13th 2020.";
+
+		Consumer<LlamaCppInstructProcessor> process = (processor) -> {
+			long beginLoad = System.currentTimeMillis();
+			processor.loadContextState(savedState);
+			logger.log(INFO, "Loaded context in " + (System.currentTimeMillis() - beginLoad) + " ms");
+
+			System.out.println(USER.name() + " :\n" + userMsg02);
+			processor.write(USER, userMsg02);
+
+			System.out.println(ASSISTANT.name() + " :\n");
+			long begin = System.currentTimeMillis();
+			try {
+				processor.readMessage(System.out);
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
+			logger.log(INFO, "Generation took " + +(System.currentTimeMillis() - begin) + " ms");
+		};
+
+		// deterministic answer
+		try (LlamaCppContext context = new LlamaCppContext(model, contextParams); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
+		) {
+			process.accept(new LlamaCppInstructProcessor(context, chain));
+		}
+
+		// with temperature
+		try (LlamaCppContext context = new LlamaCppContext(model, contextParams); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, true); //
+		) {
+			process.accept(new LlamaCppInstructProcessor(context, chain));
+		}
+
+		logger.log(INFO, "Saved context state smoke tests PASSED");
+	}
+
+	/*
+	 * STATIC UTILITIES
+	 */
+	/** CLI entry point. */
 	public static void main(String[] args) throws Exception {
-		new A2SmokeTests().main(Arrays.asList(args));
+		new SmokeTests().main(Arrays.asList(args));
+	}
+
+	/**
+	 * Writes the beginning of an integer buffer as a string. It has no side effect
+	 * on the input buffer.
+	 */
+	static String logIntegers(IntBuffer in, int max, String separator) {
+		StringBuilder sb = new StringBuilder();
+		integers: for (int i = in.position(); i < in.limit(); i++) {
+			if (i != in.position())
+				sb.append(separator);
+			if (i == max) {
+				sb.append("...");
+				break integers;
+			}
+			sb.append(Integer.toString(in.get(i)));
+		}
+		return sb.toString();
 	}
 
 	/*
