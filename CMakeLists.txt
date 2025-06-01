@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project("argeo-jjml"
 DESCRIPTION "Java bindings for GGML-based libraries"
-VERSION 0.1.3
+VERSION 0.1.4
 )
 set(A2_JAVA_RELEASE 11)
 set(A2_CATEGORY org.argeo.jjml)
