@@ -4,10 +4,11 @@ It is written in C++ and relies solely on the plain ggml-*.so/dll and llama.so/d
 
 It does not depend on any Argeo or third-party Java library and is built with CMake. No tooling or application is provided, except a basic CLI for testing and development purposes. Focus is on providing robust support for batch and embeddings rather than end-user chat assistants.
 
-This has been extracted from another application layer providing agents based on and integrating with the Argeo platform, as it became clear that it could be generally useful and that we would also benefit from others using it in various settings. **Contrary to our usual policy, we are therefore open to feedback and contributions, and we will do reasonable efforts to fix reported issues.** 
+This has been extracted from another application layer providing agents based on and integrating with the Argeo platform, as it became clear that it could be generally useful and that we would also benefit from others using it in various settings. Contrary to our usual policy, we are therefore open to feedback and contributions, and we will do reasonable efforts to fix reported issues. 
 
 # Features
-- Java 11+ support, JPMS and OSGi metadata
+- Java 11+ support
+- JPMS and OSGi metadata
 - Parallel batches
 - Embeddings
 - Chat templates
@@ -37,13 +38,15 @@ The overall architecture is in place and after a few months following closely [g
 The goal is to release a stable version relatively soon (target is Q2 2025).
 
 Planned tasks:
+- Save context state (in progress)
 - Shift/rewind context
-- Improve build and development environment (feedback welcome!)
 - [whisper.cpp](https://github.com/ggerganov/whisper.cpp) integration
 - Android integration (low priority)
 
 # License
-Argeo JJML is dual-licensed to the general public with the LGPL v2.1 (or later version) license or the EPL v2 license.
+Argeo JJML is dual-licensed:
+- LGPL v2.1 (or later version)
+- EPL v2, with GPL as a possible secondary license
 
 ```Copyright 2024-2025 Mathieu Baudier
 Copyright 2024-2025 Argeo GmbH
