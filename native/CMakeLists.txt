@@ -4,21 +4,28 @@
 
 #set(CMAKE_FIND_DEBUG_MODE ON)
 
-# Current Debian paths
-set(CMAKE_LIBRARY_PATH /usr/lib/x86_64-linux-gnu/ggml)
-include_directories(/usr/include/ggml)
+# Current Debian and Argeo paths
+# TODO ask Debian to package llama.cpp headers
+set(CMAKE_LIBRARY_PATH
+/usr/lib/x86_64-linux-gnu/ggml
+/usr/libexec/x86_64-linux-gnu/ggml
+)
+include_directories(
+/usr/include/ggml
+)
 
-# Current Argeo path for ggml backends and executables
-set(CMAKE_LIBRARY_PATH /usr/libexec/x86_64-linux-gnu/ggml)
-
-# MinGW
-#set(CMAKE_FIND_LIBRARY_SUFFIXES .dll ${CMAKE_FIND_LIBRARY_SUFFIXES})
-
-find_package(ggml)
+if(NOT JJML_FORCE_BUILD_TP)
+	find_package(llama)
+	if(NOT llama_FOUND)
+		find_package(ggml)
+	endif()
+	find_library(GGML_LOCATION ggml)
+	find_library(GGML_BASE_LOCATION ggml-base)
+	find_library(LLAMA_LOCATION llama)
+endif()
 
 # ggml as external library
-find_library(GGML_LOCATION ggml)
-if(EXISTS ${GGML_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
+if(EXISTS ${GGML_LOCATION} AND EXISTS ${GGML_BASE_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
 #	if(MINGW)
 #		add_library(ggml STATIC IMPORTED GLOBAL)
 #	else()
@@ -50,7 +57,6 @@ else()
 endif()
 
 # llama.cpp as external library
-find_library(LLAMA_LOCATION llama)
 if(EXISTS ${LLAMA_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
 #	if(MINGW)
 #		add_library(llama STATIC IMPORTED GLOBAL)
