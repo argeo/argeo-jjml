@@ -3,8 +3,6 @@
 #
 #set(CMAKE_FIND_DEBUG_MODE ON)
 
-message (STATUS "GGML_BACKEND_DL=${GGML_BACKEND_DL}")
-
 # Current Debian and Argeo paths
 # TODO ask Debian to package llama.cpp headers
 set(CMAKE_LIBRARY_PATH
