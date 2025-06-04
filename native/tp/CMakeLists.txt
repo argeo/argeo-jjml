@@ -43,7 +43,7 @@ if(EXISTS ${GGML_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
 else()
 	## multiple backends libraries
 	if(NOT DEFINED GGML_BACKEND_DL)
-		set(GGML_BACKEND_DL)
+		set(GGML_BACKEND_DL ON)
 	endif()
 	if(GGML_BACKEND_DL)
 		set(GGML_CPU_ALL_VARIANTS ON)
