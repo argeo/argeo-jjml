@@ -11,7 +11,9 @@ add_library(${TARGET} SHARED
 	jjml_llama_batch_read.cpp
 	jjml_llama_embedding.cpp
 )
-target_link_libraries(${TARGET} PRIVATE	ggml llama)
+target_link_libraries(${TARGET} PRIVATE	ggml ggml-base llama)
+
+#target_compile_definitions(${TARGET} PRIVATE GGML_ASSERT=)
 
 target_compile_definitions(${TARGET} PRIVATE
 _JJML_PRE_LLAMA_0_0_4881
