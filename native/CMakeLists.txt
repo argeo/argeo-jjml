@@ -35,7 +35,7 @@ if(EXISTS ${GGML_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
 	message (STATUS "Found GGML library: ${GGML_LOCATION}")
 	include(CheckIncludeFileCXX)
 	check_include_file_cxx(ggml-backend.h JJML_BACKEND_INCLUDE_FOUND)
-	if(JJML_BACKEND_INCLUDE_FOUND)
+	if(NOT DEFINED GGML_BACKEND_DL AND JJML_BACKEND_INCLUDE_FOUND)
 		set(GGML_BACKEND_DL ON)
 		message (STATUS "Found ggml-backend.h, enable GGML_BACKEND_DL")
 	endif()
@@ -47,7 +47,7 @@ else()
 	endif()
 	if(GGML_BACKEND_DL)
 		set(GGML_CPU_ALL_VARIANTS ON)
-		message (STATUS "Enable GGML_BACKEND_DL")
+		message (STATUS "Enable GGML_BACKEND_DL by default")
 	endif()
 
 	# copied from root of ggml, otherwise
@@ -56,7 +56,7 @@ else()
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 
 	add_subdirectory(tp/ggml) # build locally
-	message (STATUS "Will locally build ggml from submodule native/tp/ggml") 
+	message (STATUS "Build ggml locally from submodule native/tp/ggml") 
 endif()
 
 # llama.cpp as external library
@@ -73,7 +73,7 @@ else()
 	set_target_properties(llama PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 	# Required by MSYS
 	set_target_properties(llama PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-	message (STATUS "Will locally build llama.cpp from submodule native/tp/llama.cpp") 
+	message (STATUS "Build llama.cpp locally from submodule native/tp/llama.cpp") 
 endif()
 
 if(NOT DEFINED GGML_BACKEND_DL AND MINGW)
@@ -89,7 +89,7 @@ endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(GGML_BACKEND_DL)
-message (STATUS "Will build JNI libraries with support for dynamic ggml backends") 
+message (STATUS "Build JNI libraries with support for dynamic ggml backends") 
 endif()
 
 add_subdirectory(org_argeo_jjml_ggml)
