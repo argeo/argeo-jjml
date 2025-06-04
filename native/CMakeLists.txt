@@ -3,6 +3,8 @@
 #
 #set(CMAKE_FIND_DEBUG_MODE ON)
 
+message (STATUS "GGML_BACKEND_DL=${GGML_BACKEND_DL}")
+
 # Current Debian and Argeo paths
 # TODO ask Debian to package llama.cpp headers
 set(CMAKE_LIBRARY_PATH
@@ -12,7 +14,6 @@ set(CMAKE_LIBRARY_PATH
 include_directories(
 /usr/include/ggml
 )
-
 
 if(NOT JJML_FORCE_BUILD_TP)
 	find_package(llama QUIET)
@@ -35,19 +36,19 @@ if(EXISTS ${GGML_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
 	message (STATUS "Found GGML library: ${GGML_LOCATION}")
 	include(CheckIncludeFileCXX)
 	check_include_file_cxx(ggml-backend.h JJML_BACKEND_INCLUDE_FOUND)
-	if(NOT DEFINED GGML_BACKEND_DL AND JJML_BACKEND_INCLUDE_FOUND)
+	if(NOT DEFINED ${GGML_BACKEND_DL} AND JJML_BACKEND_INCLUDE_FOUND)
 		set(GGML_BACKEND_DL ON)
 		message (STATUS "Found ggml-backend.h, enable GGML_BACKEND_DL")
 	endif()
 else()
 	## multiple backends libraries
-	if(NOT DEFINED GGML_BACKEND_DL)
+	if(NOT DEFINED ${GGML_BACKEND_DL})
 		set(GGML_BACKEND_DL ON)
-		set(BUILD_SHARED_LIBS ON)
+		message (STATUS "Enable GGML_BACKEND_DL by default")
 	endif()
 	if(GGML_BACKEND_DL)
+		set(BUILD_SHARED_LIBS ON)
 		set(GGML_CPU_ALL_VARIANTS ON)
-		message (STATUS "Enable GGML_BACKEND_DL by default")
 	endif()
 
 	# copied from root of ggml, otherwise
@@ -76,20 +77,16 @@ else()
 	message (STATUS "Build llama.cpp locally from submodule native/tp/llama.cpp") 
 endif()
 
-if(NOT DEFINED GGML_BACKEND_DL AND MINGW)
-set(GGML_BACKEND_DL ON)
-endif()
-
 #
 # JJML NATIVE BUILD
 #
 if(NOT CMAKE_CXX_STANDARD)
-set(CMAKE_CXX_STANDARD 17)
+	set(CMAKE_CXX_STANDARD 17)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(GGML_BACKEND_DL)
-message (STATUS "Build JNI libraries with support for dynamic ggml backends") 
+	message (STATUS "Build JNI libraries with support for dynamic ggml backends") 
 endif()
 
 add_subdirectory(org_argeo_jjml_ggml)
