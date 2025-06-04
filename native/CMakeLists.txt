@@ -19,9 +19,12 @@ if(NOT JJML_FORCE_BUILD_TP)
 	if(NOT llama_FOUND)
 		find_package(ggml QUIET)
 	endif()
-	find_library(GGML_LOCATION ggml)
-	find_library(LLAMA_LOCATION llama)
 endif()
+# we still search for libraries in order to:
+# - deal with the case when CMake config is not available
+# - have a condition to trigger a local build
+find_library(GGML_LOCATION ggml)
+find_library(LLAMA_LOCATION llama)
 
 # ggml as external library
 if(EXISTS ${GGML_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
