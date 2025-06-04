@@ -8,6 +8,9 @@
 set(CMAKE_LIBRARY_PATH /usr/lib/x86_64-linux-gnu/ggml)
 include_directories(/usr/include/ggml)
 
+# Current Argeo path for ggml backends and executables
+set(CMAKE_LIBRARY_PATH /usr/libexec/x86_64-linux-gnu/ggml)
+
 # MinGW
 #set(CMAKE_FIND_LIBRARY_SUFFIXES .dll ${CMAKE_FIND_LIBRARY_SUFFIXES})
 
