@@ -13,7 +13,7 @@ endif()
 if(NOT CMAKE_CXX_STANDARD)
 set(CMAKE_CXX_STANDARD 17)
 endif()
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(GGML_BACKEND_DL)
 message (STATUS "Will build JNI libraries with support for dynamic ggml backends") 
