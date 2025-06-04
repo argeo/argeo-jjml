@@ -7,12 +7,13 @@
 # Current Debian and Argeo paths
 # TODO ask Debian to package llama.cpp headers
 set(CMAKE_LIBRARY_PATH
-/usr/lib/x86_64-linux-gnu/ggml
-/usr/libexec/x86_64-linux-gnu/ggml
+/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/ggml
+/usr/libexec/${CMAKE_LIBRARY_ARCHITECTURE}/ggml
 )
 include_directories(
 /usr/include/ggml
 )
+
 
 if(NOT JJML_FORCE_BUILD_TP)
 	find_package(llama QUIET)
@@ -20,7 +21,7 @@ if(NOT JJML_FORCE_BUILD_TP)
 		find_package(ggml QUIET)
 	endif()
 endif()
-# we still search for libraries in order to:
+# we still search for libraries' locations in order to:
 # - deal with the case when CMake config is not available
 # - have a condition to trigger a local build
 find_library(GGML_LOCATION ggml)
@@ -33,6 +34,15 @@ if(EXISTS ${GGML_LOCATION} AND NOT JJML_FORCE_BUILD_TP)
 		set_target_properties(ggml PROPERTIES IMPORTED_LOCATION ${GGML_LOCATION})
 	endif()
 	message (STATUS "Found GGML library: ${GGML_LOCATION}")
+	include(CheckIncludeFileCXX)
+	check_include_file_cxx(ggml-backend.h JJML_BACKEND_INCLUDE_FOUND)
+#	include(CheckFunctionExists)
+#	check_function_exists(ggml_backend_load JJML_BACKEND_LOAD_FOUND)
+#	message (STATUS "JJML_BACKEND_LOAD_FOUND=${JJML_BACKEND_LOAD_FOUND}")
+	if(JJML_BACKEND_INCLUDE_FOUND)
+		set(GGML_BACKEND_DL)
+		message (STATUS "Found ggml-backend.h, enable GGML_BACKEND_DL")
+	endif()
 else()
 	## multiple backends libraries
 	if(GGML_BACKEND_DL)
