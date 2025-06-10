@@ -211,11 +211,21 @@ class SmokeTests {
 	}
 
 	void assertBatch(LlamaCppModel model) {
-		Integer[] sequenceIds = { 1, 10, 100 };
+		String prompt = "Write HELLO\n"//
+				+ "HELLO\n"//
+				+ "Write WORLD\n"//
+				+ "WORLD\n"//
+				+ "Write TEST\n" //
+		;
+
+		// !! max seq_id must be < 64
+		// TODO understand why
+		Integer[] sequenceIds = { 1, 10, 63 };
 		try ( //
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
 						.with(n_ctx, 6144) //
-						.with(n_batch, sequenceIds.length * 64)); //
+						.with(n_batch, sequenceIds.length * prompt.length()) //
+				); //
 				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
 				LlamaCppNativeSampler validatingSampler = LlamaCppSamplers.newSamplerGrammar(model, //
 						"root ::= [ \\t\\n]* \"TEST\"", "root");//
@@ -224,12 +234,6 @@ class SmokeTests {
 			LlamaCppTextProcessor processor = new LlamaCppTextProcessor(context, chain, validatingSampler,
 					Set.of(sequenceIds));
 
-			String prompt = "Write HELLO\n"//
-					+ "HELLO\n"//
-					+ "Write WORLD\n"//
-					+ "WORLD\n"//
-					+ "Write TEST\n" //
-			;
 			System.out.println("=>\n" + prompt);
 			String str = processor.processBatch(prompt);
 			System.out.println("<=\n" + str);
