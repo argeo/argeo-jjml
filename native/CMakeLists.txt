@@ -102,4 +102,4 @@ if(GGML_BACKEND_DL)
 endif()
 
 add_subdirectory(org_argeo_jjml_ggml)
-add_subdirectory(org_argeo_jjml_llama)
+add_subdirectory(org_argeo_jjml_llm)
