@@ -3,10 +3,10 @@
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.parseBoolean;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.argeo.jjml.llama.LlamaCppContext.defaultContextParams;
-import static org.argeo.jjml.llama.LlamaCppNative.ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY;
-import static org.argeo.jjml.llama.params.ModelParam.n_gpu_layers;
-import static org.argeo.jjml.llama.util.StandardRole.SYSTEM;
+import static org.argeo.jjml.llm.LlamaCppContext.defaultContextParams;
+import static org.argeo.jjml.llm.LlamaCppNative.ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY;
+import static org.argeo.jjml.llm.params.ModelParam.n_gpu_layers;
+import static org.argeo.jjml.llm.util.StandardRole.SYSTEM;
 
 import java.io.BufferedReader;
 import java.io.Console;
@@ -35,21 +35,21 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.argeo.jjml.llama.LlamaCppBackend;
-import org.argeo.jjml.llama.LlamaCppBatchProcessor;
-import org.argeo.jjml.llama.LlamaCppChatMessage;
-import org.argeo.jjml.llama.LlamaCppContext;
-import org.argeo.jjml.llama.LlamaCppEmbeddingProcessor;
-import org.argeo.jjml.llama.LlamaCppModel;
-import org.argeo.jjml.llama.LlamaCppNative;
-import org.argeo.jjml.llama.LlamaCppSamplerChain;
-import org.argeo.jjml.llama.LlamaCppSamplers;
-import org.argeo.jjml.llama.LlamaCppVocabulary;
-import org.argeo.jjml.llama.params.ContextParam;
-import org.argeo.jjml.llama.params.ModelParam;
-import org.argeo.jjml.llama.params.ModelParams;
-import org.argeo.jjml.llama.params.PoolingType;
-import org.argeo.jjml.llama.util.StandardRole;
+import org.argeo.jjml.llm.LlamaCppBackend;
+import org.argeo.jjml.llm.LlamaCppBatchProcessor;
+import org.argeo.jjml.llm.LlamaCppChatMessage;
+import org.argeo.jjml.llm.LlamaCppContext;
+import org.argeo.jjml.llm.LlamaCppEmbeddingProcessor;
+import org.argeo.jjml.llm.LlamaCppModel;
+import org.argeo.jjml.llm.LlamaCppNative;
+import org.argeo.jjml.llm.LlamaCppSamplerChain;
+import org.argeo.jjml.llm.LlamaCppSamplers;
+import org.argeo.jjml.llm.LlamaCppVocabulary;
+import org.argeo.jjml.llm.params.ContextParam;
+import org.argeo.jjml.llm.params.ModelParam;
+import org.argeo.jjml.llm.params.ModelParams;
+import org.argeo.jjml.llm.params.PoolingType;
+import org.argeo.jjml.llm.util.StandardRole;
 
 /** A minimal command line interface for batch processing and simple chat. */
 public class SimpleCli {

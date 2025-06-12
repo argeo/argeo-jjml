@@ -8,8 +8,11 @@ include  sdk/argeo-build/cmake/default.mk
 # Use make rebuild-force-to (see below) in order to force a local build. 
 ##
 
-GGML_VULKAN ?= OFF
+GGML_BLAS ?= ON
+GGML_VULKAN ?= ON
 GGML_CUDA ?= OFF
+GGML_RPC ?= OFF
+
 # To be used for "heavy" C++ development,
 # that is when adding new capabilities and exploring upstream code:
 # - Make sure the target binaries are built from the local sources submodules
@@ -35,12 +38,13 @@ rebuild-force-tp: clean-local
 		-DGGML_CPU_ALL_VARIANTS=ON \
 		-DGGML_BACKEND_DL=ON \
 		\
-		-DGGML_BLAS=OFF \
+		-DGGML_BLAS=$(GGML_BLAS) \
 		-DGGML_BLAS_VENDOR=OpenBLAS \
 		-DGGML_VULKAN=$(GGML_VULKAN) \
 		-DGGML_CUDA=$(GGML_CUDA) \
 		-DGGML_CUDA_FORCE_MMQ=ON \
 		-DGGML_CUDA_FA_ALL_QUANTS=OFF \
+		-DGGML_RPC=$(GGML_RPC) \
 	
 	cmake --build $(BUILD_BASE) -j $(shell nproc)
 
