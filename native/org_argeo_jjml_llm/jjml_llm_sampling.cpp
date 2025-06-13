@@ -9,9 +9,6 @@
 
 #include "org_argeo_jjml_llm_.h"
 
-/** UTF-16 converter. */
-static argeo::jni::utf16_convert utf16_conv;
-
 /*
  * STANDARD SAMPLERS
  */
@@ -74,24 +71,25 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppSamplers_doInitDist__I(
 }
 
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppSamplers_doInitGrammar(
-		JNIEnv *env, jclass, jobject modelObj, jstring grammarStr,
-		jstring rootStr) {
+		JNIEnv *env, jclass, jobject modelObj, jbyteArray grammarStr,
+		jbyteArray rootStr) {
 	auto *model = argeo::jni::as_pointer<llama_model*>(env, modelObj);
 	const llama_vocab *vocab = llama_model_get_vocab(model);
 
-//	const char *grammar_str = env->GetStringUTFChars(grammarStr, nullptr);
-//	const char *grammar_root = env->GetStringUTFChars(rootStr, nullptr);
+	void *u8_grammar_arr = env->GetPrimitiveArrayCritical(grammarStr, 0);
+	std::string u8_grammar(static_cast<char*>(u8_grammar_arr),
+			env->GetArrayLength(grammarStr));
 
-	std::string grammar_str = argeo::jni::to_string(env, grammarStr,
-			&utf16_conv);
-	std::string grammar_root = argeo::jni::to_string(env, rootStr, &utf16_conv);
+	void *u8_root_arr = env->GetPrimitiveArrayCritical(rootStr, 0);
+	std::string u8_root(static_cast<char*>(u8_root_arr),
+			env->GetArrayLength(rootStr));
 
-	llama_sampler *smpl = llama_sampler_init_grammar(vocab, grammar_str.c_str(),
-			grammar_root.c_str());
+	llama_sampler *smpl = llama_sampler_init_grammar(vocab, //
+			u8_grammar.c_str(), u8_root.c_str());
 
 	// clean up
-//	env->ReleaseStringUTFChars(grammarStr, grammar_str);
-//	env->ReleaseStringUTFChars(rootStr, grammar_root);
+	env->ReleasePrimitiveArrayCritical(grammarStr, u8_grammar_arr, 0);
+	env->ReleasePrimitiveArrayCritical(rootStr, u8_root_arr, 0);
 
 	return reinterpret_cast<jlong>(smpl);
 }
