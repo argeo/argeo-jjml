@@ -1,6 +1,7 @@
 package org.argeo.jjml.llm;
 
 import static java.lang.System.Logger.Level.WARNING;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -72,16 +73,16 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		contextTrainingSize = doGetContextTrainingSize();
 		embeddingSize = doGetEmbeddingSize();
 		layerCount = doGetLayerCount();
-		String[] keys = doGetMetadataKeys();
-		String[] values = doGetMetadataValues();
+		byte[][] keys = doGetMetadataKeys();
+		byte[][] values = doGetMetadataValues();
 		if (keys.length != values.length)
 			throw new IllegalStateException("Metadata keys and values don't have the same size");
 		LinkedHashMap<String, String> map = new LinkedHashMap<>();// preserve order
 		for (int i = 0; i < keys.length; i++) {
-			map.put(keys[i], values[i]);
+			map.put(new String(keys[i], UTF_8), new String(values[i], UTF_8));
 		}
 		metadata = Collections.unmodifiableMap(map);
-		description = doGetDescription();
+		description = new String(doGetDescription(), UTF_8);
 		modelSize = doGetModelSize();
 		endOfGenerationToken = doGetEndOfGenerationToken();
 	}
@@ -90,7 +91,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	 * NATIVE METHODS
 	 */
 	// Chat
-	private native String doFormatChatMessages(long pointer, String[] roles, String[] contents,
+	private native byte[] doFormatChatMessages(long pointer, byte[][] utf8Roles, byte[][] utf8Contents,
 			boolean addAssistantTokens);
 
 	// Lifecycle
@@ -107,11 +108,11 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	private native int doGetLayerCount();
 
-	private native String[] doGetMetadataKeys();
+	private native byte[][] doGetMetadataKeys();
 
-	private native String[] doGetMetadataValues();
+	private native byte[][] doGetMetadataValues();
 
-	private native String doGetDescription();
+	private native byte[] doGetDescription();
 
 	private native long doGetModelSize();
 
@@ -131,19 +132,19 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	public String formatChatMessages(List<LlamaCppChatMessage> messages,
 			Predicate<LlamaCppChatMessage> addAssistantTokens) {
-		String[] roles = new String[messages.size()];
-		String[] contents = new String[messages.size()];
+		byte[][] roles = new byte[messages.size()][];
+		byte[][] contents = new byte[messages.size()][];
 
 		boolean currIsUserRole = false;
 		for (int i = 0; i < messages.size(); i++) {
 			LlamaCppChatMessage message = messages.get(i);
-			roles[i] = message.getRole();
+			roles[i] = message.getRole().getBytes(UTF_8);
 			currIsUserRole = addAssistantTokens.test(message);
-			contents[i] = message.getContent();
+			contents[i] = message.getContent().getBytes(UTF_8);
 		}
 
-		String res = doFormatChatMessages(pointer, roles, contents, currIsUserRole);
-		return res;
+		byte[] res = doFormatChatMessages(pointer, roles, contents, currIsUserRole);
+		return new String(res, UTF_8);
 	}
 
 	/*

@@ -1,7 +1,6 @@
 #include <llama.h>
 
 #include <argeo/jni/argeo_jni.h>
-#include <argeo/jni/argeo_jni_encoding.h>
 
 #include "org_argeo_jjml_llm_LlamaCppNativeSampler.h" // IWYU pragma: keep
 #include "org_argeo_jjml_llm_LlamaCppSamplerChain.h" // IWYU pragma: keep

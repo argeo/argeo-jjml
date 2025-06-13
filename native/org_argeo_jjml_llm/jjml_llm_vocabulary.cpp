@@ -64,7 +64,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llm_LlamaCppVocabulary_doTokeniz
 	auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 	const llama_vocab *vocab = llama_model_get_vocab(model);
 
-	void *u8_arr = env->GetPrimitiveArrayCritical(str, NULL);
+	void *u8_arr = env->GetPrimitiveArrayCritical(str, 0);
 	char *u8_chars = static_cast<char*>(u8_arr) + offset;
 
 	std::vector<llama_token> tokens = jjml_cpp_string_to_tokens(vocab, u8_chars,
@@ -142,8 +142,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LlamaCppVocabulary_doDeToke
 	auto *model = argeo::jni::as_pointer<llama_model*>(pointer);
 	const llama_vocab *vocab = llama_model_get_vocab(model);
 
-	void *tokens_arr = env->GetPrimitiveArrayCritical(tokenList,
-	NULL);
+	void *tokens_arr = env->GetPrimitiveArrayCritical(tokenList, 0);
 	llama_token *tokens = static_cast<llama_token*>(tokens_arr) + pos;
 
 	std::string text = jjml_tokens_to_cpp_string(vocab, tokens, size,

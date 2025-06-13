@@ -8,20 +8,16 @@
 #include <llama.h>
 
 #include <argeo/jni/argeo_jni.h>
-#include <argeo/jni/argeo_jni_encoding.h>
 
 #include "org_argeo_jjml_llm_LlamaCppModel.h" // IWYU pragma: keep
 #include "org_argeo_jjml_llm_LlamaCppBackend.h" // IWYU pragma: keep
 
 #include "org_argeo_jjml_llm_.h"
 
-/** UTF-16 converter. */
-static argeo::jni::utf16_convert utf16_conv;
-
 /*
  * CHAT
  */
-JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doFormatChatMessages(
+JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doFormatChatMessages(
 		JNIEnv *env, jobject, jlong pointer, jobjectArray roles,
 		jobjectArray contents, jboolean addAssistantTokens) {
 	// TODO change method signature as model is not needed anymore
@@ -34,25 +30,32 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doFormatChatMess
 		int alloc_size = 0;
 		// TODO is it really necessary to go through the heap?
 		for (int i = 0; i < messages_size; i++) {
-			jstring roleStr = (jstring) env->GetObjectArrayElement(roles, i);
-			std::u16string u16role = argeo::jni::jstring_to_utf16(env, roleStr);
-			std::string u8role = utf16_conv.to_bytes(u16role);
-			char *role = new char[u8role.length() + 1];
-			strcpy(role, u8role.c_str());
-
-			jstring contentStr = (jstring) env->GetObjectArrayElement(contents,
+			jbyteArray roleStr = (jbyteArray) env->GetObjectArrayElement(roles,
 					i);
-			std::u16string u16content = argeo::jni::jstring_to_utf16(env,
-					contentStr);
-			std::string u8content = utf16_conv.to_bytes(u16content);
-			char *content = new char[u8content.length() + 1];
-			strcpy(content, u8content.c_str());
+			void *u8_role_arr = env->GetPrimitiveArrayCritical(roleStr, 0);
+			std::string u8_role(static_cast<char*>(u8_role_arr),
+					env->GetArrayLength(roleStr));
+
+			char *role = new char[u8_role.length() + 1];
+			strcpy(role, u8_role.c_str());
+			env->ReleasePrimitiveArrayCritical(roleStr, u8_role_arr, 0);
+
+			jbyteArray contentStr = (jbyteArray) env->GetObjectArrayElement(
+					contents, i);
+			void *u8_content_arr = env->GetPrimitiveArrayCritical(contentStr,
+					0);
+			std::string u8_content(static_cast<char*>(u8_content_arr),
+					env->GetArrayLength(contentStr));
+
+			char *content = new char[u8_content.length() + 1];
+			strcpy(content, u8_content.c_str());
+			env->ReleasePrimitiveArrayCritical(contentStr, u8_content_arr, 0);
 
 			llama_chat_message message { role, content };
 			chat_messages.push_back(message);
 
 			// using the same factor as in common.cpp
-			alloc_size += (u8role.length() + u8content.length()) * 1.25;
+			alloc_size += (u8_role.length() + u8_content.length()) * 1.25;
 		}
 
 		const char *ptr_tmpl = nullptr; // TODO custom template
@@ -84,9 +87,11 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doFormatChatMess
 			delete message.content;
 		}
 
-		std::u16string u16res = utf16_conv.from_bytes(
-				std::string(buf.data(), resLength));
-		return argeo::jni::utf16_to_jstring(env, u16res);
+		std::string u8_res(buf.data(), resLength);
+		jbyteArray res = env->NewByteArray(u8_res.length());
+		env->SetByteArrayRegion(res, 0, u8_res.length(),
+				(jbyte*) u8_res.c_str());
+		return res;
 	} catch (std::exception &ex) {
 		return argeo::jni::throw_to_java(env, ex);
 	}
@@ -196,33 +201,34 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doGetLayerCount(
 	return llama_model_n_layer(model);
 }
 
+/** Gather metadata keys or values. */
 static jobjectArray jjml_lama_get_meta(JNIEnv *env, llama_model *model,
 		std::function<int32_t(int32_t, char*, size_t)> supplier) {
 	try {
 		int32_t meta_count = llama_model_meta_count(model);
 
-		jobjectArray res = env->NewObjectArray(meta_count,
-				env->FindClass("java/lang/String"), nullptr);
+		jobjectArray res = env->NewObjectArray(meta_count, env->FindClass("[B"),
+				nullptr);
 		for (int32_t i = 0; i < meta_count; i++) {
 			try {
-				// chat templates can be big
 				const size_t buf_size = 1024;
 				char buf[buf_size];
 				int32_t length = supplier(i, buf, buf_size);
 				if (length == -1)
 					throw std::runtime_error(
 							"Cannot read model metadata " + std::to_string(i));
-				std::u16string u16res;
+				std::string u8_res;
 				if (length > buf_size) { // chat templates can be quite big
 					char big_buf[length];
 					length = supplier(i, big_buf, length);
-					u16res = utf16_conv.from_bytes(
-							std::string(big_buf, length));
+					u8_res = std::string(big_buf, length);
 				} else {
-					u16res = utf16_conv.from_bytes(std::string(buf, length));
+					u8_res = std::string(buf, length);
 				}
-				jstring str = argeo::jni::utf16_to_jstring(env, u16res);
+				jbyteArray str = env->NewByteArray(u8_res.length());
 				env->SetObjectArrayElement(res, i, str);
+				env->SetByteArrayRegion(str, 0, u8_res.length(),
+						(jbyte*) u8_res.c_str());
 			} catch (std::exception &ex) {
 				// ignore
 				std::cerr << "Cannot read metadata " << i << ": " << ex.what()
@@ -254,7 +260,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doGetMetada
 			});
 }
 
-JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doGetDescription(
+JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doGetDescription(
 		JNIEnv *env, jobject obj) {
 	try {
 		auto *model = argeo::jni::as_pointer<llama_model*>(env, obj);
@@ -263,15 +269,18 @@ JNIEXPORT jstring JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doGetDescription
 		int32_t length = llama_model_desc(model, buf, buf_size);
 		if (length == -1)
 			throw std::runtime_error("Cannot read model description ");
-		std::u16string u16res;
+		std::string u8_res;
 		if (length > buf_size) { // big description
 			char big_buf[length];
 			length = llama_model_desc(model, big_buf, length);
-			u16res = utf16_conv.from_bytes(std::string(big_buf, length));
+			u8_res = std::string(big_buf, length);
 		} else {
-			u16res = utf16_conv.from_bytes(std::string(buf, length));
+			u8_res = std::string(buf, length);
 		}
-		return argeo::jni::utf16_to_jstring(env, u16res);
+		jbyteArray res = env->NewByteArray(u8_res.length());
+		env->SetByteArrayRegion(res, 0, u8_res.length(),
+				(jbyte*) u8_res.c_str());
+		return res;
 	} catch (std::exception &ex) {
 		return argeo::jni::throw_to_java(env, ex);
 	}
