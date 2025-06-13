@@ -22,7 +22,6 @@ import java.util.concurrent.FutureTask;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoublePredicate;
 import java.util.function.LongSupplier;
-import java.util.function.Predicate;
 
 import org.argeo.jjml.llm.params.ModelParam;
 import org.argeo.jjml.llm.params.ModelParams;
@@ -62,6 +61,8 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private final long modelSize;
 	private final int endOfGenerationToken;
 
+	private String chatTemplate = null;
+
 	LlamaCppModel(long pointer, Path localPath, ModelParams initParams) {
 		this.pointer = pointer;
 		this.vocabulary = new LlamaCppVocabulary(this);
@@ -82,6 +83,10 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 			map.put(new String(keys[i], UTF_8), new String(values[i], UTF_8));
 		}
 		metadata = Collections.unmodifiableMap(map);
+		if (metadata.containsKey("tokenizer.chat_template")) {
+			chatTemplate = metadata.get("tokenizer.chat_template");
+		}
+
 		description = new String(doGetDescription(), UTF_8);
 		modelSize = doGetModelSize();
 		endOfGenerationToken = doGetEndOfGenerationToken();
@@ -90,10 +95,6 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	/*
 	 * NATIVE METHODS
 	 */
-	// Chat
-	private native byte[] doFormatChatMessages(long pointer, byte[][] utf8Roles, byte[][] utf8Contents,
-			boolean addAssistantTokens);
-
 	// Lifecycle
 	private static native long doInit(String localPathStr, ModelParams params, DoublePredicate progressCallback);
 
@@ -121,30 +122,15 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	/*
 	 * USABLE METHODS
 	 */
+	@Deprecated
 	public String formatChatMessages(LlamaCppChatMessage... messages) {
 		return formatChatMessages(Arrays.asList(messages));
 	}
 
+	@Deprecated
 	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
-		return formatChatMessages(messages, //
-				(message) -> message.getRole().equals(StandardRole.USER.get()));
-	}
-
-	public String formatChatMessages(List<LlamaCppChatMessage> messages,
-			Predicate<LlamaCppChatMessage> addAssistantTokens) {
-		byte[][] roles = new byte[messages.size()][];
-		byte[][] contents = new byte[messages.size()][];
-
-		boolean currIsUserRole = false;
-		for (int i = 0; i < messages.size(); i++) {
-			LlamaCppChatMessage message = messages.get(i);
-			roles[i] = message.getRole().getBytes(UTF_8);
-			currIsUserRole = addAssistantTokens.test(message);
-			contents[i] = message.getContent().getBytes(UTF_8);
-		}
-
-		byte[] res = doFormatChatMessages(pointer, roles, contents, currIsUserRole);
-		return new String(res, UTF_8);
+		return LLamaCppNativeChatFormatter.formatChatMessages(messages, //
+				(message) -> message.getRole().equals(StandardRole.USER.get()), chatTemplate);
 	}
 
 	/*
@@ -163,7 +149,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	}
 
 	/*
-	 * ACESSORS
+	 * ACCESSORS
 	 */
 	@Override
 	public long getAsLong() {

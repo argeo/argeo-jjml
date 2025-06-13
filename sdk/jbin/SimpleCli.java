@@ -1,12 +1,13 @@
 
-
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.parseBoolean;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llm.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llm.LlamaCppNative.ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY;
 import static org.argeo.jjml.llm.params.ModelParam.n_gpu_layers;
+import static org.argeo.jjml.llm.util.StandardRole.ASSISTANT;
 import static org.argeo.jjml.llm.util.StandardRole.SYSTEM;
+import static org.argeo.jjml.llm.util.StandardRole.USER;
 
 import java.io.BufferedReader;
 import java.io.Console;
@@ -318,7 +319,7 @@ class SimpleChat extends LlamaCppBatchProcessor implements BiFunction<String, Co
 			formatMessages = false;
 			usePreviousMessages = false;
 		} else {
-			systemMsg = SYSTEM.msg(systemPrompt);
+			systemMsg = new LlamaCppChatMessage(SYSTEM, systemPrompt);
 			formatMessages = true;
 			usePreviousMessages = true;
 		}
@@ -337,7 +338,7 @@ class SimpleChat extends LlamaCppBatchProcessor implements BiFunction<String, Co
 //		message = message.replace("\\\n", "\n");
 		String prompt;
 		if (formatMessages) {
-			LlamaCppChatMessage userMsg = StandardRole.USER.msg(message);
+			LlamaCppChatMessage userMsg = new LlamaCppChatMessage(USER, message);
 			if (usePreviousMessages) {
 				String previousPrompts = messages.size() == 0 ? "" : getModel().formatChatMessages(messages);
 				if (firstMessage) {
@@ -368,7 +369,7 @@ class SimpleChat extends LlamaCppBatchProcessor implements BiFunction<String, Co
 		FutureTask<Void> future = new FutureTask<>(() -> {
 			String reply = readAll(consumer);
 			if (usePreviousMessages) {
-				LlamaCppChatMessage assistantMsg = StandardRole.ASSISTANT.msg(reply);
+				LlamaCppChatMessage assistantMsg = new LlamaCppChatMessage(ASSISTANT, reply);
 				messages.add(assistantMsg);
 			}
 			return null;
