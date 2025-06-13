@@ -86,15 +86,11 @@ class SmokeTests {
 					sb.append(key + "=" + model.getMetadata().get(key) + "\n");
 				logger.log(DEBUG, "Metadata:\n" + sb);
 
-				model.getVocabulary().setStringMode(false);
-				assertVocabulary(model.getVocabulary());
-				model.getVocabulary().setStringMode(true);
 				assertVocabulary(model.getVocabulary());
 				// TODO return if vocabulary only
 //				if (true)
 //					return;
 
-				model.getVocabulary().setStringMode(false);
 				assertLoadUnloadDefaultContext(model);
 				assertEmbeddings(model);
 				assertBatch(model);
