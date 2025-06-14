@@ -4,9 +4,12 @@ import static java.lang.System.Logger.Level.WARNING;
 
 import java.lang.System.Logger;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.LongSupplier;
 
+import org.argeo.jjml.internal.OsUtils;
 import org.argeo.jjml.llm.params.ContextParam;
 import org.argeo.jjml.llm.params.ContextParams;
 import org.argeo.jjml.llm.params.PoolingType;
@@ -34,7 +37,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	private final PoolingType poolingType;
 	private final int contextSize;
 	private final int batchSize;
-	private final int physicalBatchSize;
+//	private final int physicalBatchSize;
 	private final int maxSequenceCount;
 
 //	private LlamaCppBatchProcessor batchProcessor;
@@ -59,8 +62,9 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 		int poolingTypeCode = doGetPoolingType();
 		poolingType = PoolingType.byCode(poolingTypeCode);
 		contextSize = doGetContextSize();
+
 		batchSize = doGetBatchSize();
-		physicalBatchSize = doGetPhysicalBatchSize();
+//		physicalBatchSize = doGetPhysicalBatchSize();
 		maxSequenceCount = doGetMaxSequenceCount();
 	}
 
@@ -91,13 +95,17 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 
 	private native void doSetStateData(ByteBuffer buf, int offset, int length);
 
+	private native void doSaveSessionFile(byte[] path, IntBuffer buf, int offset, int length);
+
+	private native int doLoadSessionFile(byte[] path, IntBuffer buf, int offset);
+
 	/*
 	 * STATE
 	 */
 	long getStateSize() {
 		return doGetStateSize();
 	}
-	
+
 	void readState(ByteBuffer buf) {
 		byte[] arr = doGetStateDataAsBytes();
 		buf.put(arr);
@@ -106,6 +114,20 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	void writeState(ByteBuffer buf) {
 		byte[] arr = buf.array();
 		doSetStateDataBytes(arr, 0, arr.length);
+	}
+
+	void saveSessionFile(Path path, IntBuffer tokens) {
+		if (!tokens.isDirect())
+			throw new IllegalArgumentException("Tokens must be in a direct buffer");
+		doSaveSessionFile(OsUtils.filePathToNative(path), tokens, 0, tokens.position());
+	}
+
+	int loadSessionFile(Path path, IntBuffer tokens) {
+		if (!tokens.isDirect())
+			throw new IllegalArgumentException("Tokens must be in a direct buffer");
+		int tokenCount = doLoadSessionFile(OsUtils.filePathToNative(path), tokens, 0);
+		tokens.position(tokenCount);
+		return tokenCount;
 	}
 
 	/*
@@ -157,9 +179,9 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 //		return batchProcessor;
 //	}
 
-	public int getPhysicalBatchSize() {
-		return physicalBatchSize;
-	}
+//	public int getPhysicalBatchSize() {
+//		return physicalBatchSize;
+//	}
 
 	public int getMaxSequenceCount() {
 		return maxSequenceCount;

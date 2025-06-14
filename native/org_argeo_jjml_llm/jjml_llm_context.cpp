@@ -60,6 +60,39 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llm_LlamaCppContext_doSetStateData(
 	// FIXME implement it
 }
 
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llm_LlamaCppContext_doSaveSessionFile(
+		JNIEnv *env, jobject obj, jbyteArray path, jobject buf, jint offset,
+		jint length) {
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
+	std::string p = argeo::jni::to_string(env, path);
+
+	void *tokens_arr = env->GetDirectBufferAddress(buf);
+	if (tokens_arr == NULL)
+		throw std::invalid_argument("Input is not a direct buffer");
+	assert(env->GetDirectBufferCapacity(buf) //
+	>= (offset + length) * sizeof(llama_token));
+
+	auto *tokens = static_cast<const llama_token*>(tokens_arr) + offset;
+	llama_state_save_file(ctx, p.c_str(), tokens, length);
+}
+
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppContext_doLoadSessionFile(
+		JNIEnv *env, jobject obj, jbyteArray path, jobject buf, jint offset) {
+	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
+	std::string p = argeo::jni::to_string(env, path);
+
+	void *tokens_arr = env->GetDirectBufferAddress(buf);
+	if (tokens_arr == NULL)
+		throw std::invalid_argument("Input is not a direct buffer");
+
+	size_t capacity = env->GetDirectBufferCapacity(buf) / sizeof(llama_token)
+			- offset;
+	auto *tokens = static_cast<llama_token*>(tokens_arr) + offset;
+	size_t n_token_count;
+	llama_state_load_file(ctx, p.c_str(), tokens, capacity, &n_token_count);
+	return n_token_count;
+}
+
 /*
  * PARAMETERS
  */

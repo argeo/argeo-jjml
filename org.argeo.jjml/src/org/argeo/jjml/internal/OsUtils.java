@@ -5,9 +5,10 @@ import java.nio.file.Path;
 
 /** OS- or locale- dependent utilities, mostly around encoding. */
 public class OsUtils {
-	public final static Charset OS_CHARSET;
+	final static Charset OS_CHARSET;
 
 	static {
+		// Note: IBM OpenJ9 seems to support this property as well
 		String encodingSysProp = System.getProperty("sun.jnu.encoding");
 		if (encodingSysProp != null)
 			OS_CHARSET = Charset.forName(encodingSysProp);

@@ -20,6 +20,7 @@ import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -280,7 +281,7 @@ class SmokeTests {
 		) {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
 
-			String systemMsg = "You are a helpful assistant, which answer as briefly as possible.";
+			String systemMsg = "You are a helpful assistant, which answers as briefly as possible.";
 			System.out.println(SYSTEM.name() + " :\n" + systemMsg);
 			processor.write(SYSTEM, systemMsg);
 
@@ -309,6 +310,15 @@ class SmokeTests {
 		; //
 
 		final LlamaCppContextState savedState;
+		final Path sessionFile = Files.createTempFile("jjml_session_", ".llama");
+		Runtime.getRuntime().addShutdownHook(new Thread((Runnable) () -> {
+			try {
+				Files.deleteIfExists(sessionFile);
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
+		}));
+
 		try (//
 				LlamaCppContext context = new LlamaCppContext(model, contextParams); //
 				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
@@ -332,17 +342,19 @@ class SmokeTests {
 			processor.write(USER, userMsg01);
 
 			savedState = new LlamaCppContextState.ByteBufferSavedState();
+			logger.log(INFO, "Wrote context in " + (System.currentTimeMillis() - begin) + " ms");
 			processor.saveContextState(savedState);
-			logger.log(INFO, "Wrote and saved context in " + (System.currentTimeMillis() - begin) + " ms");
+			long beginSaveContext = System.currentTimeMillis();
+			logger.log(INFO, "Saved context in " + (System.currentTimeMillis() - beginSaveContext) + " ms");
+			long beginSaveSessionFile = System.currentTimeMillis();
+			processor.saveSessionFile(sessionFile);
+			logger.log(INFO, "Saved session file to " + sessionFile + " in "
+					+ (System.currentTimeMillis() - beginSaveSessionFile) + " ms");
 		}
 
 		String userMsg02 = "Current Date: March 13th 2020.";
 
 		Consumer<LlamaCppInstructProcessor> process = (processor) -> {
-			long beginLoad = System.currentTimeMillis();
-			processor.loadContextState(savedState);
-			logger.log(INFO, "Loaded context in " + (System.currentTimeMillis() - beginLoad) + " ms");
-
 			System.out.println(USER.name() + " :\n" + userMsg02);
 			processor.write(USER, userMsg02);
 
@@ -360,14 +372,24 @@ class SmokeTests {
 		try (LlamaCppContext context = new LlamaCppContext(model, contextParams); //
 				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
 		) {
-			process.accept(new LlamaCppInstructProcessor(context, chain));
+			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
+			long beginLoad = System.currentTimeMillis();
+			processor.loadContextState(savedState);
+			logger.log(INFO, "Loaded context from memory in " + (System.currentTimeMillis() - beginLoad) + " ms");
+
+			process.accept(processor);
 		}
 
 		// with temperature
 		try (LlamaCppContext context = new LlamaCppContext(model, contextParams); //
 				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, true); //
 		) {
-			process.accept(new LlamaCppInstructProcessor(context, chain));
+			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
+			long beginLoad = System.currentTimeMillis();
+			processor.loadSessionFile(sessionFile);
+			logger.log(INFO, "Loaded context from file in " + (System.currentTimeMillis() - beginLoad) + " ms");
+
+			process.accept(processor);
 		}
 
 		logger.log(INFO, "Saved context state smoke tests PASSED");

@@ -26,7 +26,7 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		write(new LlamaCppChatMessage(role, message));
 	}
 
-	void write(LlamaCppChatMessage message) {
+	public void write(LlamaCppChatMessage message) {
 		String prompt = getModel().formatChatMessages(message);
 		writeFormatted(prompt);
 	}
