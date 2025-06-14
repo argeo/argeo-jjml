@@ -11,6 +11,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.argeo.jjml.internal.OsUtils;
+
 /** A registered GGML backend. */
 public class GgmlBackend {
 	private final static Logger logger = System.getLogger(GgmlBackend.class.getName());
@@ -30,9 +32,9 @@ public class GgmlBackend {
 		this.path = path;
 	}
 
-	private static native long doLoadBackend(String backendPath);
+	private static native long doLoadBackend(byte[] backendPath);
 
-	private static native void doLoadAllBackends(String basePath);
+	private static native void doLoadAllBackends(byte[] basePath);
 
 	public static void loadAllBackends() {
 		List<Path> basePaths = new ArrayList<>();
@@ -51,8 +53,8 @@ public class GgmlBackend {
 		// load
 		for (Path basePath : basePaths) {
 			if (Files.exists(basePath)) {
-				//loadBackends(basePath);
-				doLoadAllBackends(basePath.toString());
+				// loadBackends(basePath);
+				doLoadAllBackends(OsUtils.filePathToNative(basePath));
 			}
 		}
 	}
@@ -88,7 +90,7 @@ public class GgmlBackend {
 			}
 			Path backendPath = basePath.resolve(dllName);
 			if (Files.exists(backendPath)) {
-				long pointer = doLoadBackend(backendPath.toString());
+				long pointer = doLoadBackend(OsUtils.filePathToNative(basePath));
 				if (pointer > 0) {
 					// TODO log it
 					GgmlBackend backend = new GgmlBackend(pointer, backendName.name(), backendPath);
