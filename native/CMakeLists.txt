@@ -16,6 +16,9 @@ set(CMAKE_PREFIX_PATH
 /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/llama.cpp/cmake-private
 )
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
+
 if(NOT JJML_FORCE_BUILD_TP)
 	find_package(llama QUIET)
 	if(llama_FOUND)
@@ -60,12 +63,6 @@ else()
 		set(BUILD_SHARED_LIBS ON)
 		set(GGML_CPU_ALL_VARIANTS ON)
 	endif()
-
-	# copied from root of ggml, otherwise
-	# standalone build of GGML with GGML_BACKEND_DL fails 
-	# TODO check whether this is still the case
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
 
 	add_subdirectory(tp/ggml) # build locally
 	message (STATUS "Build ggml locally from submodule native/tp/ggml") 
