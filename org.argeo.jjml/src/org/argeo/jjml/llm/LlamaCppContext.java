@@ -89,7 +89,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 
 	private native byte[] doGetStateDataAsBytes();
 
-	private native void doGetStateData(ByteBuffer buf, int offset);
+	private native int doGetStateData(ByteBuffer buf, int offset);
 
 	private native void doSetStateDataBytes(byte[] arr, int offset, int length);
 
@@ -107,13 +107,24 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	}
 
 	void readState(ByteBuffer buf) {
-		byte[] arr = doGetStateDataAsBytes();
-		buf.put(arr);
+		if (buf.isDirect()) {
+			int offset = buf.position();
+			int read = doGetStateData(buf, offset);
+			buf.position(offset + read);
+		} else {
+			byte[] arr = doGetStateDataAsBytes();
+			buf.put(arr);
+		}
 	}
 
 	void writeState(ByteBuffer buf) {
-		byte[] arr = buf.array();
-		doSetStateDataBytes(arr, 0, arr.length);
+		if (buf.isDirect()) {
+			doSetStateData(buf, 0, buf.limit());
+			buf.position(buf.limit());
+		} else {
+			byte[] arr = buf.array();
+			doSetStateDataBytes(arr, 0, arr.length);
+		}
 	}
 
 	void saveSessionFile(Path path, IntBuffer tokens) {
