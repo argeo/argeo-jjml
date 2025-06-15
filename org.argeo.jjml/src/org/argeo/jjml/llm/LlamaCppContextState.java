@@ -16,7 +16,8 @@ public interface LlamaCppContextState {
 		@Override
 		public void save(LlamaCppContext context, int contextPosition) {
 			int stateSize = (int) context.getStateSize();
-			savedState = ByteBuffer.allocate(stateSize);
+			//savedState = ByteBuffer.allocate(stateSize);
+			savedState = ByteBuffer.allocateDirect(stateSize);
 			context.readState(savedState);
 			// System.out.println("Saved context state (" + stateSize / (1024 * 1024) + "
 			// MiB)");
@@ -26,6 +27,7 @@ public interface LlamaCppContextState {
 
 		@Override
 		public int load(LlamaCppContext context) {
+			savedState.flip();
 			context.writeState(savedState);
 			return savedContextPosition;
 		}

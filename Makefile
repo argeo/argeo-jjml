@@ -51,16 +51,18 @@ rebuild-force-tp: clean-local
 	@$(RM) $(TARGET_NATIVE_OUTPUT)/vulkan-shaders-gen
 
 # Remove locally built libraries
-clean-local:
+clean-local: clean
 	$(RM) -rf $(BUILD_BASE)
 	echo $(TARGET_NATIVE_OUTPUT)
 ifeq ($(MSYS_VERSION),0)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libggml*.so
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libllama*.so
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libJava_org_argeo_jjml_*.so
 	@$(RM) $(TARGET_NATIVE_OUTPUT)/vulkan-shaders-gen
 else
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/ggml*.dll
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/llama*.dll
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/Java_org_argeo_jjml_*.dll
 endif
 
 install-deps:

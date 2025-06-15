@@ -2,8 +2,6 @@ package org.argeo.jjml.llm.util;
 
 import java.util.function.Supplier;
 
-import org.argeo.jjml.llm.LlamaCppChatMessage;
-
 /** Commonly used instruct roles. */
 public enum StandardRole implements Supplier<String> {
 	SYSTEM("system"), //
@@ -25,10 +23,5 @@ public enum StandardRole implements Supplier<String> {
 	@Override
 	public String toString() {
 		return get();
-	}
-
-	/** Creates a new chat message with this role and the provided text. */
-	public LlamaCppChatMessage msg(String text) {
-		return new LlamaCppChatMessage(this, text);
 	}
 }

@@ -1,8 +1,11 @@
 package org.argeo.jjml.llm;
 
 import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.channels.CompletionHandler;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,6 +37,12 @@ public class LlamaCppBatchProcessor {
 	private final /* const */ int[] sequenceIds;
 	private final int[] outputIds;
 
+	/**
+	 * Direct buffers keeping track of the tokens, typically useful when saving
+	 * session file. THes are not used by the computations as such.
+	 */
+	private final IntBuffer[] tokens;
+
 	public LlamaCppBatchProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
 		this(context, samplerChain, null, Collections.singleton(0));
 	}
@@ -62,6 +71,14 @@ public class LlamaCppBatchProcessor {
 			this.sequenceIds[i] = lst.get(i);
 		this.outputIds = new int[parallelCount];
 		Arrays.fill(outputIds, NO_OUTPUT_ID);
+
+		// TODO make it optional?
+		tokens = new IntBuffer[parallelCount];
+		for (int i = 0; i < parallelCount; i++) {
+			ByteBuffer directBuf = ByteBuffer.allocateDirect(context.getContextSize() * Integer.BYTES);
+			directBuf.order(ByteOrder.nativeOrder());// IMPORTANT!
+			tokens[i] = directBuf.asIntBuffer();
+		}
 	}
 
 	/*
@@ -108,8 +125,6 @@ public class LlamaCppBatchProcessor {
 			buf.position(buf.position() + input.limit());
 			writeBatch(new IntBuffer[] { input }, lastLogits);
 		}
-
-		// writeBatch(new IntBuffer[] { input }, lastLogits);
 	}
 
 	/**
@@ -140,6 +155,14 @@ public class LlamaCppBatchProcessor {
 			buffersToArrays(inputs, offsets, lengths, arrays, true);
 			contextPosition = doWriteArrays(context.getAsLong(), samplerChain.getAsLong(), contextPosition, arrays,
 					offsets, lengths, sequenceIds, outputIds, lastLogits);
+		}
+
+		// cache tokens
+		for (int i = 0; i < parallelCount; i++) {
+			IntBuffer toCopy = inputs.length == 1 ? inputs[0] : inputs[i];
+			toCopy.position(inputs.length == 1 ? offsets[0] : offsets[i]);
+			toCopy.limit(inputs.length == 1 ? offsets[0] + lengths[0] : offsets[i] + lengths[1]);
+			tokens[i].put(toCopy);
 		}
 
 		if (lastLogits && contextPosition > 0) {// end of user input
@@ -204,11 +227,23 @@ public class LlamaCppBatchProcessor {
 			@Override
 			public void completed(Integer result, Integer sequenceIndex) {
 				IntBuffer output = outputs[sequenceIndex];
+				int currentOutputPosition = output.position();
+				int currentOutputLimit = output.limit();
 				if (arrays != null && !output.hasArray()) {
 					output.put(arrays[sequenceIndex], 0, result);
 				} else {
 					output.position(output.position() + result);
 				}
+
+				// cache tokens
+				for (int i = 0; i < parallelCount; i++) {
+					IntBuffer toCopy = outputs[i];
+					toCopy.position(currentOutputPosition);
+					toCopy.limit(currentOutputPosition + result);
+					tokens[i].put(toCopy);
+					toCopy.limit(currentOutputLimit);
+				}
+
 				if (generationCompleted != null) {
 					int outputId = outputIds[sequenceIndex];
 					// notify that generation is completed for this sequence
@@ -340,19 +375,23 @@ public class LlamaCppBatchProcessor {
 		// FIXME load or compute last logits,
 		// otherwise we need to write something else before it is usable
 	}
-//	
-//	public ByteBuffer getSavedState() {
-//		return savedState;
-//	}
-//
-//	public int getSavedContextPosition() {
-//		return savedContextPosition;
-//	}
-//
-//	public void setSavedState(ByteBuffer systemPromptState, int savedContextPosition) {
-//		this.savedState = systemPromptState;
-//		this.savedContextPosition = savedContextPosition;
-//	}
+
+	public synchronized void saveSessionFile(Path path) {
+		if (parallelCount != 1)
+			throw new UnsupportedOperationException("Session files are not supported for parallel batches");
+		synchronized (context) {
+			context.saveSessionFile(path, tokens[0]);
+		}
+	}
+
+	public synchronized void loadSessionFile(Path path) {
+		if (parallelCount != 1)
+			throw new UnsupportedOperationException("Session files are not supported for parallel batches");
+		synchronized (context) {
+			int position = context.loadSessionFile(path, tokens[0]);
+			contextPosition = position;
+		}
+	}
 
 	/*
 	 * UTILITIES

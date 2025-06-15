@@ -212,5 +212,23 @@ inline T as_pointer(JNIEnv *env, jobject reference) {
 	return as_pointer<T>(pointer);
 }
 
+/*
+ * STRINGS
+ */
+
+struct jbytes_releaser {
+	void operator()(jbyte *adapter) {
+		return;
+	}
+};
+
+/** Converts an array of bytes (typically UTF-8 encoded) to a C++ string.*/
+inline std::string to_string(JNIEnv *env, jbyteArray str) {
+	jsize length = env->GetArrayLength(str);
+	std::string res(length, 0);
+	env->GetByteArrayRegion(str, 0, length, (jbyte*) &res[0]);
+	return res;
+}
+
 }  // namespace argeo::jni
 #endif

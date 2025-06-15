@@ -1,5 +1,7 @@
 package org.argeo.jjml.llm;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import org.argeo.jjml.llm.params.DefaultSamplerChainParams;
 
 /**
@@ -30,21 +32,17 @@ public class LlamaCppSamplers {
 
 	private static native long doInitMinP(float min_p, long min_keep);
 
-	//private static native long doInitTailFree(float tfs_z, long min_keep);
-
 	private static native long doInitTypicalP(float typ_p, long min_keep);
 
 	private static native long doInitTempExt(float temp, float dynatemp_range, float dynatemp_exponent);
 
 	private static native long doInitTemp(float temp);
 
-	//private static native long doInitSoftMax();
-
 	private static native long doInitDist();
 
 	private static native long doInitDist(int seed);
 
-	private static native long doInitGrammar(LlamaCppModel model, String grammar, String root);
+	private static native long doInitGrammar(LlamaCppModel model, byte[] grammarUtf8, byte[] rootUtf8);
 
 	private static native long doInitJavaSampler(LlamaCppJavaSampler javaSampler);
 
@@ -67,7 +65,8 @@ public class LlamaCppSamplers {
 		if (params.temp() > 0) {
 			chain.addSampler(LlamaCppSamplers.newSamplerTopK(params.top_k()));
 			long min_keep = params.min_keep();
-			//chain.addSampler(LlamaCppSamplers.newSamplerTailFree(params.tfs_z(), min_keep));
+			// chain.addSampler(LlamaCppSamplers.newSamplerTailFree(params.tfs_z(),
+			// min_keep));
 			chain.addSampler(LlamaCppSamplers.newSamplerTypicalP(params.typ_p(), min_keep));
 			chain.addSampler(LlamaCppSamplers.newSamplerTopP(params.top_p(), min_keep));
 			chain.addSampler(LlamaCppSamplers.newSamplerMinP(params.min_p(), min_keep));
@@ -75,12 +74,12 @@ public class LlamaCppSamplers {
 					params.dynatemp_exponent()));
 
 			// final sampler
-			//chain.addSampler(LlamaCppSamplers.newSamplerSoftMax());
+			// chain.addSampler(LlamaCppSamplers.newSamplerSoftMax());
 			chain.addSampler(LlamaCppSamplers.newSamplerDist());
 		} else {
 			if (params.n_probs() > 0) {
 				chain.addSampler(LlamaCppSamplers.newSamplerTopK(params.n_probs()));
-				//chain.addSampler(LlamaCppSamplers.newSamplerSoftMax());
+				// chain.addSampler(LlamaCppSamplers.newSamplerSoftMax());
 			}
 			chain.addSampler(LlamaCppSamplers.newSamplerGreedy());
 //			chain.addSampler(LlamaCppSamplers.newJavaSampler(new LlamaCppJavaSampler.SimpleGreedy()));
@@ -155,7 +154,7 @@ public class LlamaCppSamplers {
 	}
 
 	public static LlamaCppNativeSampler newSamplerGrammar(LlamaCppModel model, String grammar, String root) {
-		return new LlamaCppNativeSampler(doInitGrammar(model, grammar, root));
+		return new LlamaCppNativeSampler(doInitGrammar(model, grammar.getBytes(UTF_8), root.getBytes(UTF_8)));
 	}
 
 	public static LlamaCppNativeSampler newJavaSampler(LlamaCppJavaSampler javaSampler) {

@@ -5,6 +5,7 @@ add_library(${TARGET} SHARED
 	jjml_llm.cpp
 	jjml_llm_vocabulary.cpp
 	jjml_llm_model.cpp
+	jjml_llm_chat.cpp
 	jjml_llm_context.cpp
 	jjml_llm_sampling.cpp
 	jjml_llm_batch_write.cpp

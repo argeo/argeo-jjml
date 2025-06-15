@@ -1,6 +1,7 @@
 package org.argeo.jjml.llm;
 
 import static java.lang.System.Logger.Level.WARNING;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -21,7 +22,6 @@ import java.util.concurrent.FutureTask;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoublePredicate;
 import java.util.function.LongSupplier;
-import java.util.function.Predicate;
 
 import org.argeo.jjml.llm.params.ModelParam;
 import org.argeo.jjml.llm.params.ModelParams;
@@ -61,6 +61,8 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private final long modelSize;
 	private final int endOfGenerationToken;
 
+	private String chatTemplate = null;
+
 	LlamaCppModel(long pointer, Path localPath, ModelParams initParams) {
 		this.pointer = pointer;
 		this.vocabulary = new LlamaCppVocabulary(this);
@@ -72,16 +74,20 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		contextTrainingSize = doGetContextTrainingSize();
 		embeddingSize = doGetEmbeddingSize();
 		layerCount = doGetLayerCount();
-		String[] keys = doGetMetadataKeys();
-		String[] values = doGetMetadataValues();
+		byte[][] keys = doGetMetadataKeys();
+		byte[][] values = doGetMetadataValues();
 		if (keys.length != values.length)
 			throw new IllegalStateException("Metadata keys and values don't have the same size");
 		LinkedHashMap<String, String> map = new LinkedHashMap<>();// preserve order
 		for (int i = 0; i < keys.length; i++) {
-			map.put(keys[i], values[i]);
+			map.put(new String(keys[i], UTF_8), new String(values[i], UTF_8));
 		}
 		metadata = Collections.unmodifiableMap(map);
-		description = doGetDescription();
+		if (metadata.containsKey("tokenizer.chat_template")) {
+			chatTemplate = metadata.get("tokenizer.chat_template");
+		}
+
+		description = new String(doGetDescription(), UTF_8);
 		modelSize = doGetModelSize();
 		endOfGenerationToken = doGetEndOfGenerationToken();
 	}
@@ -89,10 +95,6 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	/*
 	 * NATIVE METHODS
 	 */
-	// Chat
-	private native String doFormatChatMessages(long pointer, String[] roles, String[] contents,
-			boolean addAssistantTokens);
-
 	// Lifecycle
 	private static native long doInit(String localPathStr, ModelParams params, DoublePredicate progressCallback);
 
@@ -107,11 +109,11 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	private native int doGetLayerCount();
 
-	private native String[] doGetMetadataKeys();
+	private native byte[][] doGetMetadataKeys();
 
-	private native String[] doGetMetadataValues();
+	private native byte[][] doGetMetadataValues();
 
-	private native String doGetDescription();
+	private native byte[] doGetDescription();
 
 	private native long doGetModelSize();
 
@@ -124,26 +126,10 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		return formatChatMessages(Arrays.asList(messages));
 	}
 
+	@Deprecated
 	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
-		return formatChatMessages(messages, //
-				(message) -> message.getRole().equals(StandardRole.USER.get()));
-	}
-
-	public String formatChatMessages(List<LlamaCppChatMessage> messages,
-			Predicate<LlamaCppChatMessage> addAssistantTokens) {
-		String[] roles = new String[messages.size()];
-		String[] contents = new String[messages.size()];
-
-		boolean currIsUserRole = false;
-		for (int i = 0; i < messages.size(); i++) {
-			LlamaCppChatMessage message = messages.get(i);
-			roles[i] = message.getRole();
-			currIsUserRole = addAssistantTokens.test(message);
-			contents[i] = message.getContent();
-		}
-
-		String res = doFormatChatMessages(pointer, roles, contents, currIsUserRole);
-		return res;
+		return LLamaCppNativeChatFormatter.formatChatMessages(messages, //
+				(message) -> message.getRole().equals(StandardRole.USER.get()), chatTemplate);
 	}
 
 	/*
@@ -162,7 +148,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	}
 
 	/*
-	 * ACESSORS
+	 * ACCESSORS
 	 */
 	@Override
 	public long getAsLong() {
