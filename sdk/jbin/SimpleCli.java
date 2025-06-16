@@ -5,9 +5,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llm.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llm.LlamaCppNative.ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY;
 import static org.argeo.jjml.llm.params.ModelParam.n_gpu_layers;
-import static org.argeo.jjml.llm.util.StandardRole.ASSISTANT;
-import static org.argeo.jjml.llm.util.StandardRole.SYSTEM;
-import static org.argeo.jjml.llm.util.StandardRole.USER;
+import static org.argeo.jjml.llm.util.InstructRole.ASSISTANT;
+import static org.argeo.jjml.llm.util.InstructRole.SYSTEM;
+import static org.argeo.jjml.llm.util.InstructRole.USER;
 
 import java.io.BufferedReader;
 import java.io.Console;
@@ -50,7 +50,6 @@ import org.argeo.jjml.llm.params.ContextParam;
 import org.argeo.jjml.llm.params.ModelParam;
 import org.argeo.jjml.llm.params.ModelParams;
 import org.argeo.jjml.llm.params.PoolingType;
-import org.argeo.jjml.llm.util.StandardRole;
 
 /** A minimal command line interface for batch processing and simple chat. */
 public class SimpleCli {
@@ -302,7 +301,7 @@ class SimpleChat extends LlamaCppBatchProcessor implements BiFunction<String, Co
 	private final List<LlamaCppChatMessage> messages;
 
 	public SimpleChat(String systemPrompt, LlamaCppContext context) {
-		this(systemPrompt, context, LlamaCppSamplers.newDefaultSampler(context.getModel(), true));
+		this(systemPrompt, context, LlamaCppSamplers.newDefaultSampler(true));
 	}
 
 	/**

@@ -24,7 +24,7 @@ public class OsUtils {
 		return path.getBytes(OS_CHARSET);
 	}
 
-	public static void main(String[] args) {
-		System.out.println(OS_CHARSET);
-	}
+//	public static void main(String[] args) {
+//		System.out.println(OS_CHARSET);
+//	}
 }

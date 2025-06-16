@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -19,14 +20,17 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 	}
 
 	public void write(Supplier<String> role, String message) {
+		Objects.requireNonNull(message);
 		write(new LlamaCppChatMessage(role, message));
 	}
 
 	public void write(String role, String message) {
+		Objects.requireNonNull(message);
 		write(new LlamaCppChatMessage(role, message));
 	}
 
 	public void write(LlamaCppChatMessage message) {
+		Objects.requireNonNull(message);
 		String prompt = getModel().formatChatMessages(message);
 		writeFormatted(prompt);
 	}
@@ -40,7 +44,7 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		int outputMax = getContext().getBatchSize();
 
 		// TODO check whether it makes sense (pattern was taken from llama.cpp code)
-		int requiredContextSize = tokenCount + outputMax * getParallelCount() * 10;
+		int requiredContextSize = tokenCount + outputMax * getParallelCount();
 
 		int contextSize = getContext().getContextSize();
 //			System.out.println("Context size: " + contextSize);

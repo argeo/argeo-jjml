@@ -73,7 +73,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llm_LlamaCppContext_doSetStateData(
 			static_cast<uint8_t*>(src) + offset, length);
 }
 
-JNIEXPORT void JNICALL Java_org_argeo_jjml_llm_LlamaCppContext_doSaveSessionFile(
+JNIEXPORT void JNICALL Java_org_argeo_jjml_llm_LlamaCppContext_doSaveStateFile(
 		JNIEnv *env, jobject obj, jbyteArray path, jobject buf, jint offset,
 		jint length) {
 	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
@@ -89,7 +89,7 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llm_LlamaCppContext_doSaveSessionFile
 	llama_state_save_file(ctx, p.c_str(), tokens, length);
 }
 
-JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppContext_doLoadSessionFile(
+JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppContext_doLoadStateFile(
 		JNIEnv *env, jobject obj, jbyteArray path, jobject buf, jint offset) {
 	auto *ctx = argeo::jni::as_pointer<llama_context*>(env, obj);
 	std::string p = argeo::jni::to_string(env, path);
