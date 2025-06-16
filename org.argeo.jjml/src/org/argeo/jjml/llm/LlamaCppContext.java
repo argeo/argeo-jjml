@@ -2,9 +2,12 @@ package org.argeo.jjml.llm;
 
 import static java.lang.System.Logger.Level.WARNING;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.System.Logger;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.LongSupplier;
@@ -95,9 +98,9 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 
 	private native void doSetStateData(ByteBuffer buf, int offset, int length);
 
-	private native void doSaveSessionFile(byte[] path, IntBuffer buf, int offset, int length);
+	private native void doSaveStateFile(byte[] path, IntBuffer buf, int offset, int length);
 
-	private native int doLoadSessionFile(byte[] path, IntBuffer buf, int offset);
+	private native int doLoadStateFile(byte[] path, IntBuffer buf, int offset);
 
 	/*
 	 * STATE
@@ -127,16 +130,20 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 		}
 	}
 
-	void saveSessionFile(Path path, IntBuffer tokens) {
+	void saveStateFile(Path path, IntBuffer tokens) throws IOException {
 		if (!tokens.isDirect())
 			throw new IllegalArgumentException("Tokens must be in a direct buffer");
-		doSaveSessionFile(OsUtils.filePathToNative(path), tokens, 0, tokens.position());
+		if (Files.exists(path) && !Files.isWritable(path))
+			throw new IOException("Location " + path + " for session file is not writable");
+		doSaveStateFile(OsUtils.filePathToNative(path), tokens, 0, tokens.position());
 	}
 
-	int loadSessionFile(Path path, IntBuffer tokens) {
+	int loadStateFile(Path path, IntBuffer tokens) throws IOException {
+		if (!Files.exists(path))
+			throw new FileNotFoundException("Session file " + path + " does not exist");
 		if (!tokens.isDirect())
 			throw new IllegalArgumentException("Tokens must be in a direct buffer");
-		int tokenCount = doLoadSessionFile(OsUtils.filePathToNative(path), tokens, 0);
+		int tokenCount = doLoadStateFile(OsUtils.filePathToNative(path), tokens, 0);
 		tokens.position(tokenCount);
 		return tokenCount;
 	}

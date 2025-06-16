@@ -1,5 +1,6 @@
 package org.argeo.jjml.llm;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -376,19 +377,21 @@ public class LlamaCppBatchProcessor {
 		// otherwise we need to write something else before it is usable
 	}
 
-	public synchronized void saveSessionFile(Path path) {
+	public synchronized void saveStateFile(Path path) throws IOException {
 		if (parallelCount != 1)
 			throw new UnsupportedOperationException("Session files are not supported for parallel batches");
 		synchronized (context) {
-			context.saveSessionFile(path, tokens[0]);
+			Objects.requireNonNull(path);
+			context.saveStateFile(path, tokens[0]);
 		}
 	}
 
-	public synchronized void loadSessionFile(Path path) {
+	public synchronized void loadStateFile(Path path) throws IOException {
 		if (parallelCount != 1)
 			throw new UnsupportedOperationException("Session files are not supported for parallel batches");
 		synchronized (context) {
-			int position = context.loadSessionFile(path, tokens[0]);
+			Objects.requireNonNull(path);
+			int position = context.loadStateFile(path, tokens[0]);
 			contextPosition = position;
 		}
 	}

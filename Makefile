@@ -8,8 +8,8 @@ include  sdk/argeo-build/cmake/default.mk
 # Use make rebuild-force-to (see below) in order to force a local build. 
 ##
 
-GGML_BLAS ?= ON
-GGML_VULKAN ?= ON
+GGML_BLAS ?= OFF
+GGML_VULKAN ?= OFF
 GGML_CUDA ?= OFF
 GGML_RPC ?= OFF
 

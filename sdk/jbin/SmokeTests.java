@@ -347,7 +347,7 @@ class SmokeTests {
 			long beginSaveContext = System.currentTimeMillis();
 			logger.log(INFO, "Saved context in " + (System.currentTimeMillis() - beginSaveContext) + " ms");
 			long beginSaveSessionFile = System.currentTimeMillis();
-			processor.saveSessionFile(sessionFile);
+			processor.saveStateFile(sessionFile);
 			logger.log(INFO, "Saved session file to " + sessionFile + " in "
 					+ (System.currentTimeMillis() - beginSaveSessionFile) + " ms");
 		}
@@ -386,7 +386,7 @@ class SmokeTests {
 		) {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
 			long beginLoad = System.currentTimeMillis();
-			processor.loadSessionFile(sessionFile);
+			processor.loadStateFile(sessionFile);
 			logger.log(INFO, "Loaded context from file in " + (System.currentTimeMillis() - beginLoad) + " ms");
 
 			process.accept(processor);

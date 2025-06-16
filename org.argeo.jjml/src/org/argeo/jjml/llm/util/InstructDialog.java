@@ -1,11 +1,10 @@
 package org.argeo.jjml.llm.util;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -23,30 +22,39 @@ import org.argeo.jjml.llm.params.DefaultSamplerChainParams;
  * between a system ("user") and an LLM ("assistant") trained for instructions
  * ("chat").
  */
-public class InstructDialog implements Closeable, Function<String, String> {
+public class InstructDialog implements AutoCloseable, Function<String, String>, Consumer<String> {
 	private final LlamaCppContext context;
 	private final LlamaCppInstructProcessor processor;
 
-	public InstructDialog(LlamaCppModel model, int contextSize, Path sessionFile, float temperature)
-			throws IOException {
-		this(model, contextSize, temperature);
-		Objects.requireNonNull(sessionFile);
-
-		processor.loadSessionFile(sessionFile);
+	/*
+	 * CONSTRUCTORS
+	 */
+	public InstructDialog(LlamaCppModel model, int contextSize, int parallelism, String systemPrompt) {
+		this(model, contextSize, parallelism, systemPrompt, 0);
 	}
 
-	public InstructDialog(LlamaCppModel model, int contextSize, String systemPrompt, float temperature)
-			throws IOException {
-		this(model, contextSize, temperature);
-		Objects.requireNonNull(systemPrompt);
-
-		processor.write(InstructRole.SYSTEM, systemPrompt);
+	public InstructDialog(LlamaCppModel model, int contextSize, int parallelism, Path stateFile) throws IOException {
+		this(model, contextSize, parallelism, stateFile, 0);
 	}
 
-	protected InstructDialog(LlamaCppModel model, int contextSize, float temperature) throws IOException {
-		Objects.requireNonNull(model);
+	public InstructDialog(LlamaCppModel model, int contextSize, int parallelism, String systemPrompt,
+			float temperature) {
+		this(model, contextSize, parallelism, temperature);
+		processor.write(getSystemRole(), systemPrompt);
+	}
 
-		ContextParams contextParams = newContextParams().with(ContextParam.n_ctx, contextSize);
+	public InstructDialog(LlamaCppModel model, int contextSize, int parallelism, Path stateFile, float temperature)
+			throws IOException {
+		this(model, contextSize, parallelism, temperature);
+		processor.loadStateFile(stateFile);
+	}
+
+	protected InstructDialog(LlamaCppModel model, int contextSize, int parallelism, float temperature) {
+		ContextParams contextParams = newContextParams() //
+				.with(ContextParam.n_ctx, contextSize) //
+				.with(ContextParam.n_threads, parallelism) //
+		;
+
 		context = new LlamaCppContext(model, contextParams);
 		LlamaCppSamplerChain samplerChain = newSamplerChain(context, temperature);
 		processor = new LlamaCppInstructProcessor(context, samplerChain);
@@ -55,8 +63,6 @@ public class InstructDialog implements Closeable, Function<String, String> {
 	/** Writes an input message to an LLM context, and retrieve its output. */
 	@Override
 	public String apply(String message) {
-		Objects.requireNonNull(message);
-
 		processor.write(getInputRole(), message);
 		StringWriter sw = new StringWriter();
 		try {
@@ -67,6 +73,16 @@ public class InstructDialog implements Closeable, Function<String, String> {
 		return sw.toString();
 	}
 
+	/**
+	 * Appends an input to the context ("user message"), without triggering
+	 * generation from the model.
+	 */
+	@Override
+	public void accept(String message) {
+		processor.write(getInputRole(), message);
+	}
+
+	/** Free context resources. */
 	@Override
 	public void close() throws IOException {
 		context.close();
@@ -75,14 +91,16 @@ public class InstructDialog implements Closeable, Function<String, String> {
 	/*
 	 * CONTEXT STATE
 	 */
-	public void saveSessionFile(Path path) {
-		Objects.requireNonNull(path);
-
-		processor.saveSessionFile(path);
+	public void saveStateFile(Path path) throws IOException {
+		processor.saveStateFile(path);
 	}
 
 	/*
 	 * DEFAULTS TO BE OVERRIDDEN IF NEEDED
+	 */
+	/**
+	 * The context parameters to use when initializing. Default implementation uses
+	 * {@link LlamaCppContext#defaultContextParams()}.
 	 */
 	protected ContextParams newContextParams() {
 		return LlamaCppContext.defaultContextParams();
@@ -98,10 +116,6 @@ public class InstructDialog implements Closeable, Function<String, String> {
 
 	protected Supplier<String> getInputRole() {
 		return InstructRole.USER;
-	}
-
-	protected Supplier<String> getOutputRole() {
-		return InstructRole.ASSISTANT;
 	}
 
 }
