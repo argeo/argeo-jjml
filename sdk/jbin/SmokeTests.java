@@ -9,9 +9,9 @@ import static org.argeo.jjml.llm.params.ContextParam.embeddings;
 import static org.argeo.jjml.llm.params.ContextParam.n_batch;
 import static org.argeo.jjml.llm.params.ContextParam.n_ctx;
 import static org.argeo.jjml.llm.params.ContextParam.n_ubatch;
-import static org.argeo.jjml.llm.util.StandardRole.ASSISTANT;
-import static org.argeo.jjml.llm.util.StandardRole.SYSTEM;
-import static org.argeo.jjml.llm.util.StandardRole.USER;
+import static org.argeo.jjml.llm.util.InstructRole.ASSISTANT;
+import static org.argeo.jjml.llm.util.InstructRole.SYSTEM;
+import static org.argeo.jjml.llm.util.InstructRole.USER;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -223,7 +223,7 @@ class SmokeTests {
 						.with(n_ctx, 6144) //
 						.with(n_batch, sequenceIds.length * prompt.length()) //
 				); //
-				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(false); //
 				LlamaCppNativeSampler validatingSampler = LlamaCppSamplers.newSamplerGrammar(model, //
 						"root ::= [ \\t\\n]* \"TEST\"", "root");//
 		) {
@@ -277,7 +277,7 @@ class SmokeTests {
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
 						.with(n_ctx, 20480) //
 						.with(n_batch, 1024)); //
-				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(false); //
 		) {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
 
@@ -321,7 +321,7 @@ class SmokeTests {
 
 		try (//
 				LlamaCppContext context = new LlamaCppContext(model, contextParams); //
-				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(false); //
 		) {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
 
@@ -370,7 +370,7 @@ class SmokeTests {
 
 		// deterministic answer
 		try (LlamaCppContext context = new LlamaCppContext(model, contextParams); //
-				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, false); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(false); //
 		) {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
 			long beginLoad = System.currentTimeMillis();
@@ -382,7 +382,7 @@ class SmokeTests {
 
 		// with temperature
 		try (LlamaCppContext context = new LlamaCppContext(model, contextParams); //
-				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(model, true); //
+				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(true); //
 		) {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
 			long beginLoad = System.currentTimeMillis();

@@ -17,7 +17,6 @@ public class LlamaCppSamplers {
 	private static native long doInitGreedy();
 
 	private static native long doInitPenalties( //
-			LlamaCppModel model, //
 			int penalty_last_n, //
 			float penalty_repeat, //
 			float penalty_freq, //
@@ -49,19 +48,19 @@ public class LlamaCppSamplers {
 	/*
 	 * DEFAULT CHAINS
 	 */
-	public static LlamaCppSamplerChain newDefaultSampler(LlamaCppModel model) {
-		return newDefaultSampler(model, false);
+	public static LlamaCppSamplerChain newDefaultSampler() {
+		return newDefaultSampler(false);
 	}
 
-	public static LlamaCppSamplerChain newDefaultSampler(LlamaCppModel model, boolean withTemp) {
-		return newDefaultSampler(model, withTemp ? new DefaultSamplerChainParams() : new DefaultSamplerChainParams(0));
+	public static LlamaCppSamplerChain newDefaultSampler(boolean withTemp) {
+		return newDefaultSampler(withTemp ? new DefaultSamplerChainParams() : new DefaultSamplerChainParams(0));
 	}
 
-	public static LlamaCppSamplerChain newDefaultSampler(LlamaCppModel model, DefaultSamplerChainParams params) {
+	public static LlamaCppSamplerChain newDefaultSampler(DefaultSamplerChainParams params) {
 		// see gpt_sampler_init in sampling.cpp
 
 		LlamaCppSamplerChain chain = new LlamaCppSamplerChain();
-		chain.addSampler(LlamaCppSamplers.newSamplerPenalties(model, params));
+		chain.addSampler(LlamaCppSamplers.newSamplerPenalties(params));
 		if (params.temp() > 0) {
 			chain.addSampler(LlamaCppSamplers.newSamplerTopK(params.top_k()));
 			long min_keep = params.min_keep();
@@ -94,7 +93,7 @@ public class LlamaCppSamplers {
 		return new LlamaCppNativeSampler(doInitGreedy());
 	}
 
-	public static LlamaCppNativeSampler newSamplerPenalties(LlamaCppModel model, //
+	public static LlamaCppNativeSampler newSamplerPenalties(//
 			int penalty_last_n, // last n tokens to penalize (0 = disable penalty, -1 = context size)
 			float penalty_repeat, // 1.0 = disabled
 			float penalty_freq, // 0.0 = disabled
@@ -102,13 +101,13 @@ public class LlamaCppSamplers {
 			boolean penalize_nl, // consider newlines as a repeatable token
 			boolean ignore_eos // ignore the end-of-sequence token
 	) {
-		return new LlamaCppNativeSampler(doInitPenalties(model, penalty_last_n, penalty_repeat, penalty_freq,
-				penalty_present, penalize_nl, ignore_eos));
+		return new LlamaCppNativeSampler(doInitPenalties(penalty_last_n, penalty_repeat, penalty_freq, penalty_present,
+				penalize_nl, ignore_eos));
 
 	}
 
-	public static LlamaCppNativeSampler newSamplerPenalties(LlamaCppModel model, DefaultSamplerChainParams params) {
-		return newSamplerPenalties(model, params.penalty_last_n(), params.penalty_repeat(), params.penalty_freq(),
+	public static LlamaCppNativeSampler newSamplerPenalties(DefaultSamplerChainParams params) {
+		return newSamplerPenalties(params.penalty_last_n(), params.penalty_repeat(), params.penalty_freq(),
 				params.penalty_freq(), params.penalize_nl(), params.ignore_eos());
 
 	}

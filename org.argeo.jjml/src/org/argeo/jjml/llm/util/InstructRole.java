@@ -3,7 +3,7 @@ package org.argeo.jjml.llm.util;
 import java.util.function.Supplier;
 
 /** Commonly used instruct roles. */
-public enum StandardRole implements Supplier<String> {
+public enum InstructRole implements Supplier<String> {
 	SYSTEM("system"), //
 	USER("user"), //
 	ASSISTANT("assistant"), //
@@ -11,7 +11,7 @@ public enum StandardRole implements Supplier<String> {
 
 	private final String role;
 
-	private StandardRole(String role) {
+	private InstructRole(String role) {
 		this.role = role;
 	}
 

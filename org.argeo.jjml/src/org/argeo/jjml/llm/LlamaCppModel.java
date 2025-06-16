@@ -25,7 +25,7 @@ import java.util.function.LongSupplier;
 
 import org.argeo.jjml.llm.params.ModelParam;
 import org.argeo.jjml.llm.params.ModelParams;
-import org.argeo.jjml.llm.util.StandardRole;
+import org.argeo.jjml.llm.util.InstructRole;
 
 /**
  * Access to a llama.cpp model
@@ -129,7 +129,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	@Deprecated
 	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
 		return LLamaCppNativeChatFormatter.formatChatMessages(messages, //
-				(message) -> message.getRole().equals(StandardRole.USER.get()), chatTemplate);
+				(message) -> message.getRole().equals(InstructRole.USER.get()), chatTemplate);
 	}
 
 	/*
