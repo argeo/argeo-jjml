@@ -13,7 +13,7 @@ set(CMAKE_LIBRARY_PATH
 # Debian official until libraries are stable
 set(CMAKE_PREFIX_PATH
 /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/ggml/cmake-private
-/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/llama.cpp/cmake-private
+/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/llama/cmake-private
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
