@@ -1,3 +1,9 @@
 /bin/*.class
 /bin/
 *.log
+
+# JVM crashes
+core.*.dmp
+jitdump.*.dmp
+javacore.*.txt
+Snap.*.trc
