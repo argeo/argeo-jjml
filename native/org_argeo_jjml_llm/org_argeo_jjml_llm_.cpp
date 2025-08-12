@@ -80,7 +80,7 @@ static void org_argeo_jjml_llm_(JNIEnv *env) {
 			"<init>", "(IZZZ)V");
 	jclass ContextParams = argeo::jni::find_jclass(env, JCLASS_CONTEXT_PARAMS);
 	ContextParams$init = argeo::jni::jmethod_id(env, ContextParams, //
-			"<init>", "(IIIIIIIIIFFFFFFIFIIZZZZ)V");
+			"<init>", "(IIIIIIIIIFFFFFFIFIIZZZZZZZ)V");
 	// Tip: in order to find a constructor signature, use:
 	// javap -s '../org.argeo.jjml/bin/org/argeo/jjml/llama/params/ContextParams.class'
 }

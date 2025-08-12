@@ -52,6 +52,9 @@ public class ContextParams { //
 
 	private final boolean flash_attn; // whether to use flash attention [EXPERIMENTAL]
 	private final boolean no_perf; // whether to measure performance timings
+	private final boolean op_offload; // offload host tensor operations to device
+	private final boolean swa_full; // use full-size SWA cache
+	private final boolean kv_unified; // use a unified buffer across the input sequences when computing the attention
 
 	/**
 	 * Record-like full constructor. Will be called from the native side to provide
@@ -80,7 +83,10 @@ public class ContextParams { //
 			boolean embeddings, //
 			boolean offload_kqv, //
 			boolean flash_attn, //
-			boolean no_perf //
+			boolean no_perf, //
+			boolean op_offload, //
+			boolean swa_full, //
+			boolean kv_unified //
 	) {
 		this.n_ctx = n_ctx;
 		this.n_batch = n_batch;
@@ -105,6 +111,9 @@ public class ContextParams { //
 		this.offload_kqv = offload_kqv;
 		this.flash_attn = flash_attn;
 		this.no_perf = no_perf;
+		this.op_offload = op_offload;
+		this.swa_full = swa_full;
+		this.kv_unified = kv_unified;
 	}
 
 	public ContextParams with(ContextParam key, Object value) {
@@ -144,7 +153,10 @@ public class ContextParams { //
 				parseBoolean(p.getOrDefault(ContextParam.embeddings, Boolean.toString(this.embeddings))), //
 				parseBoolean(p.getOrDefault(ContextParam.offload_kqv, Boolean.toString(this.offload_kqv))), //
 				parseBoolean(p.getOrDefault(ContextParam.flash_attn, Boolean.toString(this.flash_attn))), //
-				this.no_perf //
+				this.no_perf, //
+				this.op_offload, //
+				this.swa_full, //
+				parseBoolean(p.getOrDefault(ContextParam.kv_unified, Boolean.toString(this.kv_unified))) //
 		);
 	}
 
@@ -238,6 +250,18 @@ public class ContextParams { //
 
 	public boolean no_perf() {
 		return no_perf;
+	}
+
+	public boolean op_offload() {
+		return op_offload;
+	}
+
+	public boolean swa_full() {
+		return swa_full;
+	}
+
+	public boolean kv_unified() {
+		return kv_unified;
 	}
 
 //	/** Ensure that components and enum are perfectly in line. */
