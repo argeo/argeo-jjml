@@ -73,3 +73,81 @@ else
 	# Vulkan
 	pacman -S --needed mingw-w64-ucrt-x86_64-vulkan-devel mingw-w64-ucrt-x86_64-shaderc
 endif
+
+##
+## PACKAGING
+##
+
+# "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\dumpbin.exe" /DEPENDENTS ggml-cpu-icelake.dll
+
+COPY=cp -v
+UCRT64_BASE=/ucrt64
+JMODS_BASE=$(BUILD_BASE)/jmods
+A2_JMODS=$(A2_OUTPUT)/jmods
+
+JMOD_UCRT=org.argeo.ftw.ucrt
+JMOD_JJML=org.argeo.jjml
+
+JLINK_HOME ?= $(JAVA_HOME)
+JLINK_JMODS ?= $(JLINK_HOME)/jmods
+RT_JJML ?= rt-jjml
+ifeq ($(MSYS_VERSION),0)
+RT_JJML_JMODS ?= java.base,java.net.http,jdk.compiler,jdk.jlink,jdk.jartool,jdk.jshell,$(JMOD_JJML)
+else
+RT_JJML_JMODS ?= java.base,java.net.http,jdk.compiler,jdk.jlink,jdk.jartool,jdk.jshell,$(JMOD_UCRT),$(JMOD_JJML)
+endif	
+
+jmod-ftw-ucrt:
+ifeq ($(MSYS_VERSION),0)
+else
+	mkdir -p $(A2_JMODS)
+	mkdir -p $(JMODS_BASE)/$(JMOD_UCRT)/java
+	mkdir -p $(JMODS_BASE)/$(JMOD_UCRT)/classes
+	mkdir -p $(JMODS_BASE)/$(JMOD_UCRT)/lib
+	
+	$(COPY) $(UCRT64_BASE)/bin/libgcc_s_seh-*.dll $(JMODS_BASE)/$(JMOD_UCRT)/lib
+	$(COPY) $(UCRT64_BASE)/bin/libgomp-*.dll $(JMODS_BASE)/$(JMOD_UCRT)/lib
+	$(COPY) $(UCRT64_BASE)/bin/libstdc++-*.dll $(JMODS_BASE)/$(JMOD_UCRT)/lib
+	$(COPY) $(UCRT64_BASE)/bin/libwinpthread-*.dll $(JMODS_BASE)/$(JMOD_UCRT)/lib
+	
+	echo "module $(JMOD_UCRT) {}" > $(JMODS_BASE)/$(JMOD_UCRT)/java/module-info.java
+	$(JAVA_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_UCRT)/classes $(JMODS_BASE)/$(JMOD_UCRT)/java/module-info.java
+	
+	$(RM) $(A2_JMODS)/$(JMOD_UCRT).jmod
+	$(JAVA_HOME)/bin/jmod create \
+	 --class-path $(JMODS_BASE)/$(JMOD_UCRT)/classes \
+	 --libs $(JMODS_BASE)/$(JMOD_UCRT)/lib \
+	 $(A2_JMODS)/$(JMOD_UCRT).jmod
+endif
+
+jmod-jjml:
+	mkdir -p $(A2_JMODS)
+	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
+ifeq ($(MSYS_VERSION),0)
+else
+	$(COPY) $(A2_OUTPUT)/lib/local/ggml.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
+	$(COPY) $(A2_OUTPUT)/lib/local/ggml-base.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
+	$(COPY) $(A2_OUTPUT)/lib/local/ggml-cpu-*.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
+	$(COPY) $(A2_OUTPUT)/lib/local/llama.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
+	
+	$(COPY) $(A2_OUTPUT)/lib/local/Java_org_argeo_jjml*.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
+endif
+	$(RM) $(A2_JMODS)/$(JMOD_JJML).jmod
+	$(JAVA_HOME)/bin/jmod create \
+	 --class-path $(A2_OUTPUT)/org.argeo.jjml/org.argeo.jjml.0.1.jar \
+	 --libs $(JMODS_BASE)/$(JMOD_JJML)/lib \
+	 $(A2_JMODS)/$(JMOD_JJML).jmod
+	
+rt-jjml: jmod-ftw-ucrt jmod-jjml
+	$(RM) -r $(BUILD_BASE)/$(RT_JJML)
+	$(JLINK_HOME)/bin/jlink \
+	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
+	 --add-modules $(RT_JJML_JMODS) \
+	 --output $(BUILD_BASE)/$(RT_JJML)
+	
+	mkdir -p $(BUILD_BASE)/$(RT_JJML)/jmods
+	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod $(BUILD_BASE)/$(RT_JJML)/jmods
+ifeq ($(MSYS_VERSION),0)
+else
+	$(COPY) $(A2_JMODS)/$(JMOD_UCRT).jmod $(BUILD_BASE)/$(RT_JJML)/jmods
+endif	
