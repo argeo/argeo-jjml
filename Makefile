@@ -80,7 +80,7 @@ endif
 
 # "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\dumpbin.exe" /DEPENDENTS ggml-cpu-icelake.dll
 
-COPY=cp -v
+COPY=cp -rv 
 UCRT64_BASE=/ucrt64
 JMODS_BASE=$(BUILD_BASE)/jmods
 A2_JMODS=$(A2_OUTPUT)/jmods
@@ -123,6 +123,7 @@ endif
 jmod-jjml:
 	mkdir -p $(A2_JMODS)
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
+	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib/$(JMOD_JJML)/jbin
 ifeq ($(MSYS_VERSION),0)
 	$(COPY) $(A2_OUTPUT)/lib/local/libggml.so $(JMODS_BASE)/$(JMOD_JJML)/lib
 	$(COPY) $(A2_OUTPUT)/lib/local/libggml-base.so $(JMODS_BASE)/$(JMOD_JJML)/lib
@@ -134,10 +135,13 @@ else
 	$(COPY) $(A2_OUTPUT)/lib/local/ggml.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
 	$(COPY) $(A2_OUTPUT)/lib/local/ggml-base.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
 	$(COPY) $(A2_OUTPUT)/lib/local/ggml-cpu-*.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
+#	$(COPY) $(A2_OUTPUT)/lib/local/ggml-vulkan.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
 	$(COPY) $(A2_OUTPUT)/lib/local/llama.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
 	
 	$(COPY) $(A2_OUTPUT)/lib/local/Java_org_argeo_jjml*.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
 endif
+	$(COPY) sdk/jbin/* $(JMODS_BASE)/$(JMOD_JJML)/lib/$(JMOD_JJML)/jbin
+
 	$(RM) $(A2_JMODS)/$(JMOD_JJML).jmod
 	$(JAVA_HOME)/bin/jmod create \
 	 --class-path $(A2_OUTPUT)/org.argeo.jjml/org.argeo.jjml.0.1.jar \
