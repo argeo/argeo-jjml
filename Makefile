@@ -124,6 +124,12 @@ jmod-jjml:
 	mkdir -p $(A2_JMODS)
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
 ifeq ($(MSYS_VERSION),0)
+	$(COPY) $(A2_OUTPUT)/lib/local/libggml.so $(JMODS_BASE)/$(JMOD_JJML)/lib
+	$(COPY) $(A2_OUTPUT)/lib/local/libggml-base.so $(JMODS_BASE)/$(JMOD_JJML)/lib
+	$(COPY) $(A2_OUTPUT)/lib/local/libggml-cpu-*.so $(JMODS_BASE)/$(JMOD_JJML)/lib
+	$(COPY) $(A2_OUTPUT)/lib/local/libllama.so $(JMODS_BASE)/$(JMOD_JJML)/lib
+	
+	$(COPY) $(A2_OUTPUT)/lib/local/libJava_org_argeo_jjml*.so $(JMODS_BASE)/$(JMOD_JJML)/lib
 else
 	$(COPY) $(A2_OUTPUT)/lib/local/ggml.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
 	$(COPY) $(A2_OUTPUT)/lib/local/ggml-base.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
