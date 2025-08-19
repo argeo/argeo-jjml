@@ -6,8 +6,10 @@ import static org.argeo.jjml.llm.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llm.LlamaCppModel.defaultModelParams;
 import static org.argeo.jjml.llm.LlamaCppSamplers.newJavaSampler;
 import static org.argeo.jjml.llm.params.ContextParam.embeddings;
+import static org.argeo.jjml.llm.params.ContextParam.kv_unified;
 import static org.argeo.jjml.llm.params.ContextParam.n_batch;
 import static org.argeo.jjml.llm.params.ContextParam.n_ctx;
+import static org.argeo.jjml.llm.params.ContextParam.n_threads;
 import static org.argeo.jjml.llm.params.ContextParam.n_ubatch;
 import static org.argeo.jjml.llm.util.InstructRole.ASSISTANT;
 import static org.argeo.jjml.llm.util.InstructRole.SYSTEM;
@@ -54,6 +56,8 @@ import org.argeo.jjml.llm.params.ModelParams;
  */
 class SmokeTests {
 	private final static Logger logger = System.getLogger(SmokeTests.class.getName());
+
+	private int parallelism = Runtime.getRuntime().availableProcessors();
 
 	public void main(List<String> args) throws Exception, AssertionError {
 		try {
@@ -188,6 +192,7 @@ class SmokeTests {
 				.with(n_ctx, 6144) //
 				.with(n_batch, batchSize) //
 				.with(n_ubatch, batchSize) // must be same for embeddings
+				.with(kv_unified, true) // required for robustness
 		);) {
 			LlamaCppEmbeddingProcessor embeddingProcessor = new LlamaCppEmbeddingProcessor(context);
 
@@ -222,6 +227,7 @@ class SmokeTests {
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
 						.with(n_ctx, 6144) //
 						.with(n_batch, sequenceIds.length * prompt.length()) //
+						.with(kv_unified, true) // required for robustness
 				); //
 				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(false); //
 				LlamaCppNativeSampler validatingSampler = LlamaCppSamplers.newSamplerGrammar(model, //
@@ -246,7 +252,9 @@ class SmokeTests {
 		try ( //
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
 						.with(n_ctx, 6144) //
-						.with(n_batch, sequenceIds.length * 64)); //
+						.with(n_batch, sequenceIds.length * 64) //
+						.with(kv_unified, true) // required for robustness
+				); //
 				LlamaCppSamplerChain chain = new LlamaCppSamplerChain(
 						newJavaSampler(new LlamaCppJavaSampler.SimpleGreedy())); //
 				LlamaCppNativeSampler validatingSampler = LlamaCppSamplers.newSamplerGrammar(model, //
@@ -276,7 +284,9 @@ class SmokeTests {
 		try (//
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
 						.with(n_ctx, 20480) //
-						.with(n_batch, 1024)); //
+						.with(n_batch, 1024) //
+						.with(n_threads, parallelism) //
+				); //
 				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(false); //
 		) {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
@@ -307,6 +317,7 @@ class SmokeTests {
 		ContextParams contextParams = LlamaCppContext.defaultContextParams() //
 				.with(n_ctx, 20480) //
 				.with(n_batch, 1024) //
+				.with(n_threads, parallelism) //
 		; //
 
 		final LlamaCppContextState savedState;
