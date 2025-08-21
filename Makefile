@@ -3,24 +3,26 @@ include  sdk/argeo-build/cmake/default.mk
 
 ##
 # Run make clean / all / install for the default CMake build.
-# If system ggml and/or llama.cpp libraries are found they will be used to build the JNI bindings,
+# If system ggml and/or llama.cpp libraries are found,
+# they will be used to build the JNI bindings,
 # otherwise the missing layer will be buit from the source submodule.
 # Use make rebuild-force-to (see below) in order to force a local build. 
-##
 
+# rebuild-force-to: To be used for "heavy" C++ development,
+# that is when adding new capabilities and exploring upstream code. It allows:
+# - to ensure the target binaries are built from the local sources submodules
+# - to build the tools and examples, so that they can be browsed, debugged,
+# and hacked in an IDE.
+
+# Activate various features via environment varibales:
 GGML_BLAS ?= OFF
 GGML_VULKAN ?= OFF
 GGML_CUDA ?= OFF
 GGML_RPC ?= OFF
 
-# To be used for "heavy" C++ development,
-# that is when adding new capabilities and exploring upstream code:
-# - Make sure the target binaries are built from the local sources submodules
-# - Build the tools and examples, so that they can be browsed, debugged and hacked in IDE
 rebuild-force-tp: clean-local
 	echo CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 	
-	mkdir -p $(BUILD_BASE)
 	cmake -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
 		\
@@ -61,9 +63,12 @@ ifeq ($(MSYS_VERSION),0)
 	@$(RM) $(TARGET_NATIVE_OUTPUT)/vulkan-shaders-gen
 else
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/ggml*.dll
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/llama*.dll
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/Java_org_argeo_jjml_*.dll
 endif
+
+##
+## BUILD ENVIRONMENT
+##
 
 install-deps:
 ifeq ($(MSYS_VERSION),0)
@@ -78,24 +83,32 @@ endif
 ## PACKAGING
 ##
 
-# "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\dumpbin.exe" /DEPENDENTS ggml-cpu-icelake.dll
-
 COPY=cp -rv 
-UCRT64_BASE=/ucrt64
 JMODS_BASE=$(BUILD_BASE)/jmods
 A2_JMODS=$(A2_OUTPUT)/jmods
 
-JMOD_UCRT=org.argeo.ftw.ucrt
 JMOD_JJML=org.argeo.jjml
+
+# MSYS2 (Windows)
+UCRT64_BASE=/ucrt64
+JMOD_UCRT=org.argeo.ftw.ucrt
 
 JLINK_HOME ?= $(JAVA_HOME)
 JLINK_JMODS ?= $(JLINK_HOME)/jmods
-RT_JJML ?= rt-jjml
+
 ifeq ($(MSYS_VERSION),0)
-RT_JJML_JMODS ?= java.base,java.net.http,jdk.compiler,jdk.jlink,jdk.jartool,jdk.jshell,$(JMOD_JJML)
+JJML_JMODS ?= $(JMOD_JJML)
 else
-RT_JJML_JMODS ?= java.base,java.net.http,jdk.compiler,jdk.jlink,jdk.jartool,jdk.jshell,$(JMOD_UCRT),$(JMOD_JJML)
+JJML_JMODS ?= $(JMOD_UCRT),$(JMOD_JJML)
 endif	
+
+RT_JJML ?= rt-jjml
+RT_JJML_JMODS ?= java.base,java.net.http,jdk.compiler,jdk.jlink,jdk.jartool,jdk.jshell
+
+JDK_JJML ?= jdk-jjml
+# Note: replacing $${MODULES// /,} is bash specific
+JDK_JJML_JMODS ?= $(shell . $(JLINK_HOME)/release && echo $${MODULES// /,})
+JDK_JJML_JAVA_VERSION = $(shell . $(JLINK_HOME)/release && echo $$JAVA_VERSION)
 
 jmod-ftw-ucrt:
 ifeq ($(MSYS_VERSION),0)
@@ -120,10 +133,40 @@ else
 	 $(A2_JMODS)/$(JMOD_UCRT).jmod
 endif
 
+standalone-release: clean-local
+	cmake -B $(BUILD_BASE) . \
+		-DJJML_FORCE_BUILD_TP=ON \
+		-DGGML_CCACHE=ON \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_SKIP_BUILD_RPATH=ON \
+		-DLLAMA_BUILD_COMMON=ON \
+		-DLLAMA_BUILD_TOOLS=ON \
+		-DLLAMA_CURL=ON \
+		-DGGML_NATIVE=OFF \
+		-DGGML_CPU_ALL_VARIANTS=ON \
+		-DGGML_BACKEND_DL=ON	
+	cmake --build $(BUILD_BASE) -j $(shell nproc)
+
 jmod-jjml:
 	mkdir -p $(A2_JMODS)
+	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/bin
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
-	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib/$(JMOD_JJML)/jbin
+#	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib/$(JMOD_JJML)/jbin
+	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/include
+	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/legal/{ggml,llama.cpp}
+
+	# headers
+	$(COPY) native/tp/ggml/include/ggml.h native/tp/ggml/include/ggml-backend.h \
+	 $(JMODS_BASE)/$(JMOD_JJML)/include
+	$(COPY) native/tp/llama.cpp/include/*.h $(JMODS_BASE)/$(JMOD_JJML)/include
+	
+	# legal
+	$(COPY) COPYING.LESSER NOTICE $(JMODS_BASE)/$(JMOD_JJML)/legal
+	$(COPY) native/tp/ggml/LICENSE native/tp/ggml/AUTHORS \
+	 $(JMODS_BASE)/$(JMOD_JJML)/legal/ggml
+	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS \
+	 $(JMODS_BASE)/$(JMOD_JJML)/legal/llama.cpp
+	
 ifeq ($(MSYS_VERSION),0)
 	$(COPY) $(A2_OUTPUT)/lib/local/libggml.so $(JMODS_BASE)/$(JMOD_JJML)/lib
 	$(COPY) $(A2_OUTPUT)/lib/local/libggml-base.so $(JMODS_BASE)/$(JMOD_JJML)/lib
@@ -138,21 +181,28 @@ else
 #	$(COPY) $(A2_OUTPUT)/lib/local/ggml-vulkan.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
 	$(COPY) $(A2_OUTPUT)/lib/local/llama.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
 	
+	$(COPY) $(BUILD_BASE)/bin/llama-cli.exe $(JMODS_BASE)/$(JMOD_JJML)/bin
+	
 	$(COPY) $(A2_OUTPUT)/lib/local/Java_org_argeo_jjml*.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
 endif
-	$(COPY) sdk/jbin/* $(JMODS_BASE)/$(JMOD_JJML)/lib/$(JMOD_JJML)/jbin
+#	$(COPY) sdk/jbin/* $(JMODS_BASE)/$(JMOD_JJML)/lib/$(JMOD_JJML)/jbin
 
 	$(RM) $(A2_JMODS)/$(JMOD_JJML).jmod
 	$(JAVA_HOME)/bin/jmod create \
 	 --class-path $(A2_OUTPUT)/org.argeo.jjml/org.argeo.jjml.0.1.jar \
 	 --libs $(JMODS_BASE)/$(JMOD_JJML)/lib \
+	 --cmds $(JMODS_BASE)/$(JMOD_JJML)/bin \
+	 --header-files $(JMODS_BASE)/$(JMOD_JJML)/include \
+	 --legal-notices $(JMODS_BASE)/$(JMOD_JJML)/legal \
 	 $(A2_JMODS)/$(JMOD_JJML).jmod
-	
-rt-jjml: jmod-ftw-ucrt jmod-jjml
+	# list content
+	#$(JAVA_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
+
+rt-jjml: standalone-release jmod-ftw-ucrt jmod-jjml
 	$(RM) -r $(BUILD_BASE)/$(RT_JJML)
 	$(JLINK_HOME)/bin/jlink \
 	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
-	 --add-modules $(RT_JJML_JMODS) \
+	 --add-modules $(RT_JJML_JMODS),$(JJML_JMODS) \
 	 --output $(BUILD_BASE)/$(RT_JJML)
 	
 	mkdir -p $(BUILD_BASE)/$(RT_JJML)/jmods
@@ -161,3 +211,36 @@ ifeq ($(MSYS_VERSION),0)
 else
 	$(COPY) $(A2_JMODS)/$(JMOD_UCRT).jmod $(BUILD_BASE)/$(RT_JJML)/jmods
 endif	
+
+jdk-jjml: standalone-release jmod-ftw-ucrt jmod-jjml
+	$(RM) -r $(BUILD_BASE)/$(JDK_JJML)
+	$(JLINK_HOME)/bin/jlink \
+	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
+	 --add-modules $(JDK_JJML_JMODS),$(JJML_JMODS) \
+	 --output $(BUILD_BASE)/$(JDK_JJML)
+	
+	mkdir -p $(BUILD_BASE)/$(JDK_JJML)/src
+	cp $(JLINK_HOME)/lib/src.zip $(BUILD_BASE)/$(JDK_JJML)/lib
+	mkdir -p $(BUILD_BASE)/$(JDK_JJML)/src
+	cp -r org.argeo.jjml/src $(BUILD_BASE)/$(JDK_JJML)/src/org.argeo.jjml
+	cd $(BUILD_BASE)/$(JDK_JJML)/src \
+	 && zip -q -ur $(BUILD_BASE)/$(JDK_JJML)/lib/src.zip *
+	$(RM) -r $(BUILD_BASE)/$(JDK_JJML)/src
+	
+	mkdir -p $(BUILD_BASE)/$(RT_JJML)/jmods
+	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod $(BUILD_BASE)/$(RT_JJML)/jmods
+ifeq ($(MSYS_VERSION),0)
+else
+	$(COPY) $(A2_JMODS)/$(JMOD_UCRT).jmod $(BUILD_BASE)/$(RT_JJML)/jmods
+endif
+	
+	# create archive
+	cd $(BUILD_BASE) && \
+	 zip -r -q $(JDK_JJML)-$(JDK_JJML_JAVA_VERSION)-$(shell date +%F).zip $(JDK_JJML)
+	rm -rf $(BUILD_BASE)/$(JDK_JJML)
+	
+	
+# Note: On Windows, use dumpbin.exe in order to find depedencies of a DLL
+# (similar to ldd on Linux). E.g. "C:\Program Files (x86)\Microsoft Visual
+# Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\
+# dumpbin.exe" /DEPENDENTS llama.dll
