@@ -1,6 +1,9 @@
 # Convenience Makefile based on default Argeo SDK conventions
 include  sdk.mk
 
+TARGET_NATIVE_OUTPUT_GGML=$(TARGET_NATIVE_OUTPUT)/org.argeo.tp.ggml
+TARGET_NATIVE_OUTPUT_JJML=$(TARGET_NATIVE_OUTPUT)/org.argeo.jjml
+
 ##
 # Run make clean / all / install for the default CMake build.
 # If system ggml and/or llama.cpp libraries are found,
@@ -23,13 +26,12 @@ GGML_RPC ?= OFF
 rebuild-force-tp: clean-local
 	echo CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 	
-	cmake -B $(BUILD_BASE) . \
+	$(CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
 		\
 		-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
-		-DGGML_CCACHE=ON \
-		-DBUILD_SHARED_LIBS=ON \
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
+		-DGGML_CCACHE=ON \
 		\
 		-DLLAMA_BUILD_COMMON=OFF \
 		-DLLAMA_BUILD_TOOLS=OFF \
@@ -48,26 +50,18 @@ rebuild-force-tp: clean-local
 		-DGGML_CUDA_FA_ALL_QUANTS=OFF \
 		-DGGML_RPC=$(GGML_RPC) \
 	
-	cmake --build $(BUILD_BASE) -j $(shell nproc)
-
+	$(CMAKE) --build $(BUILD_BASE) -j $(shell nproc)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/* $(TARGET_NATIVE_OUTPUT)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/* $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT)/vulkan-shaders-gen
 
 # Remove locally built libraries
 clean-local:
 	$(RM) -rf $(BUILD_BASE)
-	echo $(TARGET_NATIVE_OUTPUT)
-ifeq ($(MSYS_VERSION),0)
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libggml*.so
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libllama*.so
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libmtmd*.so
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libJava_org_argeo_jjml_*.so
-	@$(RM) $(TARGET_NATIVE_OUTPUT)/vulkan-shaders-gen
-else
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/ggml*.dll
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/llama*.dll
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/mtmd*.dll
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/Java_org_argeo_jjml_*.dll
-endif
+	@$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(SHLIB_PREFIX)ggml*$(SHLIB_SUFFIX)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(SHLIB_PREFIX)llama*$(SHLIB_SUFFIX)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(SHLIB_PREFIX)Java_org_argeo_jjml_*$(SHLIB_SUFFIX)
 
 ##
 ## BUILD ENVIRONMENT
@@ -88,56 +82,51 @@ endif
 
 COPY=cp -rv 
 JMODS_BASE=$(BUILD_BASE)/jmods
-A2_JMODS=$(A2_OUTPUT)/jmods
-
-JMOD_JJML=org.argeo.jjml
 
 # MSYS2 (Windows)
-UCRT64_BASE=/ucrt64
-JMOD_UCRT=org.argeo.ftw.ucrt
+UCRT_BASE=/ucrt64
 
-JLINK_HOME ?= $(JAVA_HOME)
-JLINK_JMODS ?= $(JLINK_HOME)/jmods
+JMOD_OS_LIBC=org.argeo.os.libc
 
-ifeq ($(MSYS_VERSION),0)
-JJML_JMODS ?= $(JMOD_JJML)
-else
-JJML_JMODS ?= $(JMOD_UCRT),$(JMOD_JJML)
-endif	
+JMOD_JJML=org.argeo.jjml
+JMOD_GGML=org.argeo.tp.ggml
+JMOD_GGML_LLM=org.argeo.tp.ggml.llm
+
+JJML_JMODS ?= $(JMOD_OS_LIBC),$(JMOD_JJML),$(JMOD_GGML),$(JMOD_GGML_LLM)
 
 RT_JJML ?= rt-jjml
-RT_JJML_JMODS ?= java.base,java.net.http,jdk.compiler,jdk.jlink,jdk.jartool,jdk.jshell
+RT_JJML_DIR = $(BUILD_BASE)/$(RT_JJML)-$(JLINK_JAVA_RELEASE)-$(JLINK_JVM_VARIANT)-$(TARGET_DEB_ARCH)
+RT_JJML_JMODS ?= java.base,jdk.compiler,jdk.jlink,jdk.jartool,jdk.jshell
 
 JDK_JJML ?= jdk-jjml
-# Note: replacing $${MODULES// /,} is bash specific
-JDK_JJML_JMODS ?= $(shell . $(JLINK_HOME)/release && echo $${MODULES// /,})
-JDK_JJML_JAVA_VERSION = $(shell . $(JLINK_HOME)/release && echo $$JAVA_VERSION)
+JDK_JJML_DIR = $(BUILD_BASE)/$(JDK_JJML)-$(JLINK_JAVA_RELEASE)-$(JLINK_JVM_VARIANT)-$(TARGET_DEB_ARCH)
+#JDK_JJML_JMODS ?= $(shell . $(JLINK_HOME)/release && echo $${MODULES// /,})
+#JDK_JJML_JAVA_VERSION = $(shell . $(JLINK_HOME)/release && echo $$JAVA_VERSION)
 
-jmod-ftw-ucrt:
+
+jmod-os-libc:
+	mkdir -p $(A2_JMODS)
+	mkdir -p $(JMODS_BASE)/$(JMOD_OS_LIBC)/{java,classes}
+	mkdir -p $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib
 ifeq ($(MSYS_VERSION),0)
 else
-	mkdir -p $(A2_JMODS)
-	mkdir -p $(JMODS_BASE)/$(JMOD_UCRT)/java
-	mkdir -p $(JMODS_BASE)/$(JMOD_UCRT)/classes
-	mkdir -p $(JMODS_BASE)/$(JMOD_UCRT)/lib
-	
-	$(COPY) $(UCRT64_BASE)/bin/libgcc_s_seh-*.dll $(JMODS_BASE)/$(JMOD_UCRT)/lib
-	$(COPY) $(UCRT64_BASE)/bin/libgomp-*.dll $(JMODS_BASE)/$(JMOD_UCRT)/lib
-	$(COPY) $(UCRT64_BASE)/bin/libstdc++-*.dll $(JMODS_BASE)/$(JMOD_UCRT)/lib
-	$(COPY) $(UCRT64_BASE)/bin/libwinpthread-*.dll $(JMODS_BASE)/$(JMOD_UCRT)/lib
-	
-	echo "module $(JMOD_UCRT) {}" > $(JMODS_BASE)/$(JMOD_UCRT)/java/module-info.java
-	$(JAVA_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_UCRT)/classes $(JMODS_BASE)/$(JMOD_UCRT)/java/module-info.java
-	
-	$(RM) $(A2_JMODS)/$(JMOD_UCRT).jmod
-	$(JAVA_HOME)/bin/jmod create \
-	 --class-path $(JMODS_BASE)/$(JMOD_UCRT)/classes \
-	 --libs $(JMODS_BASE)/$(JMOD_UCRT)/lib \
-	 $(A2_JMODS)/$(JMOD_UCRT).jmod
+	$(COPY) $(UCRT_BASE)/bin/libgcc_s_seh-*.dll $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib
+	$(COPY) $(UCRT_BASE)/bin/libgomp-*.dll $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib
+	$(COPY) $(UCRT_BASE)/bin/libstdc++-*.dll $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib
+	$(COPY) $(UCRT_BASE)/bin/libwinpthread-*.dll $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib
 endif
+	
+	echo "module $(JMOD_OS_LIBC) {}" > $(JMODS_BASE)/$(JMOD_OS_LIBC)/java/module-info.java
+	$(JLINK_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_OS_LIBC)/classes $(JMODS_BASE)/$(JMOD_OS_LIBC)/java/module-info.java
+	
+	$(RM) $(A2_JMODS)/$(JMOD_OS_LIBC).jmod
+	$(JLINK_HOME)/bin/jmod create \
+	 --class-path $(JMODS_BASE)/$(JMOD_OS_LIBC)/classes \
+	 --libs $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib \
+	 $(A2_JMODS)/$(JMOD_OS_LIBC).jmod
 
 standalone-release: clean-local
-	cmake -B $(BUILD_BASE) . \
+	$(CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
 		-DGGML_CCACHE=ON \
 		-DCMAKE_BUILD_TYPE=Release \
@@ -147,99 +136,121 @@ standalone-release: clean-local
 		-DGGML_NATIVE=OFF \
 		-DGGML_CPU_ALL_VARIANTS=ON \
 		-DGGML_BACKEND_DL=ON	
-	cmake --build $(BUILD_BASE) -j $(shell nproc)
+	$(CMAKE) --build $(BUILD_BASE) -j $(shell nproc)
 
 jmod-jjml:
 	mkdir -p $(A2_JMODS)
-	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/bin
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
-#	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib/$(JMOD_JJML)/jbin
-	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/include
-	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/legal/{ggml,llama.cpp}
+	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/legal
 
-	# headers
-	$(COPY) native/tp/ggml/include/ggml.h native/tp/ggml/include/ggml-backend.h \
-	 $(JMODS_BASE)/$(JMOD_JJML)/include
-	$(COPY) native/tp/llama.cpp/include/*.h $(JMODS_BASE)/$(JMOD_JJML)/include
-	
-	# legal
 	$(COPY) COPYING.LESSER NOTICE $(JMODS_BASE)/$(JMOD_JJML)/legal
-	$(COPY) native/tp/ggml/LICENSE native/tp/ggml/AUTHORS \
-	 $(JMODS_BASE)/$(JMOD_JJML)/legal/ggml
-	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS \
-	 $(JMODS_BASE)/$(JMOD_JJML)/legal/llama.cpp
-	
-ifeq ($(MSYS_VERSION),0)
-	$(COPY) $(A2_OUTPUT)/lib/local/libggml.so $(JMODS_BASE)/$(JMOD_JJML)/lib
-	$(COPY) $(A2_OUTPUT)/lib/local/libggml-base.so $(JMODS_BASE)/$(JMOD_JJML)/lib
-	$(COPY) $(A2_OUTPUT)/lib/local/libggml-cpu-*.so $(JMODS_BASE)/$(JMOD_JJML)/lib
-	$(COPY) $(A2_OUTPUT)/lib/local/libllama.so $(JMODS_BASE)/$(JMOD_JJML)/lib
-	
-	$(COPY) $(A2_OUTPUT)/lib/local/libJava_org_argeo_jjml*.so $(JMODS_BASE)/$(JMOD_JJML)/lib
-else
-	$(COPY) $(A2_OUTPUT)/lib/local/ggml.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
-	$(COPY) $(A2_OUTPUT)/lib/local/ggml-base.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
-	$(COPY) $(A2_OUTPUT)/lib/local/ggml-cpu-*.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
-#	$(COPY) $(A2_OUTPUT)/lib/local/ggml-vulkan.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
-	$(COPY) $(A2_OUTPUT)/lib/local/llama.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
-	
-	$(COPY) $(BUILD_BASE)/bin/llama-cli.exe $(JMODS_BASE)/$(JMOD_JJML)/bin
-	
-	$(COPY) $(A2_OUTPUT)/lib/local/Java_org_argeo_jjml*.dll $(JMODS_BASE)/$(JMOD_JJML)/lib
-endif
-#	$(COPY) sdk/jbin/* $(JMODS_BASE)/$(JMOD_JJML)/lib/$(JMOD_JJML)/jbin
+
+	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(SHLIB_PREFIX)Java_org_argeo_jjml*$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_JJML)/lib
 
 	$(RM) $(A2_JMODS)/$(JMOD_JJML).jmod
-	$(JAVA_HOME)/bin/jmod create \
+	$(JLINK_HOME)/bin/jmod create \
 	 --class-path $(A2_OUTPUT)/org.argeo.jjml/org.argeo.jjml.${major}.${minor}.jar \
 	 --libs $(JMODS_BASE)/$(JMOD_JJML)/lib \
-	 --cmds $(JMODS_BASE)/$(JMOD_JJML)/bin \
-	 --header-files $(JMODS_BASE)/$(JMOD_JJML)/include \
 	 --legal-notices $(JMODS_BASE)/$(JMOD_JJML)/legal \
 	 $(A2_JMODS)/$(JMOD_JJML).jmod
 	# list content
-	#$(JAVA_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
+	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
 
-rt-jjml: standalone-release jmod-ftw-ucrt jmod-jjml
-	$(RM) -r $(BUILD_BASE)/$(RT_JJML)
+jmod-ggml:
+	mkdir -p $(A2_JMODS)
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/{java,classes}
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/lib
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/include
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/legal
+
+	$(COPY) native/tp/ggml/include/ggml.h native/tp/ggml/include/ggml-backend.h $(JMODS_BASE)/$(JMOD_GGML)/include
+	$(COPY) native/tp/ggml/LICENSE native/tp/ggml/AUTHORS $(JMODS_BASE)/$(JMOD_GGML)/legal
+	
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)ggml$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)ggml-base$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)ggml-cpu-*$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML)/lib
+
+	echo "module $(JMOD_GGML) {}" > $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
+	$(JLINK_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_GGML)/classes $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
+
+	$(RM) $(A2_JMODS)/$(JMOD_GGML).jmod
+	$(JLINK_HOME)/bin/jmod create \
+	 --class-path $(JMODS_BASE)/$(JMOD_GGML)/classes \
+	 --libs $(JMODS_BASE)/$(JMOD_GGML)/lib \
+	 --header-files $(JMODS_BASE)/$(JMOD_GGML)/include \
+	 --legal-notices $(JMODS_BASE)/$(JMOD_GGML)/legal \
+	 $(A2_JMODS)/$(JMOD_GGML).jmod
+	# list content
+	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML).jmod
+
+jmod-ggml-llm:
+	mkdir -p $(A2_JMODS)
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/{java,classes}
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/include
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal
+
+	$(COPY) native/tp/llama.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_LLM)/include
+	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal
+	
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)llama$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	$(COPY) $(BUILD_BASE)/bin/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
+
+# TODO add requires to ggml
+	echo "module $(JMOD_GGML_LLM) {}" > $(JMODS_BASE)/$(JMOD_GGML_LLM)/java/module-info.java
+	$(JLINK_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_GGML_LLM)/classes $(JMODS_BASE)/$(JMOD_GGML_LLM)/java/module-info.java
+	
+	$(RM) $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
+	$(JLINK_HOME)/bin/jmod create \
+	 --class-path $(JMODS_BASE)/$(JMOD_GGML_LLM)/classes \
+	 --libs $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib \
+	 --cmds $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin \
+	 --header-files $(JMODS_BASE)/$(JMOD_GGML_LLM)/include \
+	 --legal-notices $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal \
+	 $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
+	# list content
+	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
+
+
+rt-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
+	$(RM) -r $(RT_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
 	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
 	 --add-modules $(RT_JJML_JMODS),$(JJML_JMODS) \
-	 --output $(BUILD_BASE)/$(RT_JJML)
+	 --output $(RT_JJML_DIR)
 	
-	mkdir -p $(BUILD_BASE)/$(RT_JJML)/jmods
-	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod $(BUILD_BASE)/$(RT_JJML)/jmods
-ifeq ($(MSYS_VERSION),0)
-else
-	$(COPY) $(A2_JMODS)/$(JMOD_UCRT).jmod $(BUILD_BASE)/$(RT_JJML)/jmods
-endif	
+	mkdir -p $(RT_JJML_DIR)/jmods
+	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod $(RT_JJML_DIR)/jmods
+	$(COPY) $(A2_JMODS)/$(JMOD_GGML)*.jmod $(RT_JJML_DIR)/jmods
+	$(COPY) $(A2_JMODS)/$(JMOD_OS_LIBC).jmod $(RT_JJML_DIR)/jmods
 
-jdk-jjml: standalone-release jmod-ftw-ucrt jmod-jjml
-	$(RM) -r $(BUILD_BASE)/$(JDK_JJML)
+
+jdk-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
+	$(RM) -r $(JDK_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
 	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
-	 --add-modules $(JDK_JJML_JMODS),$(JJML_JMODS) \
-	 --output $(BUILD_BASE)/$(JDK_JJML)
+	 --add-modules $(JLINK_MODULES),$(JJML_JMODS) \
+	 --output $(JDK_JJML_DIR)
 	
-	mkdir -p $(BUILD_BASE)/$(JDK_JJML)/src
-	cp $(JLINK_HOME)/lib/src.zip $(BUILD_BASE)/$(JDK_JJML)/lib
-	mkdir -p $(BUILD_BASE)/$(JDK_JJML)/src
-	cp -r org.argeo.jjml/src $(BUILD_BASE)/$(JDK_JJML)/src/org.argeo.jjml
-	cd $(BUILD_BASE)/$(JDK_JJML)/src \
-	 && zip -q -ur $(BUILD_BASE)/$(JDK_JJML)/lib/src.zip *
-	$(RM) -r $(BUILD_BASE)/$(JDK_JJML)/src
+	mkdir -p $(JDK_JJML_DIR)/src
+	cp $(JLINK_HOME)/lib/src.zip $(JDK_JJML_DIR)/lib
+	mkdir -p $(JDK_JJML_DIR)/src
+	cp -r org.argeo.jjml/src $(JDK_JJML_DIR)/src/org.argeo.jjml
+	cd $(JDK_JJML_DIR)/src \
+	 && zip -q -ur $(JDK_JJML_DIR)/lib/src.zip *
+	$(RM) -r $(JDK_JJML_DIR)/src
 	
-	mkdir -p $(BUILD_BASE)/$(RT_JJML)/jmods
-	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod $(BUILD_BASE)/$(RT_JJML)/jmods
-ifeq ($(MSYS_VERSION),0)
-else
-	$(COPY) $(A2_JMODS)/$(JMOD_UCRT).jmod $(BUILD_BASE)/$(RT_JJML)/jmods
-endif
+	mkdir -p $(JDK_JJML_DIR)/jmods
+	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod $(JDK_JJML_DIR)/jmods
+	$(COPY) $(A2_JMODS)/$(JMOD_GGML)*.jmod $(JDK_JJML_DIR)/jmods
+	$(COPY) $(A2_JMODS)/$(JMOD_OS_LIBC).jmod $(JDK_JJML_DIR)/jmods
 	
 	# create archive
-	cd $(BUILD_BASE) && \
-	 zip -r -q $(JDK_JJML)-$(JDK_JJML_JAVA_VERSION)-$(shell date +%F).zip $(JDK_JJML)
-	rm -rf $(BUILD_BASE)/$(JDK_JJML)
+	cd $(BUILD_BASE) && zip -r -q \
+	 $(JDK_JJML)-$(JLINK_JAVA_RELEASE)-$(JLINK_JVM_VARIANT)-$(TARGET_OS)-$(TARGET_DEB_ARCH)-${major}.${minor}.${micro}.zip \
+	 $(shell basename $(JDK_JJML_DIR))
+	rm -rf $(JDK_JJML_DIR)
 	
 	
 # Note: On Windows, use dumpbin.exe in order to find depedencies of a DLL

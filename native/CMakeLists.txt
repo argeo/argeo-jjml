@@ -5,6 +5,9 @@
 # Debug
 #set(CMAKE_FIND_DEBUG_MODE ON)
 
+# We always want the shared libraries
+set(BUILD_SHARED_LIBS ON)
+
 # Argeo paths
 set(CMAKE_LIBRARY_PATH
 /usr/libexec/${CMAKE_LIBRARY_ARCHITECTURE}/ggml
@@ -16,8 +19,11 @@ set(CMAKE_PREFIX_PATH
 /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/llama/cmake-private
 )
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
+set(TARGET_NATIVE_OUTPUT_GGML ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX}/org.argeo.tp.ggml)
+set(TARGET_NATIVE_OUTPUT_LLAMA ${TARGET_NATIVE_OUTPUT_GGML})
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_GGML})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_GGML})
 
 if(NOT JJML_FORCE_BUILD_TP)
 	find_package(llama QUIET)
@@ -60,7 +66,6 @@ else()
 		message (STATUS "Enabling GGML_BACKEND_DL by default")
 	endif()
 	if(GGML_BACKEND_DL)
-		set(BUILD_SHARED_LIBS ON)
 		set(GGML_CPU_ALL_VARIANTS ON)
 	endif()
 
@@ -79,10 +84,11 @@ if(EXISTS "${llama_LIBRARY}")
 else()
 	set(LLAMA_STANDALONE ON)
 	add_subdirectory(tp/llama.cpp) # build locally
-	set_target_properties(llama PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
-	# Required by MSYS
-	# TODO check whether this is still the case
-	set_target_properties(llama PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX})
+	if(MINGW)
+		set_target_properties(llama PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
+	else()
+		set_target_properties(llama PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
+	endif()
 	message (STATUS "Build llama.cpp locally from submodule native/tp/llama.cpp") 
 endif()
 
