@@ -1,5 +1,5 @@
 # Convenience Makefile based on default Argeo SDK conventions
-include  sdk/argeo-build/cmake/default.mk
+include  sdk.mk
 
 ##
 # Run make clean / all / install for the default CMake build.
@@ -53,16 +53,19 @@ rebuild-force-tp: clean-local
 	@$(RM) $(TARGET_NATIVE_OUTPUT)/vulkan-shaders-gen
 
 # Remove locally built libraries
-clean-local: clean
+clean-local:
 	$(RM) -rf $(BUILD_BASE)
 	echo $(TARGET_NATIVE_OUTPUT)
 ifeq ($(MSYS_VERSION),0)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libggml*.so
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libllama*.so
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libmtmd*.so
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/libJava_org_argeo_jjml_*.so
 	@$(RM) $(TARGET_NATIVE_OUTPUT)/vulkan-shaders-gen
 else
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/ggml*.dll
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/llama*.dll
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/mtmd*.dll
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/Java_org_argeo_jjml_*.dll
 endif
 
@@ -141,7 +144,6 @@ standalone-release: clean-local
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
 		-DLLAMA_BUILD_COMMON=ON \
 		-DLLAMA_BUILD_TOOLS=ON \
-		-DLLAMA_CURL=ON \
 		-DGGML_NATIVE=OFF \
 		-DGGML_CPU_ALL_VARIANTS=ON \
 		-DGGML_BACKEND_DL=ON	
@@ -189,7 +191,7 @@ endif
 
 	$(RM) $(A2_JMODS)/$(JMOD_JJML).jmod
 	$(JAVA_HOME)/bin/jmod create \
-	 --class-path $(A2_OUTPUT)/org.argeo.jjml/org.argeo.jjml.0.1.jar \
+	 --class-path $(A2_OUTPUT)/org.argeo.jjml/org.argeo.jjml.${major}.${minor}.jar \
 	 --libs $(JMODS_BASE)/$(JMOD_JJML)/lib \
 	 --cmds $(JMODS_BASE)/$(JMOD_JJML)/bin \
 	 --header-files $(JMODS_BASE)/$(JMOD_JJML)/include \
