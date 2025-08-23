@@ -244,9 +244,8 @@ msi-jdk-jjml:
 	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
 	 --win-dir-chooser \
 	 --win-per-user-install \
-	 --win-upgrade-uuid $(shell uuidgen) \
+	 --win-upgrade-uuid $(shell uuidgen --sha1 --namespace $(ARGEO_ENTERPRISE_NUMBER_UUID) --name $(JDK_JJML)) \
 	 --install-dir "$(JDK_JJML)" \
-#	 --icon "$(SDK_SRC_BASE)/sdk/argeo-icon.ico" \
 	
 	mv $(BUILD_BASE)/$(JDK_JJML)-$(PACKAGE_VERSION).msi \
 	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(PACKAGE_VERSION).msi
