@@ -1,5 +1,8 @@
-# Convenience Makefile based on default Argeo SDK conventions
-include  sdk.mk
+# Makefile based on default Argeo SDK conventions,
+# used as a high-level driver for build, packaging, etc.
+# Low-level build only uses CMake.
+include sdk.mk
+include sdk/argeo-build/cmake/default.mk
 
 TARGET_NATIVE_OUTPUT_GGML=$(TARGET_NATIVE_OUTPUT)/org.argeo.tp.ggml
 TARGET_NATIVE_OUTPUT_JJML=$(TARGET_NATIVE_OUTPUT)/org.argeo.jjml
@@ -17,7 +20,7 @@ TARGET_NATIVE_OUTPUT_JJML=$(TARGET_NATIVE_OUTPUT)/org.argeo.jjml
 # - to build the tools and examples, so that they can be browsed, debugged,
 # and hacked in an IDE.
 
-# Activate various features via environment varibales:
+# Activate various features via environment variables:
 GGML_BLAS ?= OFF
 GGML_VULKAN ?= OFF
 GGML_CUDA ?= OFF
@@ -51,9 +54,9 @@ rebuild-force-tp: clean-local
 		-DGGML_RPC=$(GGML_RPC) \
 	
 	$(CMAKE) --build $(BUILD_BASE) -j $(shell nproc)
-	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/* $(TARGET_NATIVE_OUTPUT)
-	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/* $(TARGET_NATIVE_OUTPUT)
-	@$(RM) $(TARGET_NATIVE_OUTPUT)/vulkan-shaders-gen
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)*$(SHLIB_SUFFIX) $(TARGET_NATIVE_OUTPUT)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(SHLIB_PREFIX)*$(SHLIB_SUFFIX) $(TARGET_NATIVE_OUTPUT)
+	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
 
 # Remove locally built libraries
 clean-local:
@@ -79,51 +82,21 @@ endif
 ##
 ## PACKAGING
 ##
-
-COPY=cp -rv 
-JMODS_BASE=$(BUILD_BASE)/jmods
-
-# MSYS2 (Windows)
-UCRT_BASE=/ucrt64
-
-JMOD_OS_LIBC=org.argeo.os.libc
+PACKAGE_VERSION=$(A2_LAYER_VERSION)
 
 JMOD_JJML=org.argeo.jjml
 JMOD_GGML=org.argeo.tp.ggml
 JMOD_GGML_LLM=org.argeo.tp.ggml.llm
 
-JJML_JMODS ?= $(JMOD_OS_LIBC),$(JMOD_JJML),$(JMOD_GGML),$(JMOD_GGML_LLM)
+JJML_JMODS ?= $(JMOD_JJML),$(JMOD_GGML),$(JMOD_GGML_LLM)
 
 RT_JJML ?= rt-jjml
 RT_JJML_DIR = $(BUILD_BASE)/$(RT_JJML)-$(JLINK_JAVA_RELEASE)-$(JLINK_JVM_VARIANT)-$(TARGET_DEB_ARCH)
 RT_JJML_JMODS ?= java.base,jdk.compiler,jdk.jlink,jdk.jartool,jdk.jshell
 
-JDK_JJML ?= jdk-jjml
-JDK_JJML_DIR = $(BUILD_BASE)/$(JDK_JJML)-$(JLINK_JAVA_RELEASE)-$(JLINK_JVM_VARIANT)-$(TARGET_DEB_ARCH)
-#JDK_JJML_JMODS ?= $(shell . $(JLINK_HOME)/release && echo $${MODULES// /,})
-#JDK_JJML_JAVA_VERSION = $(shell . $(JLINK_HOME)/release && echo $$JAVA_VERSION)
-
-
-jmod-os-libc:
-	mkdir -p $(A2_JMODS)
-	mkdir -p $(JMODS_BASE)/$(JMOD_OS_LIBC)/{java,classes}
-	mkdir -p $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib
-ifeq ($(MSYS_VERSION),0)
-else
-	$(COPY) $(UCRT_BASE)/bin/libgcc_s_seh-*.dll $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib
-	$(COPY) $(UCRT_BASE)/bin/libgomp-*.dll $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib
-	$(COPY) $(UCRT_BASE)/bin/libstdc++-*.dll $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib
-	$(COPY) $(UCRT_BASE)/bin/libwinpthread-*.dll $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib
-endif
-	
-	echo "module $(JMOD_OS_LIBC) {}" > $(JMODS_BASE)/$(JMOD_OS_LIBC)/java/module-info.java
-	$(JLINK_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_OS_LIBC)/classes $(JMODS_BASE)/$(JMOD_OS_LIBC)/java/module-info.java
-	
-	$(RM) $(A2_JMODS)/$(JMOD_OS_LIBC).jmod
-	$(JLINK_HOME)/bin/jmod create \
-	 --class-path $(JMODS_BASE)/$(JMOD_OS_LIBC)/classes \
-	 --libs $(JMODS_BASE)/$(JMOD_OS_LIBC)/lib \
-	 $(A2_JMODS)/$(JMOD_OS_LIBC).jmod
+JDK_JJML ?= jdk-jjml-$(JLINK_JAVA_RELEASE)-$(JLINK_JVM_VARIANT)
+JDK_JJML_ARTIFACT = $(JDK_JJML)-$(TARGET_NATIVE_CATEGORY_PREFIX)
+JDK_JJML_DIR = $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)
 
 standalone-release: clean-local
 	$(CMAKE) -B $(BUILD_BASE) . \
@@ -139,7 +112,6 @@ standalone-release: clean-local
 	$(CMAKE) --build $(BUILD_BASE) -j $(shell nproc)
 
 jmod-jjml:
-	mkdir -p $(A2_JMODS)
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/legal
 
@@ -149,7 +121,8 @@ jmod-jjml:
 
 	$(RM) $(A2_JMODS)/$(JMOD_JJML).jmod
 	$(JLINK_HOME)/bin/jmod create \
-	 --class-path $(A2_OUTPUT)/org.argeo.jjml/org.argeo.jjml.${major}.${minor}.jar \
+	 --class-path $(A2_OUTPUT)/org.argeo.jjml/org.argeo.jjml.$(major).$(minor).jar \
+	 --module-version $(A2_LAYER_VERSION) \
 	 --libs $(JMODS_BASE)/$(JMOD_JJML)/lib \
 	 --legal-notices $(JMODS_BASE)/$(JMOD_JJML)/legal \
 	 $(A2_JMODS)/$(JMOD_JJML).jmod
@@ -157,7 +130,6 @@ jmod-jjml:
 	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
 
 jmod-ggml:
-	mkdir -p $(A2_JMODS)
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/{java,classes}
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/include
@@ -181,10 +153,9 @@ jmod-ggml:
 	 --legal-notices $(JMODS_BASE)/$(JMOD_GGML)/legal \
 	 $(A2_JMODS)/$(JMOD_GGML).jmod
 	# list content
-	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML).jmod
+	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML).jmod
 
 jmod-ggml-llm:
-	mkdir -p $(A2_JMODS)
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/{java,classes}
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
@@ -210,27 +181,29 @@ jmod-ggml-llm:
 	 --legal-notices $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal \
 	 $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
 	# list content
-	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
+	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
 
-
+##
+## DISTRIBUTABLE PACKAGES
+##
 rt-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
 	$(RM) -r $(RT_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
 	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
-	 --add-modules $(RT_JJML_JMODS),$(JJML_JMODS) \
+	 --add-modules $(RT_JJML_JMODS),$(JMOD_OS_LIBS),$(JJML_JMODS) \
 	 --output $(RT_JJML_DIR)
 	
 	mkdir -p $(RT_JJML_DIR)/jmods
-	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod $(RT_JJML_DIR)/jmods
-	$(COPY) $(A2_JMODS)/$(JMOD_GGML)*.jmod $(RT_JJML_DIR)/jmods
-	$(COPY) $(A2_JMODS)/$(JMOD_OS_LIBC).jmod $(RT_JJML_DIR)/jmods
+	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod \
+	 $(A2_JMODS)/$(JMOD_GGML)*.jmod \
+	 $(A2_JMODS)/$(JMOD_OS_LIBS).jmod \
+	 $(RT_JJML_DIR)/jmods
 
-
-jdk-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
+jdk-jjml: standalone-release jmod-os-libs jmod-jjml jmod-ggml jmod-ggml-llm
 	$(RM) -r $(JDK_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
 	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
-	 --add-modules $(JLINK_MODULES),$(JJML_JMODS) \
+	 --add-modules $(JLINK_MODULES),$(JMOD_OS_LIBS),$(JJML_JMODS) \
 	 --output $(JDK_JJML_DIR)
 	
 	mkdir -p $(JDK_JJML_DIR)/src
@@ -242,16 +215,42 @@ jdk-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
 	$(RM) -r $(JDK_JJML_DIR)/src
 	
 	mkdir -p $(JDK_JJML_DIR)/jmods
-	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod $(JDK_JJML_DIR)/jmods
-	$(COPY) $(A2_JMODS)/$(JMOD_GGML)*.jmod $(JDK_JJML_DIR)/jmods
-	$(COPY) $(A2_JMODS)/$(JMOD_OS_LIBC).jmod $(JDK_JJML_DIR)/jmods
+	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod \
+	 $(A2_JMODS)/$(JMOD_GGML)*.jmod \
+	 $(A2_JMODS)/$(JMOD_OS_LIBS).jmod \
+	 $(JDK_JJML_DIR)/jmods
+
+	mkdir -p $(JDK_JJML_DIR)/lib/a2/org.argeo.jjml
+	$(COPY) $(A2_OUTPUT)/org.argeo.jjml/*.jar $(JDK_JJML_DIR)/lib/a2/org.argeo.jjml	
 	
+zip-jdk-jjml:
 	# create archive
 	cd $(BUILD_BASE) && zip -r -q \
-	 $(JDK_JJML)-$(JLINK_JAVA_RELEASE)-$(JLINK_JVM_VARIANT)-$(TARGET_OS)-$(TARGET_DEB_ARCH)-${major}.${minor}.${micro}.zip \
+	 $(JDK_JJML_ARTIFACT)-$(PACKAGE_VERSION).zip \
 	 $(shell basename $(JDK_JJML_DIR))
-	rm -rf $(JDK_JJML_DIR)
+	#rm -rf $(JDK_JJML_DIR)
+
+ifneq (,$(shell which $(JLINK_HOME)/bin/jpackage))
+msi-jdk-jjml:
+	PATH=/usr/libexec/x86_64-win32-default/wix3:$(PATH) && \
+	$(JLINK_HOME)/bin/jpackage \
+	 --runtime-image $(JDK_JJML_DIR) \
+	 --type msi \
+	 --name $(JDK_JJML) \
+	 --app-version $(PACKAGE_VERSION) \
+	 --dest $(BUILD_BASE) \
+	 --description "JDK $(JLINK_JAVA_RELEASE) with additional machine learning features" \
+	 --vendor "Argeo GmbH" \
+	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
+	 --win-dir-chooser \
+	 --win-per-user-install \
+	 --win-upgrade-uuid $(shell uuidgen) \
+	 --install-dir "$(JDK_JJML)" \
+#	 --icon "$(SDK_SRC_BASE)/sdk/argeo-icon.ico" \
 	
+	mv $(BUILD_BASE)/$(JDK_JJML)-$(PACKAGE_VERSION).msi \
+	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(PACKAGE_VERSION).msi
+endif
 	
 # Note: On Windows, use dumpbin.exe in order to find depedencies of a DLL
 # (similar to ldd on Linux). E.g. "C:\Program Files (x86)\Microsoft Visual
