@@ -1,4 +1,15 @@
-/build/
-/sdk.mk
-/a2/
 /output/
+/build/
+/a2/
+/sdk.mk
+
+# CMake generated files in source
+CMakeCache.txt
+*.cmake
+**/CMakeFiles/
+
+# JVM crashes
+core.*.dmp
+jitdump.*.dmp
+javacore.*.txt
+Snap.*.trc
