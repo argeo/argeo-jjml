@@ -18,7 +18,7 @@ public class DownloadGGUF {
 
 	public static void main(String[] args) throws Exception {
 		if (args.length == 0) {
-			System.err.println("Download a quantized model (default is Q4_K_M)" + //
+			System.err.println("Download a quantized model (default is Q4_K_M)\n" + //
 					"Usage: " + DownloadGGUF.class.getSimpleName() //
 					+ " <hf repo> [<quantization>]\n" //
 					+ "e.g. unsloth/Qwen3-4B-Instruct-2507-GGUF Q4_K_M");
