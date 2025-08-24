@@ -1,3 +1,6 @@
+# Enterprise-grade Java bindings for using LLMs on premise
+
+## Use core LLM capabilities locally within existing Java systems
 Argeo JJML provides low-level Java bindings for the [ggml](https://github.com/ggml-org/ggml) family of machine learning libraries, especially [llama.cpp](https://github.com/ggml-org/llama.cpp) which allows to run locally open-weights large language models (LLMs, aka. "generative AI").
 
 The main goal of this lightweight component is to provide an enterprise-grade quality mechanism to integrate local LLMs into existing Java systems, with stable Java APIs, a small auditable code base, and essentially no impact on other components.
@@ -10,7 +13,7 @@ The Java layer does not depend on any Argeo or third-party Java libraries, and i
 
 No tooling or application is provided, except some examples for testing and development purposes. Focus is on stability rather than supporting the latest features. Usable features such as chatbots, RAG, HTTP APIs, etc. should be implemented on top of this component, typically using third-party libraries and frameworks.
 
-# Features
+## Features
 - Java 11+ support
 - JPMS and OSGi metadata
 - Simple user/assistant dialog based on standard functional interfaces
@@ -21,7 +24,7 @@ No tooling or application is provided, except some examples for testing and deve
 - Combination and configuration of (native) samplers from the Java side
 - API for implementing samplers in pure Java
 
-# Build
+## Build
 The build relies only on CMake and the [argeo-build](https://github.com/argeo/argeo-build) scripts (as a git submodule). Pinned reference versions of both [ggml](https://github.com/ggml-org/ggml) and [llama.cpp](https://github.com/ggml-org/llama.cpp) are provided as git submodules as well. *One should therefore always use `git pull --recurse-submodules` when updating.*
 
 ```
@@ -35,7 +38,7 @@ If the shared libraries are found at the usual locations (/usr, /usr/local, etc.
 
 In order to force building with the reference submodules even if the libraries are locally available, use `-DJJML_FORCE_BUILD_TP=ON` when configuring CMake.
 
-# Status
+## Status
 Argeo JJML is currently in open beta, the last phase before a first stable release.
 
 All features of the future stable release are implemented and should not change significantly. Work has already started on commercial projects using it in various industries.
@@ -45,12 +48,12 @@ Future features:
 - [whisper.cpp](https://github.com/ggerganov/whisper.cpp) integration
 - Android integration (low priority)
 
-# Contact, bug reports, commercial support
+## Contact, bug reports, commercial support
 All queries should be directed to Mathieu Baudier via [LinkedIn](https://www.linkedin.com/in/mbaudier/). You can expect properly reported bugs to be fixed free of charge, and additional features to require a fee. We can also provide consulting services in order to help you integrate this capabilities into your existing Java systems.
 
 In line with general Argeo policy, no community support is provided, as all our pro-bono efforts always go to non-commercial upstream projects (in that case, mostly contributions to the Debian packaging of ggml and llama.cpp).
 
-# License
+## License
 Argeo JJML is dual-licensed:
 - LGPL v2.1 (or later version)
 - EPL v2, with GPL as a possible secondary license
@@ -93,7 +96,7 @@ See [NOTICE](NOTICE) for more details.
 SPDX-License-Identifier: LGPL-2.1-or-later OR EPL-2.0 OR LicenseRef-argeo2-GPL-2.0-or-later-with-EPL-and-Apache-and-JCR-permissions
 ```
 
-# Alternatives for using machine learning with Java
+## Alternatives for using machine learning with Java
 - [java-llama.cpp](https://github.com/kherud/java-llama.cpp) - The Java bindings referenced by the llama.cpp project. It relies on llama.cpp "common" layer and strives to provide the `llama-server` features set. It should therefore be more complete in terms of features, while slightly more heavyweight. Argeo JJML provides a different approach, not a competing one.
 - [Jlama](https://github.com/tjake/Jlama) - An inference engine written in Java and based on the latest advancements in Java technology (esp. the new Vector API). Supports models in *.safetensors format but (at the time of writing) not in GGUF format.
 - [llama3.java](https://github.com/mukel/llama3.java) - A very short plain Java implementation based on the new Vector API. Supports only Meta's llama 3.x models (in GGUF format).
