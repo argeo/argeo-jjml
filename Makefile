@@ -1,7 +1,7 @@
 # Makefile based on default Argeo SDK conventions,
 # used as a high-level driver for build, packaging, etc.
 # Low-level build only uses CMake.
-include sdk.mk
+-include sdk.mk
 include sdk/argeo-build/cmake/default.mk
 
 TARGET_NATIVE_OUTPUT_GGML=$(TARGET_NATIVE_OUTPUT)/org.argeo.tp.ggml
@@ -60,7 +60,7 @@ rebuild-force-tp: clean-local
 
 # Remove locally built libraries
 clean-local:
-	$(RM) -rf $(BUILD_BASE)
+	$(RM) -r $(BUILD_BASE)
 	@$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(SHLIB_PREFIX)ggml*$(SHLIB_SUFFIX)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(SHLIB_PREFIX)llama*$(SHLIB_SUFFIX)
