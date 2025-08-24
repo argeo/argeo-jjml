@@ -1,4 +1,4 @@
-# Enterprise-grade Java bindings for using LLMs on premise
+# Enterprise-grade bindings for LLMs on premise
 
 ## Use core LLM capabilities locally within existing Java systems
 Argeo JJML provides low-level Java bindings for the [ggml](https://github.com/ggml-org/ggml) family of machine learning libraries, especially [llama.cpp](https://github.com/ggml-org/llama.cpp) which allows to run locally open-weights large language models (LLMs, aka. "generative AI").
