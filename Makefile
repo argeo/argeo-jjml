@@ -82,7 +82,11 @@ endif
 ##
 ## PACKAGING
 ##
+ifeq ($(qualifier),.next)
 PACKAGE_VERSION=$(major).$(minor).$(micro).$(git_commit_count)
+else
+PACKAGE_VERSION=$(major).$(minor).$(micro)$(qualifier)
+endif
 
 JMOD_JJML=org.argeo.jjml
 JMOD_GGML=org.argeo.tp.ggml
