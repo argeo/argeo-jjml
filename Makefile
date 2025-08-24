@@ -82,7 +82,7 @@ endif
 ##
 ## PACKAGING
 ##
-PACKAGE_VERSION=$(A2_LAYER_VERSION)
+PACKAGE_VERSION=$(major).$(minor).$(micro).$(git_commit_count)
 
 JMOD_JJML=org.argeo.jjml
 JMOD_GGML=org.argeo.tp.ggml
