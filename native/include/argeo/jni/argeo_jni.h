@@ -57,6 +57,7 @@ namespace argeo::jni {
 inline std::nullptr_t throw_to_java(JNIEnv *env, const std::exception &ex) {
 	if (env->ExceptionCheck())
 		return nullptr;
+#ifdef __GNUC__
 	if (typeid(std::invalid_argument) == typeid(ex)) {
 		env->ThrowNew(IllegalArgumentException(env), ex.what());
 	} else if (typeid(std::range_error) == typeid(ex)) {
@@ -66,6 +67,9 @@ inline std::nullptr_t throw_to_java(JNIEnv *env, const std::exception &ex) {
 	} else {
 		env->ThrowNew(RuntimeException(env), ex.what());
 	}
+#else
+	env->ThrowNew(RuntimeException(env), ex.what());
+#endif
 	return nullptr;
 }
 /*

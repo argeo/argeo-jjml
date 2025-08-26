@@ -13,3 +13,5 @@ core.*.dmp
 jitdump.*.dmp
 javacore.*.txt
 Snap.*.trc
+/out/build
+/.vs
