@@ -114,7 +114,7 @@ standalone-release: clean-local
 		-DGGML_NATIVE=OFF \
 		-DGGML_CPU_ALL_VARIANTS=ON \
 		-DGGML_BACKEND_DL=ON	
-	$(CMAKE) --build $(BUILD_BASE) -j $(shell nproc)
+	$(CMAKE) --build $(BUILD_BASE) --config Release -j $(shell nproc)
 
 jmod-jjml:
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
@@ -132,7 +132,7 @@ jmod-jjml:
 	 --legal-notices $(JMODS_BASE)/$(JMOD_JJML)/legal \
 	 $(A2_JMODS)/$(JMOD_JJML).jmod
 	# list content
-	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
+	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
 
 jmod-ggml:
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/{java,classes}
@@ -158,7 +158,7 @@ jmod-ggml:
 	 --legal-notices $(JMODS_BASE)/$(JMOD_GGML)/legal \
 	 $(A2_JMODS)/$(JMOD_GGML).jmod
 	# list content
-	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML).jmod
+	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML).jmod
 
 jmod-ggml-llm:
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/{java,classes}
@@ -171,7 +171,8 @@ jmod-ggml-llm:
 	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal
 	
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)llama$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
-	$(COPY) $(BUILD_BASE)/bin/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
+	#$(COPY) $(BUILD_BASE)/bin/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
 
 # TODO add requires to ggml
 	echo "module $(JMOD_GGML_LLM) {}" > $(JMODS_BASE)/$(JMOD_GGML_LLM)/java/module-info.java
@@ -186,7 +187,7 @@ jmod-ggml-llm:
 	 --legal-notices $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal \
 	 $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
 	# list content
-	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
+	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
 
 ##
 ## DISTRIBUTABLE PACKAGES
@@ -204,7 +205,9 @@ rt-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
 	 $(A2_JMODS)/$(JMOD_OS_LIBS).jmod \
 	 $(RT_JJML_DIR)/jmods
 
-jdk-jjml: standalone-release jmod-os-libs jmod-jjml jmod-ggml jmod-ggml-llm
+package-jmods: jmod-os-libs jmod-jjml jmod-ggml jmod-ggml-llm
+
+jdk-jjml: package-jmods
 	$(RM) -r $(JDK_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
 	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
