@@ -101,5 +101,13 @@ endif()
 
 message(STATUS "GGML_VERSION=${GGML_VERSION} LLAMA_VERSION=${LLAMA_VERSION}") 
 
+set(CMAKE_CXX_STANDARD 17)
+if (NOT MSVC)
+	# force ISO-C++
+    #add_compile_options(-pedantic-errors)
+    add_compile_options(-pedantic)
+endif()
+
 add_subdirectory(org_argeo_jjml_ggml)
 add_subdirectory(org_argeo_jjml_llm)
+                      
