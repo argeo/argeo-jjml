@@ -36,8 +36,8 @@ rebuild-force-tp: clean-local
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
 		-DGGML_CCACHE=ON \
 		\
-		-DLLAMA_BUILD_COMMON=OFF \
-		-DLLAMA_BUILD_TOOLS=OFF \
+		-DLLAMA_BUILD_COMMON=ON \
+		-DLLAMA_BUILD_TOOLS=ON \
 		-DLLAMA_BUILD_EXAMPLES=OFF \
 		-DLLAMA_BUILD_TESTS=OFF \
 		\
@@ -53,7 +53,7 @@ rebuild-force-tp: clean-local
 		-DGGML_CUDA_FA_ALL_QUANTS=OFF \
 		-DGGML_RPC=$(GGML_RPC) \
 	
-	$(CMAKE) --build $(BUILD_BASE) -j $(shell nproc)
+	$(CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)*$(SHLIB_SUFFIX) $(TARGET_NATIVE_OUTPUT)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(SHLIB_PREFIX)*$(SHLIB_SUFFIX) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
