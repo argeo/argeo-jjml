@@ -18,7 +18,7 @@
  * WRITE
  */
 static jint jjml_llm_batch_processor_write(llama_context *ctx,
-		llama_sampler *smpl, llama_pos cur_pos, void **inputs,
+		llama_sampler *smpl, llama_pos cur_pos, std::vector<void*> inputs,
 		const int inputs_count, JNIEnv *env, jintArray offsets,
 		jintArray lengths, jintArray sequenceIds, jintArray outputIds,
 		jboolean lastLogits) {
@@ -42,7 +42,7 @@ static jint jjml_llm_batch_processor_write(llama_context *ctx,
 	assert(env->GetArrayLength(offsets) == inputs_count);
 	jint *seq_offsets = env->GetIntArrayElements(offsets, nullptr);
 
-	llama_token *seq_tokens[inputs_count];
+	std::vector<llama_token*> seq_tokens(inputs_count);
 	for (int i = 0; i < inputs_count; i++) {
 		void *input = inputs[i];
 		if (input != nullptr) {
@@ -186,7 +186,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doWrite(
 	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
 
 	int inputs_count = env->GetArrayLength(inputBuffers);
-	void *inputs[inputs_count];
+	std::vector<void*> inputs(inputs_count);
 	for (int i = 0; i < inputs_count; i++) {
 		jobject inputBuf = env->GetObjectArrayElement(inputBuffers, i);
 		if (inputBuf != nullptr) {
@@ -217,7 +217,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doWriteArr
 	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
 
 	int inputs_count = env->GetArrayLength(inputArrays);
-	void *inputs[inputs_count];
+	std::vector<void*> inputs(inputs_count);
 	for (int i = 0; i < inputs_count; i++) {
 		jarray arr = (jarray) env->GetObjectArrayElement(inputArrays, i);
 		if (arr != nullptr) {

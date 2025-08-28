@@ -13,6 +13,10 @@
 
 #include "org_argeo_jjml_llm_.h"
 
+// CONSTANTS
+static const size_t META_BUFFER_SIZE = 1024;
+static const size_t META_BIG_BUFFER_SIZE = 20480;
+
 /*
  * PARAMETERS
  */
@@ -127,15 +131,15 @@ static jobjectArray jjml_lama_get_meta(JNIEnv *env, llama_model *model,
 				nullptr);
 		for (int32_t i = 0; i < meta_count; i++) {
 			try {
-				const size_t buf_size = 1024;
-				char buf[buf_size];
-				int32_t length = supplier(i, buf, buf_size);
+
+				char buf[META_BUFFER_SIZE];
+				int32_t length = supplier(i, buf, META_BUFFER_SIZE);
 				if (length == -1)
 					throw std::runtime_error(
 							"Cannot read model metadata " + std::to_string(i));
 				std::string u8_res;
-				if (length > buf_size) { // chat templates can be quite big
-					char big_buf[length];
+				if (length > META_BUFFER_SIZE) { // chat templates can be quite big
+					char big_buf[META_BIG_BUFFER_SIZE];
 					length = supplier(i, big_buf, length);
 					u8_res = std::string(big_buf, length);
 				} else {
@@ -180,14 +184,13 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doGetDescript
 		JNIEnv *env, jobject obj) {
 	try {
 		auto *model = argeo::jni::as_pointer<llama_model*>(env, obj);
-		const size_t buf_size = 1024;
-		char buf[buf_size];
-		int32_t length = llama_model_desc(model, buf, buf_size);
+		char buf[META_BUFFER_SIZE];
+		int32_t length = llama_model_desc(model, buf, META_BUFFER_SIZE);
 		if (length == -1)
 			throw std::runtime_error("Cannot read model description ");
 		std::string u8_res;
-		if (length > buf_size) { // big description
-			char big_buf[length];
+		if (length > META_BUFFER_SIZE) { // big description
+			char big_buf[META_BIG_BUFFER_SIZE];
 			length = llama_model_desc(model, big_buf, length);
 			u8_res = std::string(big_buf, length);
 		} else {
