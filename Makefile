@@ -105,6 +105,8 @@ JDK_JJML_DIR = $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)
 standalone-release: clean-local
 	$(CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
+		-G 'Visual Studio 17 2022' \
+		-DJAVA_HOME="$(JAVA_HOME)" \
 		-DGGML_CCACHE=ON \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
@@ -116,14 +118,23 @@ standalone-release: clean-local
 		-DGGML_BACKEND_DL=ON	
 	$(CMAKE) --build $(BUILD_BASE) --config Release -j $(shell nproc)
 
-MSVC_BUILD_TOOLS="C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
-MSVC_CMAKE="C:/PROGRAM FILES/MICROSOFT VISUAL STUDIO/2022/COMMUNITY/COMMON7/IDE/COMMONEXTENSIONS/MICROSOFT/CMAKE/CMake/bin/cmake.exe"
-MSVC_NINJA="C:/PROGRAM FILES/MICROSOFT VISUAL STUDIO/2022/COMMUNITY/COMMON7/IDE/COMMONEXTENSIONS/MICROSOFT/CMAKE/Ninja/ninja.exe"
+#MSVC_BUILD_TOOLS="C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools"
+#MSVC_ENV="/Common7/Tools/VsDevCmd.bat"
+
+ifneq (,$(VCIDEInstallDir))
+MSVC_IDE_BASE=$(shell cygpath -m '$(VCIDEInstallDir)\\..')
+else
+MSVC_IDE_BASE=$(shell cygpath -m 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/IDE/')
+endif
+#MSVC_CMAKE_BASE="$(MSVC_BUILD_TOOLS)/Common7/IDE/CommonExtensions/Microsoft/CMake"
+MSVC_CMAKE_BASE=$(MSVC_IDE_BASE)CommonExtensions/Microsoft/CMake
+MSVC_CMAKE="$(MSVC_CMAKE_BASE)/CMake/bin/cmake.exe"
 
 msvc-release:
 	$(MSVC_CMAKE) \
-		-B $(BUILD_BASE) \
-		-G 'Visual Studio 17 2022' \
+		-B "$(BUILD_BASE)" \
+		-DCMAKE_LIBRARY_ARCHITECTURE=x86_64-win32-default \
+		-DJAVA_HOME="$(JAVA_HOME)" \
 		-DJJML_FORCE_BUILD_TP=ON \
 		-DLLAMA_BUILD_COMMON=ON \
 		-DLLAMA_BUILD_TOOLS=ON \
@@ -132,15 +143,8 @@ msvc-release:
 		-DGGML_CPU_ALL_VARIANTS=ON \
 		-DGGML_BACKEND_DL=ON \
 		-DGGML_VULKAN=OFF \
-		$(SDK_SRC_BASE)
+		"$(SDK_SRC_BASE)"
 
-#		-G 'Visual Studio 17 2022' \
-#		-G "Ninja" \
-#		-DCMAKE_MAKE_PROGRAM=$(MSVC_NINJA) \
-#		-DCMAKE_C_COMPILER:FILEPATH="C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe" \
-#		-DCMAKE_CXX_COMPILER:FILEPATH="C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe" \
-
-	
 	$(MSVC_CMAKE) --build $(BUILD_BASE) --config Release -j $(shell nproc)
 
 jmod-jjml:
@@ -169,7 +173,7 @@ jmod-ggml:
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/include
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/legal
 
-	$(COPY) native/tp/ggml/include/ggml.h native/tp/ggml/include/ggml-backend.h $(JMODS_BASE)/$(JMOD_GGML)/include
+	$(COPY) native/tp/ggml/include/*.h $(JMODS_BASE)/$(JMOD_GGML)/include
 	$(COPY) native/tp/ggml/LICENSE native/tp/ggml/AUTHORS $(JMODS_BASE)/$(JMOD_GGML)/legal
 	
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib

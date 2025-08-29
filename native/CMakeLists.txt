@@ -8,16 +8,13 @@
 # We always want the shared libraries
 set(BUILD_SHARED_LIBS ON)
 
-# Argeo paths
-set(CMAKE_LIBRARY_PATH
-/usr/libexec/${CMAKE_LIBRARY_ARCHITECTURE}/ggml
-)
-
+if(NOT MSVC)
 # Debian official until libraries are stable
 set(CMAKE_PREFIX_PATH
 /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/ggml/cmake-private
 /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/llama/cmake-private
 )
+endif()
 
 set(TARGET_NATIVE_OUTPUT_GGML ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX}/org.argeo.tp.ggml)
 set(TARGET_NATIVE_OUTPUT_LLAMA ${TARGET_NATIVE_OUTPUT_GGML})
@@ -33,7 +30,14 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_GGML}>)
 else()
 endif()
 
+message(STATUS "CMAKE_LIBRARY_ARCHITECTURE=${CMAKE_LIBRARY_ARCHITECTURE}")
+
 if(NOT JJML_FORCE_BUILD_TP)
+	if(JAVA_HOME) # Use environment provided by ggml-instrumented JDK
+		set(CMAKE_LIBRARY_PATH ${JAVA_HOME}/bin ${JAVA_HOME}/lib)
+		include_directories(${JAVA_HOME}/include SYSTEM)
+	endif()
+
 	find_package(llama QUIET)
 	if(llama_FOUND)
 		message(STATUS "Found llama and ggml packages: ${llama_LIBRARY} ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
@@ -54,9 +58,18 @@ endif()
 if(EXISTS ${GGML_LIBRARY})
 	if(NOT ggml_FOUND)
 		add_library(ggml SHARED IMPORTED GLOBAL)
+		if(MSVC)
+		set_target_properties(ggml PROPERTIES IMPORTED_IMPLIB ${GGML_LIBRARY})
+		else()
 		set_target_properties(ggml PROPERTIES IMPORTED_LOCATION ${GGML_LIBRARY})
+		endif()
+		
 		add_library(ggml-base SHARED IMPORTED GLOBAL)
+		if(MSVC)
+		set_target_properties(ggml-base PROPERTIES IMPORTED_IMPLIB ${GGML_BASE_LIBRARY})
+		else()
 		set_target_properties(ggml-base PROPERTIES IMPORTED_LOCATION ${GGML_BASE_LIBRARY})
+		endif()
 		message(STATUS "Found ggml libraries: ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
 	endif()
 	if(NOT DEFINED ${GGML_BACKEND_DL})
@@ -85,7 +98,11 @@ endif()
 if(EXISTS "${llama_LIBRARY}")
 	if(NOT llama_FOUND)
 		add_library(llama SHARED IMPORTED GLOBAL)
+		if(MSVC)
+		set_target_properties(llama PROPERTIES IMPORTED_IMPLIB ${llama_LIBRARY})
+		else()
 		set_target_properties(llama PROPERTIES IMPORTED_LOCATION ${llama_LIBRARY})
+		endif()
 		target_link_libraries(llama INTERFACE ${GGML_LIBRARY})
 	endif()
 	message(STATUS "Found LLAMA library: ${llama_LIBRARY}") 
