@@ -82,7 +82,7 @@ endif
 ##
 ## PACKAGING
 ##
-ifeq ($(qualifier),.next)
+ifneq ($(git_commit_count),)
 PACKAGE_VERSION=$(major).$(minor).$(micro).$(git_commit_count)
 else
 PACKAGE_VERSION=$(major).$(minor).$(micro)$(qualifier)
