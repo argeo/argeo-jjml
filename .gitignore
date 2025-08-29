@@ -13,5 +13,7 @@ core.*.dmp
 jitdump.*.dmp
 javacore.*.txt
 Snap.*.trc
+
+# Visual Studio
 /out/build
 /.vs

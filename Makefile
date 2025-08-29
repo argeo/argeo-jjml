@@ -54,17 +54,17 @@ rebuild-force-tp: clean-local
 		-DGGML_RPC=$(GGML_RPC) \
 	
 	$(CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
-	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)*$(SHLIB_SUFFIX) $(TARGET_NATIVE_OUTPUT)
-	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(SHLIB_PREFIX)*$(SHLIB_SUFFIX) $(TARGET_NATIVE_OUTPUT)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
 
 # Remove locally built libraries
 clean-local:
 	$(RM) -r $(BUILD_BASE)
 	@$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(SHLIB_PREFIX)ggml*$(SHLIB_SUFFIX)
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(SHLIB_PREFIX)llama*$(SHLIB_SUFFIX)
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(SHLIB_PREFIX)Java_org_argeo_jjml_*$(SHLIB_SUFFIX)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
 
 ##
 ## BUILD ENVIRONMENT
@@ -122,7 +122,7 @@ jmod-jjml:
 
 	$(COPY) COPYING.LESSER NOTICE $(JMODS_BASE)/$(JMOD_JJML)/legal
 
-	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(SHLIB_PREFIX)Java_org_argeo_jjml*$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_JJML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_JJML)/lib
 
 	$(RM) $(A2_JMODS)/$(JMOD_JJML).jmod
 	$(JLINK_HOME)/bin/jmod create \
@@ -132,7 +132,7 @@ jmod-jjml:
 	 --legal-notices $(JMODS_BASE)/$(JMOD_JJML)/legal \
 	 $(A2_JMODS)/$(JMOD_JJML).jmod
 	# list content
-	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
+	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
 
 jmod-ggml:
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/{java,classes}
@@ -143,9 +143,9 @@ jmod-ggml:
 	$(COPY) native/tp/ggml/include/ggml.h native/tp/ggml/include/ggml-backend.h $(JMODS_BASE)/$(JMOD_GGML)/include
 	$(COPY) native/tp/ggml/LICENSE native/tp/ggml/AUTHORS $(JMODS_BASE)/$(JMOD_GGML)/legal
 	
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)ggml$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)ggml-base$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)ggml-cpu-*$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-cpu-*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 
 	echo "module $(JMOD_GGML) {}" > $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
 	$(JLINK_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_GGML)/classes $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
@@ -170,7 +170,7 @@ jmod-ggml-llm:
 	$(COPY) native/tp/llama.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_LLM)/include
 	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal
 	
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)llama$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 	#$(COPY) $(BUILD_BASE)/bin/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
 
@@ -195,9 +195,9 @@ jmod-ggml-llm:
 rt-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
 	$(RM) -r $(RT_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
-	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
+	 --module-path "$(JLINK_JMODS)$(file_path_sep)$(A2_JMODS)" \
 	 --add-modules $(RT_JJML_JMODS),$(JMOD_OS_LIBS),$(JJML_JMODS) \
-	 --output $(RT_JJML_DIR)
+	 --output "$(RT_JJML_DIR)"
 	
 	mkdir -p $(RT_JJML_DIR)/jmods
 	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod \
@@ -210,9 +210,9 @@ package-jmods: jmod-os-libs jmod-jjml jmod-ggml jmod-ggml-llm
 jdk-jjml: package-jmods
 	$(RM) -r $(JDK_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
-	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
+	 --module-path "$(JLINK_JMODS)$(file_path_sep)$(A2_JMODS)" \
 	 --add-modules $(JLINK_MODULES),$(JMOD_OS_LIBS),$(JJML_JMODS) \
-	 --output $(JDK_JJML_DIR)
+	 --output "$(JDK_JJML_DIR)"
 	
 	mkdir -p $(JDK_JJML_DIR)/src
 	cp $(JLINK_HOME)/lib/src.zip $(JDK_JJML_DIR)/lib
