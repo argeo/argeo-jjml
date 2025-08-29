@@ -116,6 +116,31 @@ standalone-release: clean-local
 		-DGGML_BACKEND_DL=ON	
 	$(CMAKE) --build $(BUILD_BASE) --config Release -j $(shell nproc)
 
+MSVC_CMAKE="C:/PROGRAM FILES/MICROSOFT VISUAL STUDIO/2022/COMMUNITY/COMMON7/IDE/COMMONEXTENSIONS/MICROSOFT/CMAKE/CMake/bin/cmake.exe"
+MSVC_NINJA="C:/PROGRAM FILES/MICROSOFT VISUAL STUDIO/2022/COMMUNITY/COMMON7/IDE/COMMONEXTENSIONS/MICROSOFT/CMAKE/Ninja/ninja.exe"
+
+msvc-release:
+	$(MSVC_CMAKE) \
+		-B $(BUILD_BASE) \
+		-G 'Visual Studio 17 2022' \
+		-DJJML_FORCE_BUILD_TP=ON \
+		-DLLAMA_BUILD_COMMON=ON \
+		-DLLAMA_BUILD_TOOLS=ON \
+		-DLLAMA_CURL=OFF \
+		-DGGML_NATIVE=OFF \
+		-DGGML_CPU_ALL_VARIANTS=ON \
+		-DGGML_BACKEND_DL=ON \
+		 $(SDK_SRC_BASE)
+
+#		-G 'Visual Studio 17 2022' \
+#		-G "Ninja" \
+#		-DCMAKE_MAKE_PROGRAM=$(MSVC_NINJA) \
+#		-DCMAKE_C_COMPILER:FILEPATH="C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe" \
+#		-DCMAKE_CXX_COMPILER:FILEPATH="C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe" \
+
+	
+	$(MSVC_CMAKE) --build $(BUILD_BASE) --config Release -j $(shell nproc)
+
 jmod-jjml:
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/legal
