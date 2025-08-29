@@ -116,6 +116,7 @@ standalone-release: clean-local
 		-DGGML_BACKEND_DL=ON	
 	$(CMAKE) --build $(BUILD_BASE) --config Release -j $(shell nproc)
 
+MSVC_BUILD_TOOLS="C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
 MSVC_CMAKE="C:/PROGRAM FILES/MICROSOFT VISUAL STUDIO/2022/COMMUNITY/COMMON7/IDE/COMMONEXTENSIONS/MICROSOFT/CMAKE/CMake/bin/cmake.exe"
 MSVC_NINJA="C:/PROGRAM FILES/MICROSOFT VISUAL STUDIO/2022/COMMUNITY/COMMON7/IDE/COMMONEXTENSIONS/MICROSOFT/CMAKE/Ninja/ninja.exe"
 
@@ -130,7 +131,8 @@ msvc-release:
 		-DGGML_NATIVE=OFF \
 		-DGGML_CPU_ALL_VARIANTS=ON \
 		-DGGML_BACKEND_DL=ON \
-		 $(SDK_SRC_BASE)
+		-DGGML_VULKAN=OFF \
+		$(SDK_SRC_BASE)
 
 #		-G 'Visual Studio 17 2022' \
 #		-G "Ninja" \
@@ -142,6 +144,7 @@ msvc-release:
 	$(MSVC_CMAKE) --build $(BUILD_BASE) --config Release -j $(shell nproc)
 
 jmod-jjml:
+	$(RM) -r $(JMODS_BASE)/$(JMOD_JJML)
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/legal
 
@@ -160,6 +163,7 @@ jmod-jjml:
 	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
 
 jmod-ggml:
+	$(RM) -r $(JMODS_BASE)/$(JMOD_GGML)
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/{java,classes}
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/include
@@ -171,6 +175,10 @@ jmod-ggml:
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-cpu-*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	#$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-vulkan$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	# MSVC linker libs
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
 
 	echo "module $(JMOD_GGML) {}" > $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
 	$(JLINK_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_GGML)/classes $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
@@ -186,6 +194,7 @@ jmod-ggml:
 	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML).jmod
 
 jmod-ggml-llm:
+	$(RM) -r $(JMODS_BASE)/$(JMOD_GGML_LLM)
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/{java,classes}
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
@@ -196,6 +205,8 @@ jmod-ggml-llm:
 	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal
 	
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	# MSVC linker libs
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.lib $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 	#$(COPY) $(BUILD_BASE)/bin/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
 
