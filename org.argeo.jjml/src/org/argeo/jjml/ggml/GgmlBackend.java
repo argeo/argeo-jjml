@@ -4,11 +4,14 @@ import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.WARNING;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.System.Logger;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.argeo.jjml.internal.OsUtils;
@@ -51,9 +54,20 @@ public class GgmlBackend {
 			basePaths.add(Paths.get("/usr/libexec/x86_64-linux-gnu/ggml"));
 
 		// load
-		for (Path basePath : basePaths) {
+		basePaths: for (Path basePath : basePaths) {
 			if (Files.exists(basePath)) {
 				// loadBackends(basePath);
+				try (DirectoryStream<Path> ds = Files.newDirectoryStream(basePath, System.mapLibraryName("ggml-*"))) {
+					Iterator<Path> it = ds.iterator();
+					// scanning some directories causes crashes on Windows,
+					// so we skip irrelevant ones
+					if (!it.hasNext())
+						continue basePaths;
+				} catch (IOException e) {
+					// silent
+					continue basePaths;
+				}
+				logger.log(INFO, "Searching for ggml backends in: " + basePath);
 				doLoadAllBackends(OsUtils.filePathToNative(basePath));
 			}
 		}
