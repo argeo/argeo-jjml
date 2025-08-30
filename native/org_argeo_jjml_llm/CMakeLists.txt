@@ -21,8 +21,11 @@ endif()
 
 #target_compile_definitions(${TARGET} PRIVATE GGML_ASSERT=)
 
-target_compile_definitions(${TARGET} PRIVATE
-_JJML_PRE_LLAMA_0_0_4881
-)
+if(LLAMA_BUILD_NUMBER LESS 5882)
+target_compile_definitions(${TARGET} PRIVATE JJML_PRE_LLAMA_0_0_5882)
+endif()
+if(LLAMA_BUILD_NUMBER LESS 4881)
+target_compile_definitions(${TARGET} PRIVATE JJML_PRE_LLAMA_0_0_4881)
+endif()
 
 a2_jni_target(${TARGET})

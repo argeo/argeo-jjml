@@ -131,6 +131,24 @@ else()
 	message(STATUS "Build llama.cpp locally from submodule native/tp/llama.cpp") 
 endif()
 
+# ggml and llama.cpp versions
+if(NOT GGML_BUILD_NUMBER)
+if (Git_FOUND)
+execute_process(COMMAND "${GIT_EXECUTABLE}" rev-list --count HEAD
+ WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tp/ggml
+ OUTPUT_VARIABLE GGML_BUILD_NUMBER OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+endif()
+if(NOT LLAMA_BUILD_NUMBER)
+if (Git_FOUND)
+execute_process(COMMAND "${GIT_EXECUTABLE}" rev-list --count HEAD
+ WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tp/llama.cpp
+ OUTPUT_VARIABLE LLAMA_BUILD_NUMBER OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+endif()
+message(STATUS "GGML_BUILD_NUMBER=${GGML_BUILD_NUMBER} LLAMA_BUILD_NUMBER=${LLAMA_BUILD_NUMBER}")
+
+
 #
 # JJML NATIVE BUILD
 #
