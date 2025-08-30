@@ -1,3 +1,6 @@
+# clean with:
+# git clean -dxf
+
 /output/
 /build/
 /a2/
@@ -7,6 +10,7 @@
 CMakeCache.txt
 *.cmake
 **/CMakeFiles/
+Makefile
 
 # JVM crashes
 core.*.dmp
@@ -14,6 +18,7 @@ jitdump.*.dmp
 javacore.*.txt
 Snap.*.trc
 hs_err_pid*.log
+install_manifest.txt
 
 # Visual Studio
 /out/build

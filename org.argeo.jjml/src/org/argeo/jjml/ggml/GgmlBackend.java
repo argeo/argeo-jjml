@@ -44,13 +44,21 @@ public class GgmlBackend {
 		// java.library.path
 		String javaLibraryPath = System.getProperty("java.library.path");
 		if (javaLibraryPath != null && !"".equals(javaLibraryPath.trim())) {
+			System.out.println(javaLibraryPath);
 			String[] paths = javaLibraryPath.split(File.pathSeparator);
 			for (String p : paths)
 				basePaths.add(Paths.get(p));
 		}
 
 		// "standard" deployment paths
-		if (basePaths.isEmpty())
+		// TODO make it cleaner and more configurable
+		// TODO hardcode some paths on the native side and configure at build?
+		// Debian
+		Path path = Paths.get("/usr/lib/x86_64-linux-gnu/ggml/backends0");
+		System.out.println(path);
+		if (Files.exists(path))
+			basePaths.add(path);
+		else // Argeo
 			basePaths.add(Paths.get("/usr/libexec/x86_64-linux-gnu/ggml"));
 
 		// load
