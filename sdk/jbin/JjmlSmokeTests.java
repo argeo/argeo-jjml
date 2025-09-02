@@ -15,11 +15,9 @@ import static org.argeo.jjml.llm.util.InstructRole.ASSISTANT;
 import static org.argeo.jjml.llm.util.InstructRole.SYSTEM;
 import static org.argeo.jjml.llm.util.InstructRole.USER;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -50,17 +48,14 @@ import org.argeo.jjml.llm.LlamaCppTextProcessor;
 import org.argeo.jjml.llm.LlamaCppVocabulary;
 import org.argeo.jjml.llm.params.ContextParams;
 import org.argeo.jjml.llm.params.ModelParams;
+import org.argeo.jjml.llm.util.DownloadModel;
+import org.argeo.jjml.llm.util.SimpleProgressCallback;
 
 /**
  * Minimal set of non-destructive in-memory tests, in order to check that a
  * given deployment and/or model are working. Java assertions must be enabled.
  */
 class JjmlSmokeTests {
-	/** Default location for GGUF model files. */
-	private final static Path MODELS_BASE = File.separatorChar == '/'
-			? Paths.get(System.getProperty("user.home"), ".cache", "llama.cpp")
-			: Paths.get(System.getProperty("user.home"), "AppData", "Local", "llama.cpp");
-
 	private final static Logger logger = System.getLogger(JjmlSmokeTests.class.getName());
 
 	private int parallelism = Runtime.getRuntime().availableProcessors();
@@ -72,6 +67,8 @@ class JjmlSmokeTests {
 				return;
 			}
 
+			long begin = System.currentTimeMillis();
+
 			// even without a model we can check whether native libraries are loading
 			assert ((BooleanSupplier) () -> {
 				LlamaCppNative.ensureLibrariesLoaded();
@@ -79,31 +76,17 @@ class JjmlSmokeTests {
 			}).getAsBoolean();
 			logger.log(INFO, "Native libraries properly loaded.");
 
-			if (args.isEmpty()) {
-				logger.log(ERROR, "Usage: " + getClass().getSimpleName() + " <path to GGUF model>");
-				return;
-			}
-
-			Path modelPath = Paths.get(args.get(0));
-			if (!Files.exists(modelPath)) {
-				String hfRepo = args.get(0);
-				String quantization = "Q4_K_M";
-				if (hfRepo.contains(":")) {
-					quantization = hfRepo.split(":")[1];
-					hfRepo = hfRepo.split(":")[0];
-				}
-				String fileName = hfRepo.split("/")[1].replace("-GGUF", "-" + quantization + ".gguf");
-				String localFileName = hfRepo.replace("/", "_") + "_" + fileName;
-				modelPath = MODELS_BASE.resolve(localFileName);
-
-			}
+			String arg0 = args.get(0);
+			Path modelPath = Paths.get(arg0);
+			if (!Files.exists(modelPath))
+				modelPath = new DownloadModel().getOrDownloadModel(arg0, new SimpleProgressCallback());
 			if (!Files.exists(modelPath))
 				throw new IllegalArgumentException("Could not find GGUF model " + modelPath);
 
 			ModelParams modelParams = defaultModelParams();
 			logger.log(INFO, "Loading model " + modelPath + " ...");
-			Future<LlamaCppModel> loaded = LlamaCppModel.loadAsync(modelPath, modelParams,
-					new LoadModelProgressCallback(), null);
+			Future<LlamaCppModel> loaded = LlamaCppModel.loadAsync(modelPath, modelParams, new SimpleProgressCallback(),
+					null);
 			try (LlamaCppModel model = loaded.get();) {
 				logger.log(INFO, "Model " + model.getDescription());
 				logger.log(INFO, model.getLayerCount() + " layers");
@@ -127,8 +110,10 @@ class JjmlSmokeTests {
 				assertChat(model);
 				assertSavedContextState(model);
 			}
+			logger.log(INFO, "Smoke tests passed in " + (System.currentTimeMillis() - begin) / 1000 + " s with model "
+					+ modelPath.getFileName());
 		} catch (Exception | AssertionError e) {
-			logger.log(Level.ERROR, "Smoke tests failed", e);
+			logger.log(ERROR, "Smoke tests failed", e);
 			throw e;
 		} finally {
 			LlamaCppBackend.destroy();
@@ -479,7 +464,7 @@ class JjmlSmokeTests {
 
 				lastPerctPrinted = perct;
 				if (progress == 1.0)
-					System.out.print("\n");
+					System.err.print("\n");
 			}
 		}
 
