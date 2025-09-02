@@ -13,6 +13,7 @@ CMakeCache.txt
 Makefile
 
 # JVM crashes
+core
 core.*.dmp
 jitdump.*.dmp
 javacore.*.txt
