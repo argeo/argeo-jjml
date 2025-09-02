@@ -6,6 +6,7 @@ import static java.lang.System.Logger.Level.WARNING;
 import java.io.File;
 import java.io.IOException;
 import java.lang.System.Logger;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,8 +14,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import org.argeo.jjml.internal.OsUtils;
 
 /** A registered GGML backend. */
 public class GgmlBackend {
@@ -76,7 +75,7 @@ public class GgmlBackend {
 					continue basePaths;
 				}
 				logger.log(INFO, "Searching for ggml backends in: " + basePath);
-				doLoadAllBackends(OsUtils.filePathToNative(basePath));
+				doLoadAllBackends(filePathToNative(basePath));
 			}
 		}
 	}
@@ -112,7 +111,7 @@ public class GgmlBackend {
 			}
 			Path backendPath = basePath.resolve(dllName);
 			if (Files.exists(backendPath)) {
-				long pointer = doLoadBackend(OsUtils.filePathToNative(basePath));
+				long pointer = doLoadBackend(filePathToNative(basePath));
 				if (pointer > 0) {
 					// TODO log it
 					GgmlBackend backend = new GgmlBackend(pointer, backendName.name(), backendPath);
@@ -122,5 +121,10 @@ public class GgmlBackend {
 				}
 			}
 		}
+	}
+
+	/** Path as bytes, based on the OS native encoding. */
+	private static byte[] filePathToNative(Path path) {
+		return path.toString().getBytes(Charset.forName(System.getProperty("sun.jnu.encoding", "UTF-8")));
 	}
 }

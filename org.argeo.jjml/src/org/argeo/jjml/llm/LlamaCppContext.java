@@ -7,12 +7,12 @@ import java.io.IOException;
 import java.lang.System.Logger;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.LongSupplier;
 
-import org.argeo.jjml.internal.OsUtils;
 import org.argeo.jjml.llm.params.ContextParam;
 import org.argeo.jjml.llm.params.ContextParams;
 import org.argeo.jjml.llm.params.PoolingType;
@@ -135,7 +135,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 			throw new IllegalArgumentException("Tokens must be in a direct buffer");
 		if (Files.exists(path) && !Files.isWritable(path))
 			throw new IOException("Location " + path + " for session file is not writable");
-		doSaveStateFile(OsUtils.filePathToNative(path), tokens, 0, tokens.position());
+		doSaveStateFile(filePathToNative(path), tokens, 0, tokens.position());
 	}
 
 	int loadStateFile(Path path, IntBuffer tokens) throws IOException {
@@ -143,7 +143,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 			throw new FileNotFoundException("Session file " + path + " does not exist");
 		if (!tokens.isDirect())
 			throw new IllegalArgumentException("Tokens must be in a direct buffer");
-		int tokenCount = doLoadStateFile(OsUtils.filePathToNative(path), tokens, 0);
+		int tokenCount = doLoadStateFile(filePathToNative(path), tokens, 0);
 		tokens.position(tokenCount);
 		return tokenCount;
 	}
@@ -216,5 +216,10 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 				res = res.with(param, sysProp);
 		}
 		return res;
+	}
+
+	/** Path as bytes, based on the OS native encoding. */
+	private static byte[] filePathToNative(Path path) {
+		return path.toString().getBytes(Charset.forName(System.getProperty("sun.jnu.encoding", "UTF-8")));
 	}
 }
