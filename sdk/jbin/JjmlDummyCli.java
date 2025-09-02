@@ -52,15 +52,20 @@ import org.argeo.jjml.llm.params.ModelParams;
 import org.argeo.jjml.llm.params.PoolingType;
 
 /** A minimal command line interface for batch processing and simple chat. */
-public class SimpleCli {
+public class JjmlDummyCli {
+	/** Default location for GGUF model files. */
+	private final static Path MODELS_BASE = File.separatorChar == '/'
+			? Paths.get(System.getProperty("user.home"), ".cache", "llama.cpp")
+			: Paths.get(System.getProperty("user.home"), "AppData", "Local", "llama.cpp");
+
 	private final static String DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant.";
 
 	/** Force chat mode in (Eclipse) IDE, when no proper console is available. */
-	final static boolean developing = parseBoolean(System.getProperty("SimpleCli.ide", FALSE.toString()));
+	private final static boolean developing = parseBoolean(System.getProperty("JjmlDummyCli.ide", FALSE.toString()));
 
 	public static void main(String... args) throws Exception {
 		if (args.length == 0) {
-			System.err.println("A model must be specified");
+			System.err.println("A GGUF model must be specified");
 			printUsage(System.err);
 			System.exit(1);
 		}
@@ -72,6 +77,18 @@ public class SimpleCli {
 		 * ARGUMENTS
 		 */
 		Path modelPath = Paths.get(args[0]);
+		if (!Files.exists(modelPath)) {
+			String hfRepo = args[0];
+			String quantization = "Q4_K_M";
+			if (hfRepo.contains(":")) {
+				quantization = hfRepo.split(":")[1];
+				hfRepo = hfRepo.split(":")[0];
+			}
+			String fileName = hfRepo.split("/")[1].replace("-GGUF", "-" + quantization + ".gguf");
+			String localFileName = hfRepo.replace("/", "_") + "_" + fileName;
+			modelPath = MODELS_BASE.resolve(localFileName);
+
+		}
 		if (!Files.exists(modelPath))
 			throw new FileNotFoundException("Model " + modelPath + " does not exist");
 
@@ -110,7 +127,7 @@ public class SimpleCli {
 				&& modelParams.n_gpu_layers() == 0 //
 		) {
 			// we assume we want as many layers offloaded as possible
-			modelParams = modelParams.with(n_gpu_layers, 1024);
+			modelParams = modelParams.with(n_gpu_layers, 99);
 		}
 
 		try (LlamaCppModel model = LlamaCppModel.load(modelPath, modelParams); //
@@ -186,9 +203,9 @@ public class SimpleCli {
 	}
 
 	private static void printUsage(PrintStream out) {
-		out.println("Usage: java " + SimpleCli.class.getName() //
+		out.println("Usage: java " + JjmlDummyCli.class.getName() //
 				+ " <path/to/model.gguf> [<system prompt>]");
-		out.println("Usage: java -Djjml.llama.context.embeddings=true " + SimpleCli.class.getName() //
+		out.println("Usage: java -Djjml.llama.context.embeddings=true " + JjmlDummyCli.class.getName() //
 				+ " <path/to/model.gguf> [<chunk size>] [ csv | pgvector ]");
 
 		out.println();
@@ -222,11 +239,14 @@ public class SimpleCli {
 		out.println();
 		out.println("# System properties for explicit paths to shared libraries:");
 		out.println();
-		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA + "=");
+		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_JJML_LLM + "=");
 		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_LLAMACPP + "=");
 		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_GGML + "=");
 		out.println();
-		out.println("# WARNING: This is a suboptimal implementation. JJML is meant to be used as a Java library.");
+		out.println("#");
+		out.println("# WARNING - This is a suboptimal informational implementation.");
+		out.println("# JJML is meant to be used directly as a Java library.");
+		out.println("#");
 	}
 
 	/**
@@ -480,5 +500,4 @@ class SimpleEmbedding extends LlamaCppEmbeddingProcessor implements Function<Str
 		}
 		return processEmbeddings(inputs);
 	}
-
 }

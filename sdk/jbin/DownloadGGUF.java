@@ -12,7 +12,8 @@ import java.nio.file.Paths;
  * llama-cli.
  */
 public class DownloadGGUF {
-	final static Path MODELS_BASE = File.separatorChar == '/'
+	/** Default location for GGUF model files. */
+	private final static Path MODELS_BASE = File.separatorChar == '/'
 			? Paths.get(System.getProperty("user.home"), ".cache", "llama.cpp")
 			: Paths.get(System.getProperty("user.home"), "AppData", "Local", "llama.cpp");
 
@@ -20,18 +21,20 @@ public class DownloadGGUF {
 		if (args.length == 0) {
 			System.err.println("Download a quantized model (default is Q4_K_M)\n" + //
 					"Usage: " + DownloadGGUF.class.getSimpleName() //
-					+ " <hf repo> [<quantization>]\n" //
-					+ "e.g. unsloth/Qwen3-4B-Instruct-2507-GGUF Q4_K_M");
+					+ " <hf repo>:[<quantization>]\n" //
+					+ "e.g. allenai/OLMo-2-0425-1B-Instruct-GGUF:Q8_0");
 		}
 
 		String hfRepo = args[0];
 		String quantization = "Q4_K_M";
-		if (args.length > 1)
-			quantization = args[1];
-
+		if (hfRepo.contains(":")) {
+			quantization = hfRepo.split(":")[1];
+			hfRepo = hfRepo.split(":")[0];
+		}
 		String fileName = hfRepo.split("/")[1].replace("-GGUF", "-" + quantization + ".gguf");
 		String localFileName = hfRepo.replace("/", "_") + "_" + fileName;
 		Path localFile = MODELS_BASE.resolve(localFileName);
+		
 		if (Files.exists(localFile))
 			throw new IllegalStateException(localFile + " already exists, delete it first.");
 		Files.createDirectories(localFile.getParent());
@@ -45,5 +48,4 @@ public class DownloadGGUF {
 			System.out.println("Download completed after " + (System.currentTimeMillis() - begin) / 1000 + " s");
 		}
 	}
-
 }

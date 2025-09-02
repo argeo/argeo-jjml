@@ -15,6 +15,7 @@ import static org.argeo.jjml.llm.util.InstructRole.ASSISTANT;
 import static org.argeo.jjml.llm.util.InstructRole.SYSTEM;
 import static org.argeo.jjml.llm.util.InstructRole.USER;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger;
@@ -54,8 +55,13 @@ import org.argeo.jjml.llm.params.ModelParams;
  * Minimal set of non-destructive in-memory tests, in order to check that a
  * given deployment and/or model are working. Java assertions must be enabled.
  */
-class SmokeTests {
-	private final static Logger logger = System.getLogger(SmokeTests.class.getName());
+class JjmlSmokeTests {
+	/** Default location for GGUF model files. */
+	private final static Path MODELS_BASE = File.separatorChar == '/'
+			? Paths.get(System.getProperty("user.home"), ".cache", "llama.cpp")
+			: Paths.get(System.getProperty("user.home"), "AppData", "Local", "llama.cpp");
+
+	private final static Logger logger = System.getLogger(JjmlSmokeTests.class.getName());
 
 	private int parallelism = Runtime.getRuntime().availableProcessors();
 
@@ -65,16 +71,34 @@ class SmokeTests {
 				logger.log(ERROR, "Assertions must be enabled. Please call Java with the -ea option.");
 				return;
 			}
-			if (args.isEmpty()) {
-				logger.log(ERROR, "Usage: " + getClass().getSimpleName() + " <path to GGUF model>");
-				return;
-			}
-			Path modelPath = Paths.get(args.get(0));
 
+			// even without a model we can check whether native libraries are loading
 			assert ((BooleanSupplier) () -> {
 				LlamaCppNative.ensureLibrariesLoaded();
 				return true;
 			}).getAsBoolean();
+			logger.log(INFO, "Native libraries properly loaded.");
+
+			if (args.isEmpty()) {
+				logger.log(ERROR, "Usage: " + getClass().getSimpleName() + " <path to GGUF model>");
+				return;
+			}
+
+			Path modelPath = Paths.get(args.get(0));
+			if (!Files.exists(modelPath)) {
+				String hfRepo = args.get(0);
+				String quantization = "Q4_K_M";
+				if (hfRepo.contains(":")) {
+					quantization = hfRepo.split(":")[1];
+					hfRepo = hfRepo.split(":")[0];
+				}
+				String fileName = hfRepo.split("/")[1].replace("-GGUF", "-" + quantization + ".gguf");
+				String localFileName = hfRepo.replace("/", "_") + "_" + fileName;
+				modelPath = MODELS_BASE.resolve(localFileName);
+
+			}
+			if (!Files.exists(modelPath))
+				throw new IllegalArgumentException("Could not find GGUF model " + modelPath);
 
 			ModelParams modelParams = defaultModelParams();
 			logger.log(INFO, "Loading model " + modelPath + " ...");
@@ -411,7 +435,7 @@ class SmokeTests {
 	 */
 	/** CLI entry point. */
 	public static void main(String[] args) throws Exception {
-		new SmokeTests().main(Arrays.asList(args));
+		new JjmlSmokeTests().main(Arrays.asList(args));
 	}
 
 	/**
