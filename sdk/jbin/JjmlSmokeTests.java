@@ -1,3 +1,4 @@
+//!/usr/bin/env -S java -ea -cp /usr/share/java/org.argeo.jjml.jar
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
@@ -48,7 +49,7 @@ import org.argeo.jjml.llm.LlamaCppTextProcessor;
 import org.argeo.jjml.llm.LlamaCppVocabulary;
 import org.argeo.jjml.llm.params.ContextParams;
 import org.argeo.jjml.llm.params.ModelParams;
-import org.argeo.jjml.llm.util.DownloadModel;
+import org.argeo.jjml.llm.util.SimpleModelDownload;
 import org.argeo.jjml.llm.util.SimpleProgressCallback;
 
 /**
@@ -79,7 +80,7 @@ class JjmlSmokeTests {
 			String arg0 = args.get(0);
 			Path modelPath = Paths.get(arg0);
 			if (!Files.exists(modelPath))
-				modelPath = new DownloadModel().getOrDownloadModel(arg0, new SimpleProgressCallback());
+				modelPath = new SimpleModelDownload().getOrDownloadModel(arg0, new SimpleProgressCallback());
 			if (!Files.exists(modelPath))
 				throw new IllegalArgumentException("Could not find GGUF model " + modelPath);
 

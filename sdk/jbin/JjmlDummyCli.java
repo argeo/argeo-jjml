@@ -1,4 +1,4 @@
-
+//!/usr/bin/env -S java -cp /usr/share/java/org.argeo.jjml.jar
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.System.Logger.Level.INFO;
@@ -52,7 +52,7 @@ import org.argeo.jjml.llm.params.ContextParam;
 import org.argeo.jjml.llm.params.ModelParam;
 import org.argeo.jjml.llm.params.ModelParams;
 import org.argeo.jjml.llm.params.PoolingType;
-import org.argeo.jjml.llm.util.DownloadModel;
+import org.argeo.jjml.llm.util.SimpleModelDownload;
 import org.argeo.jjml.llm.util.SimpleProgressCallback;
 
 /** A minimal command line interface for batch processing and simple chat. */
@@ -80,7 +80,7 @@ public class JjmlDummyCli {
 		String arg0 = args[0];
 		Path modelPath = Paths.get(arg0);
 		if (!Files.exists(modelPath))
-			modelPath = new DownloadModel().getOrDownloadModel(arg0, new SimpleProgressCallback());
+			modelPath = new SimpleModelDownload().getOrDownloadModel(arg0, new SimpleProgressCallback());
 		if (!Files.exists(modelPath))
 			throw new IllegalArgumentException("Could not find GGUF model " + modelPath);
 

@@ -23,31 +23,27 @@ import java.util.function.DoubleConsumer;
 import org.argeo.jjml.llm.LlamaCppModel;
 
 /**
- * Download a GGUF model from HuggingFace with the same naming conventions as
- * llama-cli.
+ * Downloads a GGUF model (by defaults from HuggingFace) with the same naming
+ * conventions as llama-cli. This is meant to be used for prototyping, not as a
+ * full-fledged models management solution.
  */
-public class DownloadModel {
+public class SimpleModelDownload {
 	private final static Logger logger = System.getLogger(LlamaCppModel.class.getName());
-
-	private int bufferSize = 1024 * 4096;
 
 	/** Default location for GGUF model files. */
 	private final static Path MODELS_BASE = File.separatorChar == '/'
 			? Paths.get(System.getProperty("user.home"), ".cache", "llama.cpp")
 			: Paths.get(System.getProperty("user.home"), "AppData", "Local", "llama.cpp");
 
-	/** The default path where GGUF files are downloaded and searched for. */
-	public static Path getDefaultModelsBase() {
-		return MODELS_BASE;
-	}
+	private int bufferSize = 1024 * 4096;
 
 	private final Path modelsBase;
 
-	public DownloadModel(Path modelsBase) {
+	public SimpleModelDownload(Path modelsBase) {
 		this.modelsBase = modelsBase;
 	}
 
-	public DownloadModel() {
+	public SimpleModelDownload() {
 		this(getDefaultModelsBase());
 	}
 
@@ -61,6 +57,7 @@ public class DownloadModel {
 
 	}
 
+	/** To be overridden in order to use something else than HuggingFace. */
 	public URI getRemoteUri(String hfRepo, String quantization) {
 		return URI.create("https://huggingface.co/" + hfRepo + "/resolve/main/"
 				+ getRemoteFileName(hfRepo, quantization) + "?download=true");
@@ -79,22 +76,6 @@ public class DownloadModel {
 
 	public Path getLocalFile(String hfRepo, String quantization) {
 		return modelsBase.resolve(getLocalFileName(hfRepo, quantization));
-	}
-
-	/*
-	 * STATIC
-	 */
-
-	/** A simple CLI to use from the OS. */
-	public static void main(String[] args) throws Exception {
-		if (args.length == 0) {
-			System.err.println("Download a quantized model (default is Q4_K_M)\n" + //
-					"Usage: " + DownloadModel.class.getSimpleName() //
-					+ " <hf repo>:[<quantization>]\n" //
-					+ "e.g. allenai/OLMo-2-0425-1B-Instruct-GGUF:Q8_0");
-		}
-
-		new DownloadModel().getOrDownloadModel(args[0], new SimpleProgressCallback());
 	}
 
 	public Path getOrDownloadModel(String hfRepoArg, DoubleConsumer progressCallback) throws IOException {
@@ -161,5 +142,13 @@ public class DownloadModel {
 					"Download completed after " + (System.currentTimeMillis() - begin) / 1000 + " s, etag=" + etag);
 		}
 		return localFile;
+	}
+
+	/*
+	 * STATIC
+	 */
+	/** The default path where GGUF files are downloaded and searched for. */
+	public static Path getDefaultModelsBase() {
+		return MODELS_BASE;
 	}
 }
