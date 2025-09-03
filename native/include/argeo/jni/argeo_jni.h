@@ -220,13 +220,6 @@ inline T as_pointer(JNIEnv *env, jobject reference) {
 //
 // STRINGS
 //
-
-struct jbytes_releaser {
-	void operator()(jbyte *adapter) {
-		return;
-	}
-};
-
 /** Converts an array of bytes (typically UTF-8 encoded) to a C++ string.*/
 inline std::string to_string(JNIEnv *env, jbyteArray str) {
 	jsize length = env->GetArrayLength(str);
