@@ -185,7 +185,8 @@ jmod-jjml:
 
 jmod-ggml:
 	$(RM) -r $(JMODS_BASE)/$(JMOD_GGML)
-	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/{java,classes}
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/java
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/classes
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/include
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/legal
@@ -216,7 +217,8 @@ jmod-ggml:
 
 jmod-ggml-llm:
 	$(RM) -r $(JMODS_BASE)/$(JMOD_GGML_LLM)
-	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/{java,classes}
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/java
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/classes
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/include
