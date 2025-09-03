@@ -32,9 +32,10 @@ rebuild-force-tp: clean-local
 	
 	$(CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
+		-DA2_INSTALL_MODE=a2 \
+		-DJAVA_HOME=$(JAVA_HOME) \
 		\
 		-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
-		-DJAVA_HOME=$(JAVA_HOME) \
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
 		-DGGML_CCACHE=ON \
 		\
@@ -117,7 +118,9 @@ JDK_JJML_DIR = $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)
 standalone-release: clean-local
 	$(CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
+		-DA2_INSTALL_MODE=a2 \
 		-DJAVA_HOME="$(JAVA_HOME)" \
+		\
 		-DGGML_CCACHE=ON \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
@@ -144,14 +147,17 @@ MSVC_CMAKE="$(MSVC_CMAKE_BASE)/CMake/bin/cmake.exe"
 msvc-release:
 	$(MSVC_CMAKE) \
 		-B "$(BUILD_BASE)" \
-		-DCMAKE_LIBRARY_ARCHITECTURE=x86_64-win32-default \
-		-DJAVA_HOME="$(JAVA_HOME)" \
 		-DJJML_FORCE_BUILD_TP=ON \
+		-DA2_INSTALL_MODE=a2 \
+		-DJAVA_HOME="$(JAVA_HOME)" \
+		\
+		-DCMAKE_LIBRARY_ARCHITECTURE=x86_64-win32-default \
 		-DLLAMA_BUILD_COMMON=ON \
 		-DLLAMA_BUILD_TOOLS=ON \
 		-DLLAMA_CURL=OFF \
 		-DGGML_NATIVE=OFF \
 		-DGGML_CPU_ALL_VARIANTS=ON \
+		-DGGML_OPENMP=ON \
 		-DGGML_BACKEND_DL=ON \
 		-DGGML_VULKAN=OFF \
 		"$(SDK_SRC_BASE)"
@@ -282,7 +288,7 @@ jdk-jjml: package-jmods
 	mkdir -p $(JDK_JJML_DIR)/lib/a2/org.argeo.jjml
 	$(COPY) $(A2_OUTPUT)/org.argeo.jjml/*.jar $(JDK_JJML_DIR)/lib/a2/org.argeo.jjml	
 	
-zip-jdk-jjml:
+zip-jdk-jjml: jdk-jjml
 	# create archive
 	cd $(BUILD_BASE) && zip -r -q \
 	 $(JDK_JJML_ARTIFACT)-$(PACKAGE_VERSION).zip \
@@ -290,7 +296,7 @@ zip-jdk-jjml:
 	#rm -rf $(JDK_JJML_DIR)
 
 ifneq (,$(shell which $(JLINK_HOME)/bin/jpackage))
-msi-jdk-jjml:
+msi-jdk-jjml: jdk-jjml
 	PATH=/usr/libexec/x86_64-win32-default/wix3:$(PATH) && \
 	$(JLINK_HOME)/bin/jpackage \
 	 --runtime-image $(JDK_JJML_DIR) \
