@@ -69,9 +69,18 @@ clean-local:
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
 
-##
-## BUILD ENVIRONMENT
-##
+#
+# DOC
+#
+doc-api:
+	$(JAVA_HOME)/bin/javadoc -Xdoclint:none \
+	 -d doc/reference/api \
+	 -sourcepath org.argeo.jjml/src \
+	 -subpackages org
+
+#
+# BUILD ENVIRONMENT
+#
 
 install-deps:
 ifeq ($(MSYS_VERSION),0)
@@ -82,9 +91,9 @@ else
 	pacman -S --needed mingw-w64-ucrt-x86_64-vulkan-devel mingw-w64-ucrt-x86_64-shaderc
 endif
 
-##
-## PACKAGING
-##
+#
+# PACKAGING
+#
 ifneq ($(git_commit_count),)
 PACKAGE_VERSION=$(major).$(minor).$(micro).$(git_commit_count)
 else
@@ -231,9 +240,9 @@ jmod-ggml-llm:
 	# list content
 	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
 
-##
-## DISTRIBUTABLE PACKAGES
-##
+#
+# DISTRIBUTABLE PACKAGES
+#
 rt-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
 	$(RM) -r $(RT_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
