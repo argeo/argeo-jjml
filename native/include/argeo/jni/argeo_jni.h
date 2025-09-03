@@ -235,5 +235,11 @@ inline std::string to_string(JNIEnv *env, jbyteArray str) {
 	return res;
 }
 
+/** Converts an element of an array of arrays of bytes (typically UTF-8 encoded) to a C++ string.*/
+inline std::string to_string(JNIEnv *env, jobjectArray strings, size_t index) {
+	jbyteArray str = (jbyteArray) env->GetObjectArrayElement(strings, index);
+	return argeo::jni::to_string(env, str);
+}
+
 }  // namespace argeo::jni
 #endif
