@@ -45,7 +45,6 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 		int requiredContextSize = tokenCount + outputMax * getParallelCount() * 10;
 
 		int contextSize = getContext().getContextSize();
-//		System.out.println("Context size: " + contextSize);
 		if (getContext().getContextSize() < requiredContextSize)
 			throw new IllegalArgumentException(
 					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
@@ -86,24 +85,7 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 				input.put(promptArr, i * batchSize, input.limit());
 				input.flip();
 
-//				if (savedState != null) {
-//					context.writeState(savedState);
-//					contextPosition = savedContextPosition;
-//					Arrays.fill(outputIds, savedContextPosition - 1);
-//					System.out.println("Loaded saved context state.");
-//				} else {
-				long begin = System.nanoTime();
 				writeBatch(new IntBuffer[] { input }, lastLogits);
-				long end = System.nanoTime();
-				System.out.println("Wrote batch in " + (end - begin) / 1000000 + " ms.");
-//				}
-//				if (savedState == null) {
-//					int stateSize = (int) context.getStateSize();
-//					savedState = ByteBuffer.allocate(stateSize);
-//					context.readState(savedState);
-//					System.out.println("Saved context state (" + stateSize / (1024 * 1024) + " MiB)");
-//					savedContextPosition = contextPosition;
-//				}
 			}
 
 			if (parameters != null) {
@@ -112,7 +94,6 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 
 				IntBuffer[] inputs = new IntBuffer[getParallelCount()];
 				for (int i = 0; i < getParallelCount(); i++) {
-//					LlamaCppTokenList parameterTL = model.tokenizeAsArray(parameters[i], true);
 					IntBuffer parametersTokens = vocabulary.tokenize(parameters[i]);
 					if (parametersTokens.remaining() * getParallelCount() > batchSize)// TODO be more precise / robust
 						throw new IllegalArgumentException("Parameter '" + parameters[i] + "' is too long.");
@@ -128,7 +109,6 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 			}
 
 			if (postPrompt != null) {
-//				LlamaCppTokenList postPromptTL = model.tokenizeAsArray(postPrompt, true);
 				IntBuffer postPromptTokens = vocabulary.tokenize(postPrompt);
 				if (postPromptTokens.remaining() > batchSize)// TODO be more precise / robust
 					throw new IllegalArgumentException("Post prompt '" + postPrompt + "' is too long.");
@@ -163,7 +143,6 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 					outputs[i] = null;
 					continue outputs;
 				}
-//			IntBuffer output = buf.slice(buf.position(), outputMax); // Java 17
 				IntBuffer output = buf.slice();
 				output.limit(outputMax);
 				outputs[i] = output;
@@ -213,7 +192,5 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 		for (int i = 0; i < outputStrings.length; i++)
 			res.add(outputStrings[i]);
 		return res.toString();
-
 	}
-
 }

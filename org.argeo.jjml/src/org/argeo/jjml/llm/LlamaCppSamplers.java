@@ -64,8 +64,6 @@ public class LlamaCppSamplers {
 		if (params.temp() > 0) {
 			chain.addSampler(LlamaCppSamplers.newSamplerTopK(params.top_k()));
 			long min_keep = params.min_keep();
-			// chain.addSampler(LlamaCppSamplers.newSamplerTailFree(params.tfs_z(),
-			// min_keep));
 			chain.addSampler(LlamaCppSamplers.newSamplerTypicalP(params.typ_p(), min_keep));
 			chain.addSampler(LlamaCppSamplers.newSamplerTopP(params.top_p(), min_keep));
 			chain.addSampler(LlamaCppSamplers.newSamplerMinP(params.min_p(), min_keep));
@@ -73,12 +71,10 @@ public class LlamaCppSamplers {
 					params.dynatemp_exponent()));
 
 			// final sampler
-			// chain.addSampler(LlamaCppSamplers.newSamplerSoftMax());
 			chain.addSampler(LlamaCppSamplers.newSamplerDist());
 		} else {
 			if (params.n_probs() > 0) {
 				chain.addSampler(LlamaCppSamplers.newSamplerTopK(params.n_probs()));
-				// chain.addSampler(LlamaCppSamplers.newSamplerSoftMax());
 			}
 			chain.addSampler(LlamaCppSamplers.newSamplerGreedy());
 //			chain.addSampler(LlamaCppSamplers.newJavaSampler(new LlamaCppJavaSampler.SimpleGreedy()));
@@ -103,13 +99,11 @@ public class LlamaCppSamplers {
 	) {
 		return new LlamaCppNativeSampler(doInitPenalties(penalty_last_n, penalty_repeat, penalty_freq, penalty_present,
 				penalize_nl, ignore_eos));
-
 	}
 
 	public static LlamaCppNativeSampler newSamplerPenalties(DefaultSamplerChainParams params) {
 		return newSamplerPenalties(params.penalty_last_n(), params.penalty_repeat(), params.penalty_freq(),
 				params.penalty_freq(), params.penalize_nl(), params.ignore_eos());
-
 	}
 
 	public static LlamaCppNativeSampler newSamplerTopK(int top_k) {
@@ -124,10 +118,6 @@ public class LlamaCppSamplers {
 		return new LlamaCppNativeSampler(doInitMinP(min_p, min_keep));
 	}
 
-//	public static LlamaCppNativeSampler newSamplerTailFree(float tfs_z, long min_keep) {
-//		return new LlamaCppNativeSampler(doInitTailFree(tfs_z, min_keep));
-//	}
-
 	public static LlamaCppNativeSampler newSamplerTypicalP(float typ_p, long min_keep) {
 		return new LlamaCppNativeSampler(doInitTypicalP(typ_p, min_keep));
 	}
@@ -139,10 +129,6 @@ public class LlamaCppSamplers {
 	public static LlamaCppNativeSampler newSamplerTemp(float temp) {
 		return new LlamaCppNativeSampler(doInitTemp(temp));
 	}
-
-//	public static LlamaCppNativeSampler newSamplerSoftMax() {
-//		return new LlamaCppNativeSampler(doInitSoftMax());
-//	}
 
 	public static LlamaCppNativeSampler newSamplerDist(int seed) {
 		return new LlamaCppNativeSampler(doInitDist(seed));

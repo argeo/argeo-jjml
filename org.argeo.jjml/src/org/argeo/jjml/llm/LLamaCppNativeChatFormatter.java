@@ -5,6 +5,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.List;
 import java.util.function.Predicate;
 
+/**
+ * Format chat messages using llama.cpp basic capabilities (Jinja templates are <b>not</b>
+ * supported). 
+ */
 public class LLamaCppNativeChatFormatter {
 
 	/*
@@ -15,6 +19,16 @@ public class LLamaCppNativeChatFormatter {
 
 	/*
 	 * USABLE METHODS
+	 */
+	/**
+	 * Format a list of chat messages either as 'user' or 'assistant' messages.
+	 * 
+	 * @param messages           the list of qualified chat messages
+	 * @param addAssistantTokens whether a given message should be considered 'user'
+	 *                           (returns <code>true</code>) or 'assistant'
+	 * @param chatTemplate       the llama.cpp id for the chat template (e.g.
+	 *                           'granite'), not a full template
+	 * @return the formatted messages as single string
 	 */
 	static String formatChatMessages(List<LlamaCppChatMessage> messages,
 			Predicate<LlamaCppChatMessage> addAssistantTokens, String chatTemplate) {

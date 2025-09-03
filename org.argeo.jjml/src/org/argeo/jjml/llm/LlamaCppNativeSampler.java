@@ -2,13 +2,13 @@ package org.argeo.jjml.llm;
 
 import java.util.function.LongSupplier;
 
-/** A natice llama.cpp sampler. */
+/** Access to a native llama.cpp sampler. */
 public class LlamaCppNativeSampler implements LongSupplier, AutoCloseable, Cloneable {
 	private final long pointer;
 
 	private LlamaCppSamplerChain samplerChain = null;
 
-	public LlamaCppNativeSampler(long pointer) {
+	LlamaCppNativeSampler(long pointer) {
 		this.pointer = pointer;
 	}
 
@@ -48,5 +48,4 @@ public class LlamaCppNativeSampler implements LongSupplier, AutoCloseable, Clone
 	LlamaCppSamplerChain getSamplerChain() {
 		return samplerChain;
 	}
-
 }

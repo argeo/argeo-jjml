@@ -337,7 +337,7 @@ public class LlamaCppBatchProcessor {
 	 */
 
 	/** The number of sequences being processed in parallel. */
-	public int getParallelCount() {
+	int getParallelCount() {
 		return parallelCount;
 	}
 

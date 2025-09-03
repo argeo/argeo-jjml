@@ -69,5 +69,4 @@ public class LlamaCppBackend {
 	/** singleton */
 	private LlamaCppBackend() {
 	}
-
 }

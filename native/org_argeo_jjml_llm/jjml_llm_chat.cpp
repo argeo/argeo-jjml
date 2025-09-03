@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <cassert>
 
 #include <llama.h>
 
@@ -15,6 +16,8 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LLamaCppNativeChatFormatter
 		JNIEnv *env, jclass, jobjectArray roles, jobjectArray contents,
 		jboolean addAssistantTokens, jbyteArray chatTemplateStr) {
 	const jsize messages_size = env->GetArrayLength(roles);
+	assert(env->GetArrayLength(contents) == messages_size);
+
 	std::vector<llama_chat_message> chat_messages;
 
 	try {
