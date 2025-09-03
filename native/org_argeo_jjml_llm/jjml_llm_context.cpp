@@ -201,7 +201,7 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llm_LlamaCppBackend_newContextPara
 	llama_context_params ctx_params = llama_context_default_params();
 	jobject res = env->NewObject(
 			argeo::jni::find_jclass(env, JCLASS_CONTEXT_PARAMS), //
-			ContextParams$init, //
+			ContextParams__init, //
 			ctx_params.n_ctx, //
 			ctx_params.n_batch, //
 			ctx_params.n_ubatch, //

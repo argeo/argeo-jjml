@@ -169,9 +169,9 @@ struct llama_sampler* jjml_llm_sampler_init_java(JNIEnv *env, jobject obj) {
 //	jclass clss = argeo::jni::find_jclass(env, JCLASS_JAVA_SAMPLER);
 	jjml_llm_sampler_java *ctx = new jjml_llm_sampler_java { env->NewGlobalRef(
 			obj), //
-	LlamaCppJavaSampler$apply, //
-			LlamaCppJavaSampler$accept, //
-			LlamaCppJavaSampler$reset, //
+	LlamaCppJavaSampler__apply, //
+			LlamaCppJavaSampler__accept, //
+			LlamaCppJavaSampler__reset, //
 			"java" //
 			};
 	env->GetJavaVM(&ctx->jvm);

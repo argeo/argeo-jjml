@@ -41,7 +41,7 @@ namespace argeo::jni {
 #define IndexOutOfBoundsException(env) env->FindClass("java/lang/IndexOutOfBoundsException")
 #define IllegalStateException(env) env->FindClass("java/lang/IllegalStateException")
 
-#define LongSupplier$getAsLong(env) env->GetMethodID( \
+#define LongSupplier__getAsLong(env) env->GetMethodID( \
 		env->FindClass("java/util/function/LongSupplier"), "getAsLong", "()J")
 
 /*
@@ -81,10 +81,10 @@ inline std::string jclass_name(JNIEnv *env, jclass clazz) {
 	// we first need to get the class descriptor as an object ...
 	jclass clsObj = env->GetObjectClass(clazz);
 	// ... in order to find the proper method ...
-	jmethodID Class$getName = env->GetMethodID(clsObj, "getName",
+	jmethodID Class__getName = env->GetMethodID(clsObj, "getName",
 			"()Ljava/lang/String;");
 	// ... to apply on the class passed as argument
-	jstring name = (jstring) env->CallObjectMethod(clazz, Class$getName);
+	jstring name = (jstring) env->CallObjectMethod(clazz, Class__getName);
 	jsize length = env->GetStringLength(name);
 	std::string str;
 	str.resize(length);
@@ -212,7 +212,8 @@ template<typename T>
 inline T as_pointer(JNIEnv *env, jobject reference) {
 	if (reference == nullptr)
 		return nullptr;
-	jlong pointer = env->CallLongMethod(reference, LongSupplier$getAsLong(env));
+	jlong pointer = env->CallLongMethod(reference,
+			LongSupplier__getAsLong(env));
 	return as_pointer<T>(pointer);
 }
 

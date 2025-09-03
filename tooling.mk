@@ -25,6 +25,7 @@ GGML_BLAS ?= OFF
 GGML_VULKAN ?= OFF
 GGML_CUDA ?= OFF
 GGML_RPC ?= OFF
+GGML_OPENMP ?= OFF
 
 rebuild-force-tp: clean-local
 	echo CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
@@ -33,6 +34,7 @@ rebuild-force-tp: clean-local
 		-DJJML_FORCE_BUILD_TP=ON \
 		\
 		-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+		-DJAVA_HOME=$(JAVA_HOME) \
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
 		-DGGML_CCACHE=ON \
 		\
@@ -45,6 +47,7 @@ rebuild-force-tp: clean-local
 		-DGGML_CPU_ALL_VARIANTS=ON \
 		-DGGML_BACKEND_DL=ON \
 		\
+		-DGGML_OPENMP=$(GGML_OPENMP) \
 		-DGGML_BLAS=$(GGML_BLAS) \
 		-DGGML_BLAS_VENDOR=OpenBLAS \
 		-DGGML_VULKAN=$(GGML_VULKAN) \

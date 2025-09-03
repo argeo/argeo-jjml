@@ -163,13 +163,13 @@ static jint jjml_llm_batch_processor_read(llama_context *ctx,
 				jclass Integer = argeo::jni::find_jclass(env,
 						"java/lang/Integer");
 				jobject completionHandlerResult = env->CallStaticObjectMethod(
-						Integer, Integer$valueOf, next_idx);
+						Integer, Integer__valueOf, next_idx);
 				jobject completionHandlerAttachment =
-						env->CallStaticObjectMethod(Integer, Integer$valueOf,
+						env->CallStaticObjectMethod(Integer, Integer__valueOf,
 								i);
 				// call completion handler
 				env->CallVoidMethod(completionHandler,
-						CompletionHandler$completed, completionHandlerResult,
+						CompletionHandler__completed, completionHandlerResult,
 						completionHandlerAttachment);
 
 				if (!is_eog) // at least one could have continued

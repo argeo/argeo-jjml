@@ -40,7 +40,7 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llm_LlamaCppBackend_newModelParams
 
 	jobject res = env->NewObject(
 			argeo::jni::find_jclass(env, JCLASS_MODEL_PARAMS), //
-			ModelParams$init, //
+			ModelParams__init, //
 			mparams.n_gpu_layers, //
 			mparams.vocab_only, //
 			mparams.use_mmap, //
@@ -65,7 +65,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doInit(
 	argeo::jni::java_callback progress_data;
 	if (progressCallback != nullptr) {
 		progress_data.callback = env->NewGlobalRef(progressCallback);
-		progress_data.method = DoublePredicate$test;
+		progress_data.method = DoublePredicate__test;
 		env->GetJavaVM(&progress_data.jvm);
 		mparams.progress_callback_user_data = &progress_data;
 

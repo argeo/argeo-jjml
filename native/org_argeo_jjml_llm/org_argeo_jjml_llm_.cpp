@@ -14,23 +14,23 @@
  * Standard Java
  */
 // METHODS
-jmethodID Integer$valueOf;
-jmethodID DoublePredicate$test;
-jmethodID CompletionHandler$completed;
-jmethodID CompletionHandler$failed;
+jmethodID Integer__valueOf;
+jmethodID DoublePredicate__test;
+jmethodID CompletionHandler__completed;
+jmethodID CompletionHandler__failed;
 
 /*
  * org.argeo.jjml.llama package
  */
-jmethodID LlamaCppJavaSampler$apply;
-jmethodID LlamaCppJavaSampler$accept;
-jmethodID LlamaCppJavaSampler$reset;
+jmethodID LlamaCppJavaSampler__apply;
+jmethodID LlamaCppJavaSampler__accept;
+jmethodID LlamaCppJavaSampler__reset;
 
 /*
  * org.argeo.jjml.llama.params package
  */
-jmethodID ModelParams$init;
-jmethodID ContextParams$init;
+jmethodID ModelParams__init;
+jmethodID ContextParams__init;
 
 /*
  * LOCAL
@@ -43,20 +43,21 @@ static void org_argeo_jjml_llm_(JNIEnv *env) {
 	 * Standard Java
 	 */
 	jclass Integer = argeo::jni::find_jclass(env, "java/lang/Integer");
-	Integer$valueOf = argeo::jni::jmethod_id_static(env, Integer, //
+	Integer__valueOf = argeo::jni::jmethod_id_static(env, Integer, //
 			"valueOf", "(I)Ljava/lang/Integer;");
 
 	// METHODS
 	jclass DoublePredicate = argeo::jni::find_jclass(env,
 			"java/util/function/DoublePredicate");
-	DoublePredicate$test = argeo::jni::jmethod_id(env, DoublePredicate, //
+	DoublePredicate__test = argeo::jni::jmethod_id(env, DoublePredicate, //
 			"test", "(D)Z");
 
 	jclass CompletionHandler = argeo::jni::find_jclass(env,
 			"java/nio/channels/CompletionHandler");
-	CompletionHandler$completed = argeo::jni::jmethod_id(env, CompletionHandler,
-			"completed", "(Ljava/lang/Object;Ljava/lang/Object;)V");
-	CompletionHandler$failed = argeo::jni::jmethod_id(env, CompletionHandler,
+	CompletionHandler__completed = argeo::jni::jmethod_id(env,
+			CompletionHandler, "completed",
+			"(Ljava/lang/Object;Ljava/lang/Object;)V");
+	CompletionHandler__failed = argeo::jni::jmethod_id(env, CompletionHandler,
 			"failed", "(Ljava/lang/Throwable;Ljava/lang/Object;)V");
 
 	/*
@@ -64,22 +65,22 @@ static void org_argeo_jjml_llm_(JNIEnv *env) {
 	 */
 	jclass LlamaCppJavaSampler = argeo::jni::find_jclass(env,
 			JCLASS_JAVA_SAMPLER);
-	LlamaCppJavaSampler$apply = argeo::jni::jmethod_id(env, LlamaCppJavaSampler,
-			"apply", "(Ljava/nio/ByteBuffer;JJZ)J");
-	LlamaCppJavaSampler$accept = argeo::jni::jmethod_id(env,
+	LlamaCppJavaSampler__apply = argeo::jni::jmethod_id(env,
+			LlamaCppJavaSampler, "apply", "(Ljava/nio/ByteBuffer;JJZ)J");
+	LlamaCppJavaSampler__accept = argeo::jni::jmethod_id(env,
 			LlamaCppJavaSampler, "accept", "(I)V");
-	LlamaCppJavaSampler$reset = argeo::jni::jmethod_id(env, LlamaCppJavaSampler,
-			"reset", "()V");
+	LlamaCppJavaSampler__reset = argeo::jni::jmethod_id(env,
+			LlamaCppJavaSampler, "reset", "()V");
 
 	/*
 	 * org.argeo.jjml.llama.params package
 	 */
 	// We define the constructors here so that they fail right away when signatures change
 	jclass ModelParams = argeo::jni::find_jclass(env, JCLASS_MODEL_PARAMS);
-	ModelParams$init = argeo::jni::jmethod_id(env, ModelParams, //
+	ModelParams__init = argeo::jni::jmethod_id(env, ModelParams, //
 			"<init>", "(IZZZ)V");
 	jclass ContextParams = argeo::jni::find_jclass(env, JCLASS_CONTEXT_PARAMS);
-	ContextParams$init = argeo::jni::jmethod_id(env, ContextParams, //
+	ContextParams__init = argeo::jni::jmethod_id(env, ContextParams, //
 			"<init>", "(IIIIIIIIIFFFFFFIFIIZZZZZZZ)V");
 	// Tip: in order to find a constructor signature, use:
 	// javap -s '../org.argeo.jjml/bin/org/argeo/jjml/llama/params/ContextParams.class'
@@ -95,9 +96,11 @@ static void jjml_llm_init_backend() {
 
 		// disable llama logging
 		// FIXME make it configurable
-	    llama_log_set([](ggml_log_level /*level*/, const char * /*text*/, void * /*user_data*/) {
-	        // noop
-	    }, NULL);
+		llama_log_set(
+				[](ggml_log_level /*level*/, const char* /*text*/,
+						void* /*user_data*/) {
+					// noop
+				}, NULL);
 	}
 }
 

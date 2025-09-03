@@ -21,22 +21,22 @@ const std::string JCLASS_JAVA_SAMPLER = JNI_PKG + "LlamaCppJavaSampler";
  * Standard Java
  */
 // METHODS
-extern jmethodID Integer$valueOf;
-extern jmethodID DoublePredicate$test;
-extern jmethodID CompletionHandler$completed;
-extern jmethodID CompletionHandler$failed;
+extern jmethodID Integer__valueOf;
+extern jmethodID DoublePredicate__test;
+extern jmethodID CompletionHandler__completed;
+extern jmethodID CompletionHandler__failed;
 
 /*
  * org.argeo.jjml.llama package
  */
-extern jmethodID LlamaCppJavaSampler$apply;
-extern jmethodID LlamaCppJavaSampler$accept;
-extern jmethodID LlamaCppJavaSampler$reset;
+extern jmethodID LlamaCppJavaSampler__apply;
+extern jmethodID LlamaCppJavaSampler__accept;
+extern jmethodID LlamaCppJavaSampler__reset;
 
 /*
  * org.argeo.jjml.llama.params package
  */
-extern jmethodID ModelParams$init;
-extern jmethodID ContextParams$init;
+extern jmethodID ModelParams__init;
+extern jmethodID ContextParams__init;
 
 #endif
