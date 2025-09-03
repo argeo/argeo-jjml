@@ -1,16 +1,9 @@
 #
-# THIRD PARTIES
+# THIRD PARTY DETECTION
 #
-
-# Debug
 #set(CMAKE_FIND_DEBUG_MODE ON)
 
-# Note: bullseye still uses 3.18 and bookworm 3.25
-#cmake_policy(SET CMP0152 OLD)
-#cmake_minimum_required(VERSION 3.28) # Resolve symlink properly
-
-# We always want the shared libraries
-set(BUILD_SHARED_LIBS ON)
+if(NOT JJML_FORCE_BUILD_TP)
 
 if(NOT MSVC)
 # Debian official until libraries are stable
@@ -20,47 +13,34 @@ set(CMAKE_PREFIX_PATH
 )
 endif()
 
-set(TARGET_NATIVE_OUTPUT_GGML ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX}/org.argeo.tp.ggml)
-set(TARGET_NATIVE_OUTPUT_LLAMA ${TARGET_NATIVE_OUTPUT_GGML})
+if(JJML_JDK_TP) # Use environment provided by a ggml-instrumented JDK
+	set(CMAKE_LIBRARY_PATH ${JAVA_HOME}/bin ${JAVA_HOME}/lib)
+	include_directories(${JAVA_HOME}/include SYSTEM)
+endif()
 
-# All CPU variants backends take the default
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_GGML}>)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_GGML}>)
-
-if(MINGW)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_GGML}>)
-elseif(MSVC)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_GGML}>)
+# look for llama.cpp via CMake configs (preferred)
+find_package(llama QUIET)
+if(llama_FOUND)
+	message(STATUS "Found llama.cpp and ggml packages: ${llama_LIBRARY} ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
 else()
-endif()
-
-message(STATUS "CMAKE_LIBRARY_ARCHITECTURE=${CMAKE_LIBRARY_ARCHITECTURE}")
-
-if(NOT JJML_FORCE_BUILD_TP)
-	if(JAVA_HOME) # Use environment provided by ggml-instrumented JDK
-		set(CMAKE_LIBRARY_PATH ${JAVA_HOME}/bin ${JAVA_HOME}/lib)
-		include_directories(${JAVA_HOME}/include SYSTEM)
-	endif()
-
-	find_package(llama QUIET)
-	if(llama_FOUND)
-		message(STATUS "Found llama and ggml packages: ${llama_LIBRARY} ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
+	# look for llama.cpp via simple library search
+	find_library(llama_LIBRARY llama)
+	
+	# look for ggml via CMake configs (preferred)
+	find_package(ggml QUIET)
+	if(ggml_FOUND)
+		message(STATUS "Found ggml package: ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
 	else()
-		find_library(llama_LIBRARY llama)
-		
-		find_package(ggml QUIET)
-		if(ggml_FOUND)
-			message(STATUS "Found GGML package: ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
-		else()
-			find_library(GGML_LIBRARY ggml)
-			find_library(GGML_BASE_LIBRARY ggml-base)
-		endif()
+		# look for ggml via simple library search
+		find_library(GGML_LIBRARY ggml)
+		find_library(GGML_BASE_LIBRARY ggml-base)
 	endif()
 endif()
+	
+endif() # JJML_FORCE_BUILD_TP
 
-# ggml as external library
-if(EXISTS ${GGML_LIBRARY})
-	if(NOT ggml_FOUND)
+if(EXISTS ${GGML_LIBRARY}) # ggml as external libraries
+	if(NOT ggml_FOUND) # not CMake configured
 		add_library(ggml SHARED IMPORTED GLOBAL)
 		if(MSVC)
 		set_target_properties(ggml PROPERTIES IMPORTED_IMPLIB ${GGML_LIBRARY})
@@ -76,6 +56,7 @@ if(EXISTS ${GGML_LIBRARY})
 		endif()
 		message(STATUS "Found ggml libraries: ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
 	endif()
+	
 	if(NOT DEFINED ${GGML_BACKEND_DL})
 		include(CheckIncludeFileCXX)
 		check_include_file_cxx(ggml-backend.h JJML_BACKEND_INCLUDE_FOUND)
@@ -84,23 +65,10 @@ if(EXISTS ${GGML_LIBRARY})
 			message(STATUS "Found ggml-backend.h, enabling GGML_BACKEND_DL")
 		endif()
 	endif()
-else()
-	## multiple backends libraries
-	if(NOT DEFINED ${GGML_BACKEND_DL})
-		set(GGML_BACKEND_DL ON)
-		message(STATUS "Enabling GGML_BACKEND_DL by default")
-	endif()
-	if(GGML_BACKEND_DL)
-		set(GGML_CPU_ALL_VARIANTS ON)
-	endif()
-
-	add_subdirectory(tp/ggml) # build locally
-	message(STATUS "Build ggml locally from submodule native/tp/ggml") 
 endif()
 
-# llama.cpp as external library
-if(EXISTS "${llama_LIBRARY}")
-	if(NOT llama_FOUND)
+if(EXISTS "${llama_LIBRARY}") # llama.cpp as external library
+	if(NOT llama_FOUND) # not CMake configured
 		add_library(llama SHARED IMPORTED GLOBAL)
 		if(MSVC)
 		set_target_properties(llama PROPERTIES IMPORTED_IMPLIB ${llama_LIBRARY})
@@ -108,50 +76,15 @@ if(EXISTS "${llama_LIBRARY}")
 		set_target_properties(llama PROPERTIES IMPORTED_LOCATION ${llama_LIBRARY})
 		endif()
 		target_link_libraries(llama INTERFACE ${GGML_LIBRARY})
+		message(STATUS "Found LLAMA library: ${llama_LIBRARY}") 
 	endif()
-	message(STATUS "Found LLAMA library: ${llama_LIBRARY}") 
-else()
-	set(LLAMA_STANDALONE ON)
-	add_subdirectory(tp/llama.cpp) # build locally
-	if(MINGW)
-		set_target_properties(llama PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
-		if(LLAMA_BUILD_TOOLS)
-			set_target_properties(mtmd PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
-		endif()
-	elseif(MSVC)
-		set_target_properties(llama PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
-		if(LLAMA_BUILD_TOOLS)
-			set_target_properties(mtmd PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
-		endif()
-	else()
-		set_target_properties(llama PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
-		if(LLAMA_BUILD_TOOLS)
-			set_target_properties(mtmd PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
-		endif()
-	endif()
-	if(LLAMA_BUILD_TOOLS)
-		set_target_properties(llama-cli PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
-	endif()
-	message(STATUS "Build llama.cpp locally from submodule native/tp/llama.cpp") 
 endif()
 
-# ggml and llama.cpp versions
-if (Git_FOUND)
-execute_process(COMMAND "${GIT_EXECUTABLE}" rev-list --count HEAD
- WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tp/ggml
- OUTPUT_VARIABLE JJML_GGML_COMMIT_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE)
-execute_process(COMMAND "${GIT_EXECUTABLE}" rev-list --count HEAD
- WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tp/llama.cpp
- OUTPUT_VARIABLE JJML_LLAMA_COMMIT_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT JJML_DONOT_BUILD_TP)
+	add_subdirectory(tp) # build locally if needed
 endif()
-if(NOT GGML_BUILD_NUMBER)
-set(GGML_BUILD_NUMBER ${JJML_GGML_COMMIT_COUNT})
-endif()
-if(NOT LLAMA_BUILD_NUMBER)
-set(LLAMA_BUILD_NUMBER ${JJML_LLAMA_COMMIT_COUNT})
-endif()
+
 message(STATUS "GGML_BUILD_NUMBER=${GGML_BUILD_NUMBER} LLAMA_BUILD_NUMBER=${LLAMA_BUILD_NUMBER}")
-
 
 #
 # JJML NATIVE BUILD
