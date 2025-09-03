@@ -49,7 +49,7 @@ namespace argeo::jni {
  */
 /** Catches a standard C++ exception and throws an unchecked Java exception.
  * Does nothing if a Java execution is already pending
- * (that is, the already thrown java exception has priority.
+ * (that is, the already thrown java exception has priority).
  * A best effort is made to use an appropriate standard Java exception type.
  * Returns a <code>nullptr</code> as a convenience,
  * so that a call to it can be directly returned as the result of a (failed) non-void C++ function.
@@ -133,9 +133,9 @@ inline jclass find_jclass(JNIEnv *env, std::string name) {
 	return res;
 }
 
-/*
- * CALLBACKS
- */
+//
+// CALLBACKS
+//
 /**
  * A structure holding the reference required for executing callback in the Java code.
  */
@@ -184,9 +184,9 @@ inline jboolean exec_boolean_callback(java_callback *cb, ...) {
 	return result;
 }
 
-/*
- * POINTERS
- */
+//
+// POINTERS
+//
 
 /** Cast a jlong to a pointer. */
 template<typename T>
@@ -217,9 +217,9 @@ inline T as_pointer(JNIEnv *env, jobject reference) {
 	return as_pointer<T>(pointer);
 }
 
-/*
- * STRINGS
- */
+//
+// STRINGS
+//
 
 struct jbytes_releaser {
 	void operator()(jbyte *adapter) {
