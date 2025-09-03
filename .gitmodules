@@ -1,6 +1,9 @@
 [submodule "sdk/argeo-build"]
 	path = sdk/argeo-build
 	url = ../argeo-build
+[submodule "native/include/argeo/jni"]
+	path = native/include/argeo/jni
+	url = ../argeo-include-jni
 [submodule "sdk/tp/native/llama.cpp"]
 	path = native/tp/llama.cpp
 	url = https://github.com/ggml-org/llama.cpp.git
