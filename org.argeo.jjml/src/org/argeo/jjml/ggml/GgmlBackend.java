@@ -4,14 +4,16 @@ import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.WARNING;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.System.Logger;
+import java.nio.charset.Charset;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-
-import org.argeo.jjml.internal.OsUtils;
 
 /** A registered GGML backend. */
 public class GgmlBackend {
@@ -41,20 +43,39 @@ public class GgmlBackend {
 		// java.library.path
 		String javaLibraryPath = System.getProperty("java.library.path");
 		if (javaLibraryPath != null && !"".equals(javaLibraryPath.trim())) {
+			System.out.println(javaLibraryPath);
 			String[] paths = javaLibraryPath.split(File.pathSeparator);
 			for (String p : paths)
 				basePaths.add(Paths.get(p));
 		}
 
 		// "standard" deployment paths
-		if (basePaths.isEmpty())
+		// TODO make it cleaner and more configurable
+		// TODO hardcode some paths on the native side and configure at build?
+		// Debian
+		Path path = Paths.get("/usr/lib/x86_64-linux-gnu/ggml/backends0");
+		System.out.println(path);
+		if (Files.exists(path))
+			basePaths.add(path);
+		else // Argeo
 			basePaths.add(Paths.get("/usr/libexec/x86_64-linux-gnu/ggml"));
 
 		// load
-		for (Path basePath : basePaths) {
+		basePaths: for (Path basePath : basePaths) {
 			if (Files.exists(basePath)) {
 				// loadBackends(basePath);
-				doLoadAllBackends(OsUtils.filePathToNative(basePath));
+				try (DirectoryStream<Path> ds = Files.newDirectoryStream(basePath, System.mapLibraryName("ggml-*"))) {
+					Iterator<Path> it = ds.iterator();
+					// scanning some directories causes crashes on Windows,
+					// so we skip irrelevant ones
+					if (!it.hasNext())
+						continue basePaths;
+				} catch (IOException e) {
+					// silent
+					continue basePaths;
+				}
+				logger.log(INFO, "Searching for ggml backends in: " + basePath);
+				doLoadAllBackends(filePathToNative(basePath));
 			}
 		}
 	}
@@ -90,7 +111,7 @@ public class GgmlBackend {
 			}
 			Path backendPath = basePath.resolve(dllName);
 			if (Files.exists(backendPath)) {
-				long pointer = doLoadBackend(OsUtils.filePathToNative(basePath));
+				long pointer = doLoadBackend(filePathToNative(basePath));
 				if (pointer > 0) {
 					// TODO log it
 					GgmlBackend backend = new GgmlBackend(pointer, backendName.name(), backendPath);
@@ -100,5 +121,10 @@ public class GgmlBackend {
 				}
 			}
 		}
+	}
+
+	/** Path as bytes, based on the OS native encoding. */
+	private static byte[] filePathToNative(Path path) {
+		return path.toString().getBytes(Charset.forName(System.getProperty("sun.jnu.encoding", "UTF-8")));
 	}
 }

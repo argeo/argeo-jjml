@@ -29,7 +29,7 @@ public class LlamaCppNative {
 	 * System property to explicitly specify the path of the llama JNI shared
 	 * library to use.
 	 */
-	public final static String SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA = "jjml.libpath.jjml.llama";
+	public final static String SYSTEM_PROPERTY_LIBPATH_JJML_LLM = "jjml.libpath.jjml.llm";
 	/**
 	 * System property to explicitly specify the path of the GGML JNI shared library
 	 * to use.
@@ -55,7 +55,7 @@ public class LlamaCppNative {
 
 	private static Path ggmlLibraryPath;
 	private static Path llamaLibraryPath;
-	private static Path jjmlLlamaLibraryPath;
+	private static Path jjmlLlmLibraryPath;
 	private static Path jjmlGgmlLibraryPath;
 
 	/*
@@ -86,17 +86,17 @@ public class LlamaCppNative {
 				throw new IllegalArgumentException(
 						SYSTEM_PROPERTY_LIBPATH_LLAMACPP + " " + llamaLibraryPath + " does not exist");
 		});
-		Optional.ofNullable(System.getProperty(SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA)).ifPresent((path) -> {
-			jjmlLlamaLibraryPath = Paths.get(path);
-			if (!Files.exists(jjmlLlamaLibraryPath))
+		Optional.ofNullable(System.getProperty(SYSTEM_PROPERTY_LIBPATH_JJML_LLM)).ifPresent((path) -> {
+			jjmlLlmLibraryPath = Paths.get(path);
+			if (!Files.exists(jjmlLlmLibraryPath))
 				throw new IllegalArgumentException(
-						SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA + " " + jjmlLlamaLibraryPath + " does not exist");
+						SYSTEM_PROPERTY_LIBPATH_JJML_LLM + " " + jjmlLlmLibraryPath + " does not exist");
 		});
 		Optional.ofNullable(System.getProperty(SYSTEM_PROPERTY_LIBPATH_JJML_GGML)).ifPresent((path) -> {
 			jjmlGgmlLibraryPath = Paths.get(path);
-			if (!Files.exists(jjmlLlamaLibraryPath))
+			if (!Files.exists(jjmlLlmLibraryPath))
 				throw new IllegalArgumentException(
-						SYSTEM_PROPERTY_LIBPATH_JJML_GGML + " " + jjmlLlamaLibraryPath + " does not exist");
+						SYSTEM_PROPERTY_LIBPATH_JJML_GGML + " " + jjmlLlmLibraryPath + " does not exist");
 		});
 
 		if (ggmlLibraryPath != null) {
@@ -119,8 +119,8 @@ public class LlamaCppNative {
 		GgmlBackend.loadAllBackends();
 
 		// llama.cpp
-		if (jjmlLlamaLibraryPath != null) {
-			System.load(jjmlLlamaLibraryPath.toAbsolutePath().toString());
+		if (jjmlLlmLibraryPath != null) {
+			System.load(jjmlLlmLibraryPath.toAbsolutePath().toString());
 		} else {
 			// default behavior
 			System.loadLibrary(JJML_LAMA_LIBRARY_NAME);
@@ -132,7 +132,7 @@ public class LlamaCppNative {
 
 	public static void setJjmlLlamaLibraryPath(Path jjmlLlamaLibraryPath) {
 		checkLibrariesNotLoaded();
-		LlamaCppNative.jjmlLlamaLibraryPath = jjmlLlamaLibraryPath;
+		LlamaCppNative.jjmlLlmLibraryPath = jjmlLlamaLibraryPath;
 	}
 
 	public static void setLlamaLibraryPath(Path llamaLibraryPath) {

@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <cassert>
 
 #include <llama.h>
 
@@ -15,32 +16,22 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LLamaCppNativeChatFormatter
 		JNIEnv *env, jclass, jobjectArray roles, jobjectArray contents,
 		jboolean addAssistantTokens, jbyteArray chatTemplateStr) {
 	const jsize messages_size = env->GetArrayLength(roles);
+	assert(env->GetArrayLength(contents) == messages_size);
+
 	std::vector<llama_chat_message> chat_messages;
 
 	try {
 		int alloc_size = 0;
-		// TODO is it really necessary to go through the heap?
+		// since the content can be quite big, we go through the heap
 		for (int i = 0; i < messages_size; i++) {
-			jbyteArray roleStr = (jbyteArray) env->GetObjectArrayElement(roles,
-					i);
-			void *u8_role_arr = env->GetPrimitiveArrayCritical(roleStr, 0);
-			std::string u8_role(static_cast<char*>(u8_role_arr),
-					env->GetArrayLength(roleStr));
+			std::string u8_role = argeo::jni::to_string(env, roles, i);
+			std::string u8_content = argeo::jni::to_string(env, contents, i);
 
 			char *role = new char[u8_role.length() + 1];
 			strcpy(role, u8_role.c_str());
-			env->ReleasePrimitiveArrayCritical(roleStr, u8_role_arr, 0);
-
-			jbyteArray contentStr = (jbyteArray) env->GetObjectArrayElement(
-					contents, i);
-			void *u8_content_arr = env->GetPrimitiveArrayCritical(contentStr,
-					0);
-			std::string u8_content(static_cast<char*>(u8_content_arr),
-					env->GetArrayLength(contentStr));
 
 			char *content = new char[u8_content.length() + 1];
 			strcpy(content, u8_content.c_str());
-			env->ReleasePrimitiveArrayCritical(contentStr, u8_content_arr, 0);
 
 			llama_chat_message message { role, content };
 			chat_messages.push_back(message);
@@ -92,4 +83,3 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LLamaCppNativeChatFormatter
 		return argeo::jni::throw_to_java(env, ex);
 	}
 }
-

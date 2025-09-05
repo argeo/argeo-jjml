@@ -1,6 +1,7 @@
-
+//!/usr/bin/env -S java -cp /usr/share/java/org.argeo.jjml.jar
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.parseBoolean;
+import static java.lang.System.Logger.Level.INFO;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llm.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llm.LlamaCppNative.ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY;
@@ -12,11 +13,11 @@ import static org.argeo.jjml.llm.util.InstructRole.USER;
 import java.io.BufferedReader;
 import java.io.Console;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.lang.System.Logger;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -30,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -50,17 +52,21 @@ import org.argeo.jjml.llm.params.ContextParam;
 import org.argeo.jjml.llm.params.ModelParam;
 import org.argeo.jjml.llm.params.ModelParams;
 import org.argeo.jjml.llm.params.PoolingType;
+import org.argeo.jjml.llm.util.SimpleModelDownload;
+import org.argeo.jjml.llm.util.SimpleProgressCallback;
 
 /** A minimal command line interface for batch processing and simple chat. */
-public class SimpleCli {
+public class JjmlDummyCli {
+	private final static Logger logger = System.getLogger(JjmlDummyCli.class.getName());
+
 	private final static String DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant.";
 
 	/** Force chat mode in (Eclipse) IDE, when no proper console is available. */
-	final static boolean developing = parseBoolean(System.getProperty("SimpleCli.ide", FALSE.toString()));
+	private final static boolean developing = parseBoolean(System.getProperty("JjmlDummyCli.ide", FALSE.toString()));
 
 	public static void main(String... args) throws Exception {
 		if (args.length == 0) {
-			System.err.println("A model must be specified");
+			System.err.println("A GGUF model must be specified");
 			printUsage(System.err);
 			System.exit(1);
 		}
@@ -71,9 +77,12 @@ public class SimpleCli {
 		/*
 		 * ARGUMENTS
 		 */
-		Path modelPath = Paths.get(args[0]);
+		String arg0 = args[0];
+		Path modelPath = Paths.get(arg0);
 		if (!Files.exists(modelPath))
-			throw new FileNotFoundException("Model " + modelPath + " does not exist");
+			modelPath = new SimpleModelDownload().getOrDownloadModel(arg0, new SimpleProgressCallback());
+		if (!Files.exists(modelPath))
+			throw new IllegalArgumentException("Could not find GGUF model " + modelPath);
 
 		boolean embeddings = Boolean.parseBoolean(System.getProperty(ContextParam.embeddings.asSystemProperty()));
 		int chunkSize = 0;
@@ -110,10 +119,13 @@ public class SimpleCli {
 				&& modelParams.n_gpu_layers() == 0 //
 		) {
 			// we assume we want as many layers offloaded as possible
-			modelParams = modelParams.with(n_gpu_layers, 1024);
+			modelParams = modelParams.with(n_gpu_layers, 99);
 		}
 
-		try (LlamaCppModel model = LlamaCppModel.load(modelPath, modelParams); //
+		logger.log(INFO, "Loading model " + modelPath + " ...");
+		Future<LlamaCppModel> loaded = LlamaCppModel.loadAsync(modelPath, modelParams, new SimpleProgressCallback(),
+				null);
+		try (LlamaCppModel model = loaded.get(); //
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams()); //
 		) {
 			Object processor;
@@ -186,9 +198,9 @@ public class SimpleCli {
 	}
 
 	private static void printUsage(PrintStream out) {
-		out.println("Usage: java " + SimpleCli.class.getName() //
+		out.println("Usage: java " + JjmlDummyCli.class.getName() //
 				+ " <path/to/model.gguf> [<system prompt>]");
-		out.println("Usage: java -Djjml.llama.context.embeddings=true " + SimpleCli.class.getName() //
+		out.println("Usage: java -Djjml.llama.context.embeddings=true " + JjmlDummyCli.class.getName() //
 				+ " <path/to/model.gguf> [<chunk size>] [ csv | pgvector ]");
 
 		out.println();
@@ -222,11 +234,14 @@ public class SimpleCli {
 		out.println();
 		out.println("# System properties for explicit paths to shared libraries:");
 		out.println();
-		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_JJML_LLAMA + "=");
+		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_JJML_LLM + "=");
 		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_LLAMACPP + "=");
 		out.println("-D" + LlamaCppNative.SYSTEM_PROPERTY_LIBPATH_GGML + "=");
 		out.println();
-		out.println("# WARNING: This is a suboptimal implementation. JJML is meant to be used as a Java library.");
+		out.println("#");
+		out.println("# WARNING - This is a suboptimal informational implementation.");
+		out.println("# JJML is meant to be used directly as a Java library.");
+		out.println("#");
 	}
 
 	/**
@@ -480,5 +495,4 @@ class SimpleEmbedding extends LlamaCppEmbeddingProcessor implements Function<Str
 		}
 		return processEmbeddings(inputs);
 	}
-
 }

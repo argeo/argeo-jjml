@@ -1,0 +1,18 @@
+* text=auto
+
+*.txt text
+*.properties text
+*.ini text
+*.bnd text
+*.jsh text
+*.java text
+*.c text
+*.cpp text
+*.h text
+*.js text
+
+*.sln text eol=crlf
+*.bat text eol=crlf
+
+*.png binary
+*.jpg binary

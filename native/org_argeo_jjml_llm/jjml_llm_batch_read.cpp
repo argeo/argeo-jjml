@@ -63,9 +63,9 @@ static llama_token jjml_check_grammar(llama_context *ctx, int idx,
 
 static jint jjml_llm_batch_processor_read(llama_context *ctx,
 		llama_sampler *smpl, llama_sampler *grmr, llama_pos cur_pos,
-		void **outputs, const int outputs_count, JNIEnv *env, jintArray offsets,
-		jintArray lengths, jintArray sequenceIds, jintArray outputIds,
-		jobject completionHandler) {
+		std::vector<void*> outputs, const int outputs_count, JNIEnv *env,
+		jintArray offsets, jintArray lengths, jintArray sequenceIds,
+		jintArray outputIds, jobject completionHandler) {
 
 	const llama_vocab *vocab = llama_model_get_vocab(llama_get_model(ctx));
 
@@ -73,10 +73,8 @@ static jint jjml_llm_batch_processor_read(llama_context *ctx,
 
 	const int n_parallel = env->GetArrayLength(sequenceIds);
 	assert(n_parallel > 0 && "Sequence count");
-//	auto *sequence_ids = static_cast<llama_seq_id*>(env->GetIntArrayElements(
-//			sequenceIds, nullptr));
 	jint *arr = env->GetIntArrayElements(sequenceIds, nullptr);
-	llama_seq_id sequence_ids[n_parallel];
+	std::vector<llama_seq_id> sequence_ids(n_parallel);
 	for (int i = 0; i < n_parallel; i++) {
 		sequence_ids[i] = static_cast<llama_seq_id>(arr[i]);
 	}
@@ -85,7 +83,6 @@ static jint jjml_llm_batch_processor_read(llama_context *ctx,
 	auto *output_ids = reinterpret_cast<int32_t*>(env->GetIntArrayElements(
 			outputIds, nullptr));
 
-//	const int outBuffersCount = env->GetArrayLength(outputBuffers);
 	assert(outputs_count == n_parallel && "As many buffers as sequences");
 
 	assert(outputs_count > 0);
@@ -96,7 +93,7 @@ static jint jjml_llm_batch_processor_read(llama_context *ctx,
 	assert(env->GetArrayLength(offsets) == outputs_count);
 	jint *seq_offsets = env->GetIntArrayElements(offsets, nullptr);
 
-	llama_token *seq_tokens[outputs_count];
+	std::vector<llama_token*> seq_tokens(outputs_count);
 	for (int i = 0; i < outputs_count; i++) {
 		void *output = outputs[i];
 		if (output != nullptr) {
@@ -166,13 +163,13 @@ static jint jjml_llm_batch_processor_read(llama_context *ctx,
 				jclass Integer = argeo::jni::find_jclass(env,
 						"java/lang/Integer");
 				jobject completionHandlerResult = env->CallStaticObjectMethod(
-						Integer, Integer$valueOf, next_idx);
+						Integer, Integer__valueOf, next_idx);
 				jobject completionHandlerAttachment =
-						env->CallStaticObjectMethod(Integer, Integer$valueOf,
+						env->CallStaticObjectMethod(Integer, Integer__valueOf,
 								i);
 				// call completion handler
 				env->CallVoidMethod(completionHandler,
-						CompletionHandler$completed, completionHandlerResult,
+						CompletionHandler__completed, completionHandlerResult,
 						completionHandlerAttachment);
 
 				if (!is_eog) // at least one could have continued
@@ -242,7 +239,7 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doRead(
 	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
 
 	int outputs_count = env->GetArrayLength(outputBuffers);
-	void *outputs[outputs_count];
+	std::vector<void*> outputs(outputs_count);
 	for (int i = 0; i < outputs_count; i++) {
 		jobject buf = env->GetObjectArrayElement(outputBuffers, i);
 		if (buf != nullptr) {
@@ -278,12 +275,11 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doReadToAr
 	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
 
 	int outputs_count = env->GetArrayLength(outputArrays);
-	void *outputs[outputs_count];
+	std::vector<void*> outputs(outputs_count);
 	for (int i = 0; i < outputs_count; i++) {
 		jintArray arr = (jintArray) env->GetObjectArrayElement(outputArrays, i);
 		if (arr != nullptr) {
 			outputs[i] = env->GetPrimitiveArrayCritical(arr, nullptr);
-//			outputs[i] = env->GetIntArrayElements(arr, nullptr);
 		} else {
 			outputs[i] = nullptr;
 		}
@@ -303,7 +299,6 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doReadToAr
 		jintArray arr = (jintArray) env->GetObjectArrayElement(outputArrays, i);
 		if (arr != nullptr) {
 			env->ReleasePrimitiveArrayCritical(arr, outputs[i], 0);
-//			env->ReleaseIntArrayElements(arr, (int*) outputs[i], 0);
 		}
 	}
 

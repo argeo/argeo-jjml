@@ -190,8 +190,10 @@ static void get_context_params(JNIEnv *env, jobject params,
 			env->GetMethodID(clss, "offload_kqv", "()Z"));
 	ctx_params->flash_attn = env->CallBooleanMethod(params,
 			env->GetMethodID(clss, "flash_attn", "()Z"));
+#ifndef JJML_PRE_LLAMA_0_0_5913
 	ctx_params->kv_unified = env->CallBooleanMethod(params,
 			env->GetMethodID(clss, "kv_unified", "()Z"));
+#endif
 }
 
 JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llm_LlamaCppBackend_newContextParams(
@@ -199,7 +201,7 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llm_LlamaCppBackend_newContextPara
 	llama_context_params ctx_params = llama_context_default_params();
 	jobject res = env->NewObject(
 			argeo::jni::find_jclass(env, JCLASS_CONTEXT_PARAMS), //
-			ContextParams$init, //
+			ContextParams__init, //
 			ctx_params.n_ctx, //
 			ctx_params.n_batch, //
 			ctx_params.n_ubatch, //
@@ -225,7 +227,11 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llm_LlamaCppBackend_newContextPara
 			ctx_params.no_perf, //
 			ctx_params.op_offload, //
 			ctx_params.swa_full, //
+#ifndef JJML_PRE_LLAMA_0_0_5913
 			ctx_params.kv_unified //
+#else
+			false
+#endif
 			);
 	return res;
 }

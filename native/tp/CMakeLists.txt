@@ -1,0 +1,78 @@
+#
+# BUILD THIRD PARTY FROM SUBMODULES
+#
+
+if(GGML_BACKEND_DL)
+set(BUILD_SHARED_LIBS ON)
+endif()
+
+set(TARGET_NATIVE_OUTPUT_GGML ${A2_OUTPUT}/lib/${TARGET_NATIVE_CATEGORY_PREFIX}/org.argeo.tp.ggml)
+set(TARGET_NATIVE_OUTPUT_LLAMA ${TARGET_NATIVE_OUTPUT_GGML})
+
+# All CPU variants backends take the default output directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_GGML}>)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_GGML}>)
+
+if(MINGW)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_GGML}>)
+elseif(MSVC)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_GGML}>)
+else()
+endif()
+
+if(NOT EXISTS ${GGML_LIBRARY})
+	## multiple backends libraries
+	if(NOT DEFINED ${GGML_BACKEND_DL})
+		set(GGML_BACKEND_DL ON)
+		message(STATUS "Enabling GGML_BACKEND_DL by default")
+	endif()
+	if(GGML_BACKEND_DL)
+		set(GGML_CPU_ALL_VARIANTS ON)
+	endif()
+
+	add_subdirectory(ggml) # build locally
+	message(STATUS "Build ggml locally from submodule native/tp/ggml") 
+endif()
+
+
+if(NOT EXISTS "${llama_LIBRARY}")
+	set(LLAMA_STANDALONE ON)
+	add_subdirectory(llama.cpp) # build locally
+	if(MINGW)
+		set_target_properties(llama PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
+		if(LLAMA_BUILD_TOOLS)
+			set_target_properties(mtmd PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
+		endif()
+	elseif(MSVC)
+		set_target_properties(llama PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
+		if(LLAMA_BUILD_TOOLS)
+			set_target_properties(mtmd PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
+		endif()
+	else()
+		set_target_properties(llama PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
+		if(LLAMA_BUILD_TOOLS)
+			set_target_properties(mtmd PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
+		endif()
+	endif()
+	if(LLAMA_BUILD_TOOLS)
+		set_target_properties(llama-cli PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
+	endif()
+	message(STATUS "Build llama.cpp locally from submodule native/tp/llama.cpp") 
+endif()
+
+# ggml and llama.cpp versions
+if (Git_FOUND)
+execute_process(COMMAND "${GIT_EXECUTABLE}" rev-list --count HEAD
+ WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/ggml
+ OUTPUT_VARIABLE JJML_GGML_COMMIT_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND "${GIT_EXECUTABLE}" rev-list --count HEAD
+ WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp
+ OUTPUT_VARIABLE JJML_LLAMA_COMMIT_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+if(NOT GGML_BUILD_NUMBER)
+set(GGML_BUILD_NUMBER ${JJML_GGML_COMMIT_COUNT} CACHE INTERNAL GGML_BUILD_NUMBER)
+endif()
+if(NOT LLAMA_BUILD_NUMBER)
+set(LLAMA_BUILD_NUMBER ${JJML_LLAMA_COMMIT_COUNT} CACHE INTERNAL LLAMA_BUILD_NUMBER)
+endif()
+

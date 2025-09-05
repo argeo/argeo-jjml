@@ -19,10 +19,18 @@ else()
 target_link_libraries(${TARGET} PRIVATE	ggml ggml-base llama)
 endif()
 
-#target_compile_definitions(${TARGET} PRIVATE GGML_ASSERT=)
-
-target_compile_definitions(${TARGET} PRIVATE
-_JJML_PRE_LLAMA_0_0_4881
-)
+# When breaking changes are not funcitonnaly critical
+# we keep building against older, in order to extend the life
+# of a given JJML branch. To be trimmed when a new branch
+# is created.
+if(LLAMA_BUILD_NUMBER LESS 5913)
+target_compile_definitions(${TARGET} PRIVATE JJML_PRE_LLAMA_0_0_5913)
+endif()
+if(LLAMA_BUILD_NUMBER LESS 5882)
+target_compile_definitions(${TARGET} PRIVATE JJML_PRE_LLAMA_0_0_5882)
+endif()
+if(LLAMA_BUILD_NUMBER LESS 4881)
+target_compile_definitions(${TARGET} PRIVATE JJML_PRE_LLAMA_0_0_4881)
+endif()
 
 a2_jni_target(${TARGET})

@@ -35,7 +35,6 @@ public interface LlamaCppJavaSampler {
 
 		@Override
 		public long apply(ByteBuffer buf, long size, long selected, boolean sorted) {
-//			long begin = System.nanoTime();
 			ByteBuffer b = buf.duplicate();
 			b.order(ByteOrder.nativeOrder());
 			long count = 0;
@@ -50,13 +49,9 @@ public interface LlamaCppJavaSampler {
 				} else if (logit > bestLogit) {
 					res = count;
 					bestLogit = logit;
-//					System.out.println(begin + "\t" + token + "\t" + logit + "\t" + prob);
 				}
 				count++;
-				// System.out.println(token + "\t" + logit + "\t" + prob);
 			}
-			// System.out.println("Java simple greedy took " + (System.nanoTime() - begin) +
-			// " ns");
 			return res;
 		}
 

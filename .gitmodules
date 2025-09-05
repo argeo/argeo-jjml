@@ -1,12 +1,12 @@
 [submodule "sdk/argeo-build"]
 	path = sdk/argeo-build
 	url = ../argeo-build
-	branch = unstable
-[submodule "sdk/tp/native/llama.cpp"]
+[submodule "native/include/argeo/jni"]
+	path = native/include/argeo/jni
+	url = ../argeo-include-jni
+[submodule "tp/native/llama.cpp"]
 	path = native/tp/llama.cpp
 	url = https://github.com/ggml-org/llama.cpp.git
-	branch = master
-[submodule "sdk/tp/native/ggml"]
+[submodule "tp/native/ggml"]
 	path = native/tp/ggml
 	url = https://github.com/ggml-org/ggml.git
-	branch = master

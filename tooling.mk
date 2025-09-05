@@ -25,12 +25,15 @@ GGML_BLAS ?= OFF
 GGML_VULKAN ?= OFF
 GGML_CUDA ?= OFF
 GGML_RPC ?= OFF
+GGML_OPENMP ?= OFF
 
 rebuild-force-tp: clean-local
 	echo CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 	
 	$(CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
+		-DA2_INSTALL_MODE=a2 \
+		-DJAVA_HOME=$(JAVA_HOME) \
 		\
 		-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
@@ -38,13 +41,14 @@ rebuild-force-tp: clean-local
 		\
 		-DLLAMA_BUILD_COMMON=ON \
 		-DLLAMA_BUILD_TOOLS=ON \
-		-DLLAMA_BUILD_EXAMPLES=ON \
+		-DLLAMA_BUILD_EXAMPLES=OFF \
 		-DLLAMA_BUILD_TESTS=OFF \
 		\
 		-DGGML_NATIVE=OFF \
 		-DGGML_CPU_ALL_VARIANTS=ON \
 		-DGGML_BACKEND_DL=ON \
 		\
+		-DGGML_OPENMP=$(GGML_OPENMP) \
 		-DGGML_BLAS=$(GGML_BLAS) \
 		-DGGML_BLAS_VENDOR=OpenBLAS \
 		-DGGML_VULKAN=$(GGML_VULKAN) \
@@ -53,22 +57,31 @@ rebuild-force-tp: clean-local
 		-DGGML_CUDA_FA_ALL_QUANTS=OFF \
 		-DGGML_RPC=$(GGML_RPC) \
 	
-	$(CMAKE) --build $(BUILD_BASE) -j $(shell nproc)
-	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)*$(SHLIB_SUFFIX) $(TARGET_NATIVE_OUTPUT)
-	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(SHLIB_PREFIX)*$(SHLIB_SUFFIX) $(TARGET_NATIVE_OUTPUT)
+	$(CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
 
 # Remove locally built libraries
 clean-local:
 	$(RM) -r $(BUILD_BASE)
 	@$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(SHLIB_PREFIX)ggml*$(SHLIB_SUFFIX)
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(SHLIB_PREFIX)llama*$(SHLIB_SUFFIX)
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(SHLIB_PREFIX)Java_org_argeo_jjml_*$(SHLIB_SUFFIX)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
 
-##
-## BUILD ENVIRONMENT
-##
+#
+# DOC
+#
+doc-api:
+	$(JAVA_HOME)/bin/javadoc -Xdoclint:none \
+	 -d doc/reference/api \
+	 -sourcepath org.argeo.jjml/src \
+	 -subpackages org
+
+#
+# BUILD ENVIRONMENT
+#
 
 install-deps:
 ifeq ($(MSYS_VERSION),0)
@@ -79,10 +92,14 @@ else
 	pacman -S --needed mingw-w64-ucrt-x86_64-vulkan-devel mingw-w64-ucrt-x86_64-shaderc
 endif
 
-##
-## PACKAGING
-##
-PACKAGE_VERSION=$(A2_LAYER_VERSION)
+#
+# PACKAGING
+#
+ifneq ($(git_commit_count),)
+PACKAGE_VERSION=$(major).$(minor).$(micro).$(git_commit_count)
+else
+PACKAGE_VERSION=$(major).$(minor).$(micro)$(qualifier)
+endif
 
 JMOD_JJML=org.argeo.jjml
 JMOD_GGML=org.argeo.tp.ggml
@@ -101,23 +118,60 @@ JDK_JJML_DIR = $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)
 standalone-release: clean-local
 	$(CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
+		-DA2_INSTALL_MODE=a2 \
+		-DJAVA_HOME="$(JAVA_HOME)" \
+		\
 		-DGGML_CCACHE=ON \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
 		-DLLAMA_BUILD_COMMON=ON \
 		-DLLAMA_BUILD_TOOLS=ON \
+		-DLLAMA_CURL=OFF \
 		-DGGML_NATIVE=OFF \
 		-DGGML_CPU_ALL_VARIANTS=ON \
 		-DGGML_BACKEND_DL=ON	
-	$(CMAKE) --build $(BUILD_BASE) -j $(shell nproc)
+	$(CMAKE) --build $(BUILD_BASE) --config Release -j $(shell nproc)
+
+#MSVC_BUILD_TOOLS="C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools"
+#MSVC_ENV="/Common7/Tools/VsDevCmd.bat"
+
+ifneq (,$(VCIDEInstallDir))
+MSVC_IDE_BASE=$(shell cygpath -m '$(VCIDEInstallDir)\\..')
+else
+MSVC_IDE_BASE=$(shell cygpath -m 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/IDE/')
+endif
+#MSVC_CMAKE_BASE="$(MSVC_BUILD_TOOLS)/Common7/IDE/CommonExtensions/Microsoft/CMake"
+MSVC_CMAKE_BASE=$(MSVC_IDE_BASE)CommonExtensions/Microsoft/CMake
+MSVC_CMAKE="$(MSVC_CMAKE_BASE)/CMake/bin/cmake.exe"
+
+msvc-release:
+	$(MSVC_CMAKE) \
+		-B "$(BUILD_BASE)" \
+		-DJJML_FORCE_BUILD_TP=ON \
+		-DA2_INSTALL_MODE=a2 \
+		-DJAVA_HOME="$(JAVA_HOME)" \
+		\
+		-DCMAKE_LIBRARY_ARCHITECTURE=x86_64-win32-default \
+		-DLLAMA_BUILD_COMMON=ON \
+		-DLLAMA_BUILD_TOOLS=ON \
+		-DLLAMA_CURL=OFF \
+		-DGGML_NATIVE=OFF \
+		-DGGML_CPU_ALL_VARIANTS=ON \
+		-DGGML_OPENMP=ON \
+		-DGGML_BACKEND_DL=ON \
+		-DGGML_VULKAN=OFF \
+		"$(SDK_SRC_BASE)"
+
+	$(MSVC_CMAKE) --build $(BUILD_BASE) --config Release -j $(shell nproc)
 
 jmod-jjml:
+	$(RM) -r $(JMODS_BASE)/$(JMOD_JJML)
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/legal
 
 	$(COPY) COPYING.LESSER NOTICE $(JMODS_BASE)/$(JMOD_JJML)/legal
 
-	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(SHLIB_PREFIX)Java_org_argeo_jjml*$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_JJML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_JJML)/lib
 
 	$(RM) $(A2_JMODS)/$(JMOD_JJML).jmod
 	$(JLINK_HOME)/bin/jmod create \
@@ -130,17 +184,23 @@ jmod-jjml:
 	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
 
 jmod-ggml:
-	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/{java,classes}
+	$(RM) -r $(JMODS_BASE)/$(JMOD_GGML)
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/java
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/classes
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/include
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/legal
 
-	$(COPY) native/tp/ggml/include/ggml.h native/tp/ggml/include/ggml-backend.h $(JMODS_BASE)/$(JMOD_GGML)/include
+	$(COPY) native/tp/ggml/include/*.h $(JMODS_BASE)/$(JMOD_GGML)/include
 	$(COPY) native/tp/ggml/LICENSE native/tp/ggml/AUTHORS $(JMODS_BASE)/$(JMOD_GGML)/legal
 	
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)ggml$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)ggml-base$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)ggml-cpu-*$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-cpu-*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	#$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-vulkan$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	# MSVC linker libs
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
 
 	echo "module $(JMOD_GGML) {}" > $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
 	$(JLINK_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_GGML)/classes $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
@@ -153,10 +213,12 @@ jmod-ggml:
 	 --legal-notices $(JMODS_BASE)/$(JMOD_GGML)/legal \
 	 $(A2_JMODS)/$(JMOD_GGML).jmod
 	# list content
-	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML).jmod
+	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML).jmod
 
 jmod-ggml-llm:
-	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/{java,classes}
+	$(RM) -r $(JMODS_BASE)/$(JMOD_GGML_LLM)
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/java
+	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/classes
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/include
@@ -165,8 +227,11 @@ jmod-ggml-llm:
 	$(COPY) native/tp/llama.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_LLM)/include
 	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal
 	
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(SHLIB_PREFIX)llama$(SHLIB_SUFFIX) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
-	$(COPY) $(BUILD_BASE)/bin/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	# MSVC linker libs
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.lib $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	#$(COPY) $(BUILD_BASE)/bin/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
 
 # TODO add requires to ggml
 	echo "module $(JMOD_GGML_LLM) {}" > $(JMODS_BASE)/$(JMOD_GGML_LLM)/java/module-info.java
@@ -181,17 +246,17 @@ jmod-ggml-llm:
 	 --legal-notices $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal \
 	 $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
 	# list content
-	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
+	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
 
-##
-## DISTRIBUTABLE PACKAGES
-##
+#
+# DISTRIBUTABLE PACKAGES
+#
 rt-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
 	$(RM) -r $(RT_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
-	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
+	 --module-path "$(JLINK_JMODS)$(file_path_sep)$(A2_JMODS)" \
 	 --add-modules $(RT_JJML_JMODS),$(JMOD_OS_LIBS),$(JJML_JMODS) \
-	 --output $(RT_JJML_DIR)
+	 --output "$(RT_JJML_DIR)"
 	
 	mkdir -p $(RT_JJML_DIR)/jmods
 	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod \
@@ -199,12 +264,14 @@ rt-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
 	 $(A2_JMODS)/$(JMOD_OS_LIBS).jmod \
 	 $(RT_JJML_DIR)/jmods
 
-jdk-jjml: standalone-release jmod-os-libs jmod-jjml jmod-ggml jmod-ggml-llm
+package-jmods: jmod-os-libs jmod-jjml jmod-ggml jmod-ggml-llm
+
+jdk-jjml: package-jmods
 	$(RM) -r $(JDK_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
-	 --module-path $(JLINK_JMODS):$(A2_JMODS) \
+	 --module-path "$(JLINK_JMODS)$(file_path_sep)$(A2_JMODS)" \
 	 --add-modules $(JLINK_MODULES),$(JMOD_OS_LIBS),$(JJML_JMODS) \
-	 --output $(JDK_JJML_DIR)
+	 --output "$(JDK_JJML_DIR)"
 	
 	mkdir -p $(JDK_JJML_DIR)/src
 	cp $(JLINK_HOME)/lib/src.zip $(JDK_JJML_DIR)/lib
@@ -223,7 +290,7 @@ jdk-jjml: standalone-release jmod-os-libs jmod-jjml jmod-ggml jmod-ggml-llm
 	mkdir -p $(JDK_JJML_DIR)/lib/a2/org.argeo.jjml
 	$(COPY) $(A2_OUTPUT)/org.argeo.jjml/*.jar $(JDK_JJML_DIR)/lib/a2/org.argeo.jjml	
 	
-zip-jdk-jjml:
+zip-jdk-jjml: jdk-jjml
 	# create archive
 	cd $(BUILD_BASE) && zip -r -q \
 	 $(JDK_JJML_ARTIFACT)-$(PACKAGE_VERSION).zip \
@@ -231,7 +298,7 @@ zip-jdk-jjml:
 	#rm -rf $(JDK_JJML_DIR)
 
 ifneq (,$(shell which $(JLINK_HOME)/bin/jpackage))
-msi-jdk-jjml:
+msi-jdk-jjml: jdk-jjml
 	PATH=/usr/libexec/x86_64-win32-default/wix3:$(PATH) && \
 	$(JLINK_HOME)/bin/jpackage \
 	 --runtime-image $(JDK_JJML_DIR) \

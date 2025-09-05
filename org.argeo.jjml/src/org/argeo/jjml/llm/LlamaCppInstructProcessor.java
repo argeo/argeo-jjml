@@ -47,7 +47,6 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		int requiredContextSize = tokenCount + outputMax * getParallelCount();
 
 		int contextSize = getContext().getContextSize();
-//			System.out.println("Context size: " + contextSize);
 		if (getContext().getContextSize() < requiredContextSize)
 			throw new IllegalArgumentException(
 					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
@@ -75,10 +74,7 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 			input.put(promptArr, i * batchSize, input.limit());
 			input.flip();
 
-//			long begin = System.nanoTime();
 			writeBatch(new IntBuffer[] { input }, lastLogits);
-//			long end = System.nanoTime();
-//			System.out.println("Wrote batch in " + (end - begin) / 1000000 + " ms.");
 		}
 	}
 
@@ -94,14 +90,9 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		reads: while (reading) {
 			IntBuffer output = IntBuffer.allocate(1);
 
-//			long begin = System.nanoTime();
-
 			CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
 			CompletableFuture<Boolean> allCompleted = readBatchAsync(new IntBuffer[] { output }, generationCompleted);
 			allCompleted.join();
-
-//			long end = System.nanoTime();
-			// System.out.println("Read batch in " + (end - begin) / 1000000 + " ms.");
 
 			output.flip();
 			String outputStr = vocabulary.deTokenize(output);
