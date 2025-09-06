@@ -12,6 +12,7 @@ find_package(ArgeoBuild)
 # JAVA
 set(BUNDLES 
 org.argeo.jjml
+org.argeo.jjml.mm
 )
 
 a2_build_bundles(${BUNDLES})

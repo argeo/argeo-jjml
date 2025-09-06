@@ -60,6 +60,22 @@ if(NOT EXISTS "${llama_LIBRARY}")
 	message(STATUS "Build llama.cpp locally from submodule native/tp/llama.cpp") 
 endif()
 
+set(TARGET_NATIVE_OUTPUT_WHISPER ${TARGET_NATIVE_OUTPUT_GGML})
+if(NOT EXISTS "${whisper_LIBRARY}")
+	add_subdirectory(whisper.cpp) # build locally
+	if(MINGW)
+		set_target_properties(whisper PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_WHISPER})
+	elseif(MSVC)
+		set_target_properties(whisper PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_WHISPER}>)
+	else()
+		set_target_properties(whisper PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_WHISPER})
+	endif()
+	if(WHISPER_BUILD_EXAMPLES)
+		set_target_properties(whisper-cli PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_WHISPER}>)
+	endif()
+	message(STATUS "Build whisper.cpp locally from submodule native/tp/whisper.cpp") 
+endif()
+
 # ggml and llama.cpp versions
 if (Git_FOUND)
 execute_process(COMMAND "${GIT_EXECUTABLE}" rev-list --count HEAD

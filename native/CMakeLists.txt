@@ -20,11 +20,18 @@ endif()
 
 # look for llama.cpp via CMake configs (preferred)
 find_package(llama QUIET)
+find_package(whisper)
+if(whisper_FOUND)
+	message(STATUS "Found whisper: ${whisper_LIBRARY} ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
+endif()
 if(llama_FOUND)
 	message(STATUS "Found llama.cpp and ggml packages: ${llama_LIBRARY} ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
 else()
 	# look for llama.cpp via simple library search
 	find_library(llama_LIBRARY llama)
+	if(NOT whisper_FOUND)
+		find_library(whisper_LIBRARY whisper)
+	endif()
 	
 	# look for ggml via CMake configs (preferred)
 	find_package(ggml QUIET)
@@ -101,4 +108,7 @@ endif()
 
 add_subdirectory(org_argeo_jjml_ggml)
 add_subdirectory(org_argeo_jjml_llm)
-                      
+
+add_subdirectory(org_argeo_jjml_whisper)
+
+                     
