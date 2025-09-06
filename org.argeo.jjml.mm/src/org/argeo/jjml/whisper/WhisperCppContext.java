@@ -15,7 +15,7 @@ public class WhisperCppContext implements LongSupplier, AutoCloseable {
 	private final long pointer;
 
 	public WhisperCppContext(Path modelPath) {
-		this.pointer = doInit(filePathToNative(modelPath), false, false);
+		this.pointer = doInit(filePathToNative(modelPath), true, true);
 	}
 
 	private static native long doInit(byte[] modelPath, boolean useGpu, boolean flashAttention);

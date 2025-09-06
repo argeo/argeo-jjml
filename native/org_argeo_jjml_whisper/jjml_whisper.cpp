@@ -10,11 +10,6 @@
 /*
  * PROCESSOR
  */
-JNIEXPORT jlong JNICALL Java_org_argeo_jjml_whisper_WhisperCppProcessor_doInit
-  (JNIEnv *, jclass, jbyteArray, jboolean, jboolean){
-	return 0;
-}
-
 JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_whisper_WhisperCppProcessor_doFull(
 		JNIEnv *env, jclass, jlong contextPointer, jobject inputBuf,
 		jint offset, jint length) {
@@ -23,6 +18,8 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_whisper_WhisperCppProcessor_doF
 	whisper_full_params wparams = whisper_full_default_params(
 			WHISPER_SAMPLING_GREEDY);
 	wparams.single_segment = true;
+	wparams.translate = false;
+//	wparams.language = "fr";
 
 	float *pcmf32 = static_cast<float*>(env->GetDirectBufferAddress(inputBuf));
 	if (whisper_full(ctx, wparams, pcmf32 + offset, length) != 0) {

@@ -22,12 +22,9 @@ public class WhisperCppProcessor {
 		this.context = context;
 	}
 
-	private static native long doInit(byte[] modelPath, boolean useGpu, boolean flashAttention);
-
 	private static native byte[] doFull(long contextPointer, FloatBuffer pcm, int offset, int length);
 
 	public String transcribe(AudioInputStream input) throws IOException {
-		doInit(null, false, false);
 		FloatBuffer floatBuf = convert(input);
 		byte[] utf8 = doFull(context.getAsLong(), floatBuf, 0, floatBuf.limit());
 		return new String(utf8, StandardCharsets.UTF_8);
@@ -42,7 +39,7 @@ public class WhisperCppProcessor {
 			System.out.println(inputFormat);
 			AudioFormat outputFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, WHISPER_SAMPLE_RATE,
 					inputFormat.getSampleSizeInBits(), inputFormat.getChannels(), inputFormat.getFrameSize(),
-					WHISPER_SAMPLE_RATE, true);
+					WHISPER_SAMPLE_RATE, inputFormat.isBigEndian());
 			System.out.println(outputFormat);
 			boolean supported = AudioSystem.isConversionSupported(outputFormat, inputFormat);
 
@@ -81,16 +78,29 @@ public class WhisperCppProcessor {
 
 	public static void main(String[] args) throws Exception {
 		String modelId = "ggml-base.en.bin";
-		//modelId = "ggml-small-q5_1.bin";
+		modelId = "ggml-base.bin";
+//		modelId = "ggml-base-q8_0.bin";
+//		modelId = "ggml-small-q5_1.bin";
+//		modelId = "ggml-medium-q5_0.bin";
+		modelId = "ggml-medium-q8_0.bin";
+//		modelId = "ggml-large-v3.bin";
+//		modelId = "ggml-large-v3-q5_0.bin";
+
 		Path modelPath = Paths.get(System.getProperty("user.home"),
 				"dev/git/unstable/argeo-jjml/native/tp/whisper.cpp/models/", modelId);
 		WhisperCppContext context = new WhisperCppContext(modelPath);
 		WhisperCppProcessor processor = new WhisperCppProcessor(context);
 
-		Path wavPath = Paths.get(System.getProperty("user.home"),
-				"dev/git/unstable/argeo-jjml/native/tp/whisper.cpp/samples/jfk.wav");
+		String wavRelPath = "dev/git/unstable/argeo-jjml/native/tp/whisper.cpp/samples/jfk.wav";
+		wavRelPath = "Music/18juin/cdg.wav";
+//		wavRelPath = "Music/18juin/cdg-remastered.wav";
+//		wavRelPath = "Music/18juin/cdg-48kHz.wav";
+		Path wavPath = Paths.get(System.getProperty("user.home"), wavRelPath);
 		AudioInputStream inputStream = AudioSystem.getAudioInputStream(wavPath.toFile());
+
+		long begin = System.currentTimeMillis();
 		String str = processor.transcribe(inputStream);
 		System.out.println(str);
+		System.err.println("Transcription took " + (System.currentTimeMillis() - begin) + " ms");
 	}
 }
