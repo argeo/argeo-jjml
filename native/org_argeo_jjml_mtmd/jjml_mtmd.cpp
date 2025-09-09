@@ -75,6 +75,8 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_mtmd_MtmdProcessor_doSingleTurn(
 		return nullptr; // TOD throw exception
 	}
 
+	n_past = new_n_past;
+
 	// Generate response
 	std::cout << "# MTMD - Generate Response" << std::endl;
 	llama_batch batch = llama_batch_init(1, 0, 1);

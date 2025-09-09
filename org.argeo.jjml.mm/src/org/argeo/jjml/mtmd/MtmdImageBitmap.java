@@ -9,9 +9,11 @@ import java.nio.ByteOrder;
 import javax.imageio.ImageIO;
 
 public class MtmdImageBitmap extends MtmdBitmap {
+	private ByteBuffer rgb;
 
 	MtmdImageBitmap(ByteBuffer rgb, int width, int height) {
 		super(doInit(rgb, width, height));
+		this.rgb = rgb;
 	}
 
 	private static native long doInit(ByteBuffer rgb, int width, int height);
@@ -25,6 +27,9 @@ public class MtmdImageBitmap extends MtmdBitmap {
 		BufferedImage img = ImageIO.read(in);
 		int width = img.getWidth();
 		int height = img.getHeight();
+
+//		BufferedImage testImg = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
 		// FIXME make sure the native buffer is properly freed
 		ByteBuffer buf = ByteBuffer.allocateDirect(width * height * 3);
 		buf.order(ByteOrder.nativeOrder());
@@ -38,9 +43,23 @@ public class MtmdImageBitmap extends MtmdBitmap {
 				buf.put((byte) red);
 				buf.put((byte) green);
 				buf.put((byte) blue);
+
+//				int rgb = red;
+//				rgb = (rgb << 8) + green;
+//				rgb = (rgb << 8) + blue;
+//				testImg.setRGB(x, y, rgb);
 			}
 		}
 
+//		ImageIO.write(testImg, "bmp", new File("test.bmp"));
+
 		return new MtmdImageBitmap(buf, width, height);
 	}
+
+	@Override
+	public void close() throws Exception {
+		super.close();
+		rgb = null;
+	}
+
 }
