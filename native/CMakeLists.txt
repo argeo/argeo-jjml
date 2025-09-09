@@ -109,6 +109,8 @@ endif()
 add_subdirectory(org_argeo_jjml_ggml)
 add_subdirectory(org_argeo_jjml_llm)
 
+add_subdirectory(org_argeo_jjml_mtmd)
+
 add_subdirectory(org_argeo_jjml_whisper)
 
                      
