@@ -16,5 +16,6 @@ org.argeo.jjml.mm
 )
 
 a2_build_bundles(${BUNDLES})
+add_dependencies(org.argeo.jjml.mm org.argeo.jjml)
 
 add_subdirectory(native)
