@@ -22,16 +22,20 @@ TARGET_NATIVE_OUTPUT_JJML=$(TARGET_NATIVE_OUTPUT)/org.argeo.jjml
 
 # Activate various features via environment variables:
 GGML_BLAS ?= OFF
-GGML_VULKAN ?= OFF
+GGML_VULKAN ?= ON
 GGML_CUDA ?= OFF
 GGML_RPC ?= OFF
 GGML_OPENMP ?= OFF
+
+LLAMA_BUILD_TOOLS ?= ON
+JJML_FORCE_BUILD_LLAMA_GGML ?= OFF
 
 rebuild-force-tp: clean-local
 	echo CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 	
 	$(CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
+		-DJJML_FORCE_BUILD_LLAMA_GGML=${JJML_FORCE_BUILD_LLAMA_GGML} \
 		-DA2_INSTALL_MODE=a2 \
 		-DJAVA_HOME=$(JAVA_HOME) \
 		\
@@ -39,8 +43,8 @@ rebuild-force-tp: clean-local
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
 		-DGGML_CCACHE=ON \
 		\
-		-DLLAMA_BUILD_COMMON=ON \
-		-DLLAMA_BUILD_TOOLS=ON \
+		-DLLAMA_BUILD_COMMON=${LLAMA_BUILD_TOOLS} \
+		-DLLAMA_BUILD_TOOLS=${LLAMA_BUILD_TOOLS} \
 		-DLLAMA_BUILD_EXAMPLES=OFF \
 		-DLLAMA_BUILD_TESTS=OFF \
 		\
@@ -71,6 +75,7 @@ clean-local:
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix).*
 
 #
 # DOC

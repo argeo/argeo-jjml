@@ -90,7 +90,7 @@ if(EXISTS "${llama_LIBRARY}") # llama.cpp as external library
 	endif()
 endif()
 
-if(NOT JJML_DONOT_BUILD_TP)
+if(NOT JJML_DO_NOT_BUILD_TP)
 	add_subdirectory(tp) # build locally if needed
 endif()
 
