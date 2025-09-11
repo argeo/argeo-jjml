@@ -188,8 +188,11 @@ static void get_context_params(JNIEnv *env, jobject params,
 			env->GetMethodID(clss, "embeddings", "()Z"));
 	ctx_params->offload_kqv = env->CallBooleanMethod(params,
 			env->GetMethodID(clss, "offload_kqv", "()Z"));
+#ifndef JJML_PRE_LLAMA_0_0_6325
+#else
 	ctx_params->flash_attn = env->CallBooleanMethod(params,
 			env->GetMethodID(clss, "flash_attn", "()Z"));
+#endif
 #ifndef JJML_PRE_LLAMA_0_0_5913
 	ctx_params->kv_unified = env->CallBooleanMethod(params,
 			env->GetMethodID(clss, "kv_unified", "()Z"));
@@ -223,7 +226,11 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llm_LlamaCppBackend_newContextPara
 			ctx_params.type_v, //
 			ctx_params.embeddings, //
 			ctx_params.offload_kqv, //
-			ctx_params.flash_attn, //
+#ifndef JJML_PRE_LLAMA_0_0_6325
+			false, //
+#else
+			ctx_params.flash_attn,
+#endif
 			ctx_params.no_perf, //
 			ctx_params.op_offload, //
 			ctx_params.swa_full, //
