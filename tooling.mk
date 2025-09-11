@@ -32,6 +32,7 @@ rebuild-force-tp: clean-local
 	
 	$(CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
+		-DJJML_FORCE_BUILD_LLAMA_GGML=OFF \
 		-DA2_INSTALL_MODE=a2 \
 		-DJAVA_HOME=$(JAVA_HOME) \
 		\
@@ -57,7 +58,7 @@ rebuild-force-tp: clean-local
 		-DGGML_CUDA_FA_ALL_QUANTS=OFF \
 		-DGGML_RPC=$(GGML_RPC) \
 	
-	$(CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
+	$(CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) #-j $(shell nproc)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*

@@ -30,7 +30,12 @@ if(NOT EXISTS ${GGML_LIBRARY})
 		set(GGML_CPU_ALL_VARIANTS ON)
 	endif()
 
-	add_subdirectory(ggml) # build locally
+	# build locally
+	if(JJML_FORCE_BUILD_LLAMA_GGML)
+	add_subdirectory(llama.cpp/ggml)
+	else() # default
+	add_subdirectory(ggml)
+	endif()
 	message(STATUS "Build ggml locally from submodule native/tp/ggml") 
 endif()
 
