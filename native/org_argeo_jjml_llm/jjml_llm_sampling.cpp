@@ -108,7 +108,7 @@ void jjml_llm_sampler_java_apply(struct llama_sampler *smpl,
 		llama_token_data_array *cur_p) {
 	const auto *ctx = static_cast<jjml_llm_sampler_java*>(smpl->ctx);
 	JNIEnv *env;
-	argeo::jni::load_thread_jnienv(ctx->jvm, (void**) &env);
+	argeo::jni::load_thread_jnienv(ctx->jvm, &env);
 
 	jobject obj = env->NewLocalRef(ctx->obj);
 	jobject buf = env->NewDirectByteBuffer(cur_p->data,
@@ -125,7 +125,7 @@ void jjml_llm_sampler_java_accept(struct llama_sampler *smpl,
 		llama_token token) {
 	const auto *ctx = static_cast<jjml_llm_sampler_java*>(smpl->ctx);
 	JNIEnv *env;
-	argeo::jni::load_thread_jnienv(ctx->jvm, (void**) &env);
+	argeo::jni::load_thread_jnienv(ctx->jvm, &env);
 
 	jobject obj = env->NewLocalRef(ctx->obj);
 	env->CallVoidMethod(obj, ctx->acceptMethod, token);
@@ -134,7 +134,7 @@ void jjml_llm_sampler_java_accept(struct llama_sampler *smpl,
 void jjml_llm_sampler_java_reset(struct llama_sampler *smpl) {
 	const auto *ctx = static_cast<jjml_llm_sampler_java*>(smpl->ctx);
 	JNIEnv *env;
-	argeo::jni::load_thread_jnienv(ctx->jvm, (void**) &env);
+	argeo::jni::load_thread_jnienv(ctx->jvm, &env);
 
 	jobject obj = env->NewLocalRef(ctx->obj);
 	env->CallVoidMethod(obj, ctx->resetMethod);
@@ -143,7 +143,7 @@ void jjml_llm_sampler_java_reset(struct llama_sampler *smpl) {
 void jjml_llm_sampler_java_free(struct llama_sampler *smpl) {
 	const auto *ctx = static_cast<jjml_llm_sampler_java*>(smpl->ctx);
 	JNIEnv *env;
-	argeo::jni::load_thread_jnienv(ctx->jvm, (void**) &env);
+	argeo::jni::load_thread_jnienv(ctx->jvm, &env);
 
 	// TODO call a close method on the Java object?
 	env->DeleteGlobalRef(ctx->obj);

@@ -22,7 +22,7 @@ endif()
 
 if(NOT EXISTS ${GGML_LIBRARY})
 	## multiple backends libraries
-	if(NOT DEFINED ${GGML_BACKEND_DL})
+	if(NOT DEFINED GGML_BACKEND_DL)
 		set(GGML_BACKEND_DL ON)
 		message(STATUS "Enabling GGML_BACKEND_DL by default")
 	endif()

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -51,7 +53,11 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 			throw new IllegalArgumentException(
 					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
 							+ " available. Reduce parallel or increase context size.");
-		IntBuffer buf = IntBuffer.allocate(requiredContextSize);
+
+		ByteBuffer nativeBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
+		nativeBuf.order(ByteOrder.nativeOrder());
+		IntBuffer buf = nativeBuf.asIntBuffer();
+		// IntBuffer buf = IntBuffer.allocate(requiredContextSize);
 
 		int batchSize = getContext().getBatchSize();
 
@@ -81,6 +87,7 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 	public void readMessage(PrintStream out) throws IOException {
 		out.flush();
 		// FIXME deal properly with charset, esp. on Windows
+		// Requires Android API level 33
 		readMessage(new PrintWriter(out, false, StandardCharsets.UTF_8));
 	}
 
@@ -88,7 +95,10 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 
 		boolean reading = true;
 		reads: while (reading) {
-			IntBuffer output = IntBuffer.allocate(1);
+			ByteBuffer nativeBuf = ByteBuffer.allocateDirect(1 * Integer.BYTES);
+			nativeBuf.order(ByteOrder.nativeOrder());
+			IntBuffer output = nativeBuf.asIntBuffer();
+			// IntBuffer output = IntBuffer.allocate(1);
 
 			CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
 			CompletableFuture<Boolean> allCompleted = readBatchAsync(new IntBuffer[] { output }, generationCompleted);
@@ -98,6 +108,7 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 			String outputStr = vocabulary.deTokenize(output);
 			writer.write(outputStr);
 			writer.flush();
+			// System.out.print(outputStr);
 
 			if (isGenerationCompleted(0))
 				break reads;

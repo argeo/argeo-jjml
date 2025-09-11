@@ -1,12 +1,9 @@
 package org.argeo.jjml.llm;
 
-import static java.lang.System.Logger.Level.WARNING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -33,7 +30,6 @@ import org.argeo.jjml.llm.util.InstructRole;
  * @see llama.h - llama_model
  */
 public class LlamaCppModel implements LongSupplier, AutoCloseable {
-	private final static Logger logger = System.getLogger(LlamaCppModel.class.getName());
 
 	private final static ModelParams DEFAULT_MODEL_PARAMS_NATIVE;
 
@@ -244,13 +240,14 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 		FutureTask<LlamaCppModel> future = new FutureTask<>(() -> {
 			checkInitParams(initParams);
-			long begin = System.currentTimeMillis();
+			// long begin = System.currentTimeMillis();
 			long pointer = doInit(localPath.toString(), initParams, (progress) -> {
 				if (progressCallback != null)
 					progressCallback.accept(progress);
 				return !Thread.interrupted();
 			});
-			logger.log(Level.INFO, "Model initialization took " + (System.currentTimeMillis() - begin) + " ms");
+			// logger.log(Level.INFO, "Model initialization took " +
+			// (System.currentTimeMillis() - begin) + " ms");
 			LlamaCppModel model = new LlamaCppModel(pointer, localPath, initParams);
 			return model;
 		});
@@ -267,14 +264,14 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	}
 
 	private static void checkInitParams(ModelParams initParams) {
-		if (initParams.n_gpu_layers() != 0 && !LlamaCppBackend.supportsGpuOffload())
-			logger.log(WARNING, "GPU offload is not available, but " + ModelParam.n_gpu_layers + " is set to "
-					+ initParams.n_gpu_layers());
-		if (initParams.use_mmap() && !LlamaCppBackend.supportsMmap())
-			logger.log(WARNING,
-					"mmap is not available, but " + ModelParam.use_mmap + " is set to " + initParams.use_mmap());
-		if (initParams.use_mlock() && !LlamaCppBackend.supportsMlock())
-			logger.log(WARNING,
-					"mlock is not available, but " + ModelParam.use_mlock + " is set to " + initParams.use_mlock());
+//		if (initParams.n_gpu_layers() != 0 && !LlamaCppBackend.supportsGpuOffload())
+//			logger.log(WARNING, "GPU offload is not available, but " + ModelParam.n_gpu_layers + " is set to "
+//					+ initParams.n_gpu_layers());
+//		if (initParams.use_mmap() && !LlamaCppBackend.supportsMmap())
+//			logger.log(WARNING,
+//					"mmap is not available, but " + ModelParam.use_mmap + " is set to " + initParams.use_mmap());
+//		if (initParams.use_mlock() && !LlamaCppBackend.supportsMlock())
+//			logger.log(WARNING,
+//					"mlock is not available, but " + ModelParam.use_mlock + " is set to " + initParams.use_mlock());
 	}
 }

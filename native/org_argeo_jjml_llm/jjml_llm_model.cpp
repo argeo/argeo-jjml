@@ -26,11 +26,11 @@ static void get_model_params(JNIEnv *env, jobject params,
 	jclass clss = env->FindClass(JCLASS_MODEL_PARAMS.c_str());
 	mparams->n_gpu_layers = env->CallIntMethod(params,
 			env->GetMethodID(clss, "n_gpu_layers", "()I"));
-	mparams->vocab_only = env->CallIntMethod(params,
+	mparams->vocab_only = env->CallBooleanMethod(params,
 			env->GetMethodID(clss, "vocab_only", "()Z"));
-	mparams->use_mmap = env->CallIntMethod(params,
+	mparams->use_mmap = env->CallBooleanMethod(params,
 			env->GetMethodID(clss, "use_mmap", "()Z"));
-	mparams->use_mlock = env->CallIntMethod(params,
+	mparams->use_mlock = env->CallBooleanMethod(params,
 			env->GetMethodID(clss, "use_mlock", "()Z"));
 }
 
@@ -77,6 +77,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doInit(
 		};
 	}
 
+	ggml_backend_load_all();
 	llama_model *model = llama_model_load_from_file(path_model, mparams);
 
 	// free callback global reference

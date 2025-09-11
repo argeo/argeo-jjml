@@ -1,7 +1,5 @@
 package org.argeo.jjml.llm;
 
-import java.lang.System.Logger;
-
 import org.argeo.jjml.ggml.params.NumaStrategy;
 import org.argeo.jjml.llm.params.ContextParams;
 import org.argeo.jjml.llm.params.ModelParams;
@@ -16,8 +14,6 @@ import org.argeo.jjml.llm.params.ModelParams;
  * </p>
  */
 public class LlamaCppBackend {
-
-	private final static Logger logger = System.getLogger(LlamaCppBackend.class.getName());
 
 	static {
 		LlamaCppNative.ensureLibrariesLoaded();

@@ -116,21 +116,27 @@ static void jjml_llm_free_backend() {
  */
 /** Called when the library is loaded, before any other function. */
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
-	//std::cerr << "JNI_OnLoad";
-
 	// load a new JNIEnv
 	JNIEnv *env;
-	vm->AttachCurrentThreadAsDaemon((void**) &env, nullptr);
+#ifdef __ANDROID__
+    vm->AttachCurrentThreadAsDaemon(&env, nullptr);
+#else
+    vm->AttachCurrentThreadAsDaemon((void**) &env, nullptr);
+#endif
 
 	// cache Java references
 	org_argeo_jjml_llm_(env);
 
-	vm->DetachCurrentThread();
+//	vm->DetachCurrentThread();
 
 	// initialize llama.cpp backend
 	jjml_llm_init_backend();
 
-	return JNI_VERSION_10;
+#ifdef __ANDROID__
+	return JNI_VERSION_1_6;
+#else
+    return JNI_VERSION_10;
+#endif
 }
 
 void JNI_OnUnload(JavaVM *vm, void *reserved) {
