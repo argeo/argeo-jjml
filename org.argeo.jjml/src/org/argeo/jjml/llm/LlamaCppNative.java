@@ -1,7 +1,5 @@
 package org.argeo.jjml.llm;
 
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,11 +43,8 @@ public class LlamaCppNative {
 	 */
 	public final static String ENV_GGML_CUDA_ENABLE_UNIFIED_MEMORY = "GGML_CUDA_ENABLE_UNIFIED_MEMORY";
 
-	private final static String JJML_GGML_LIBRARY_NAME = "Java_" + GgmlBackend.class.getPackageName().replace('.', '_');
-	private final static String JJML_LAMA_LIBRARY_NAME = "Java_"
-			+ LlamaCppNative.class.getPackageName().replace('.', '_');
-
-	private final static Logger logger = System.getLogger(LlamaCppNative.class.getName());
+	private final static String JJML_GGML_LIBRARY_NAME = "Java_org_argeo_jjml_ggml";
+	private final static String JJML_LAMA_LIBRARY_NAME = "Java_org_argeo_jjml_llm";
 
 	private static boolean librariesLoaded = false;
 
@@ -101,11 +96,11 @@ public class LlamaCppNative {
 
 		if (ggmlLibraryPath != null) {
 			System.load(ggmlLibraryPath.toAbsolutePath().toString());
-			logger.log(Level.WARNING, "GGML library loaded from " + ggmlLibraryPath);
+//			logger.log(Level.WARNING, "GGML library loaded from " + ggmlLibraryPath);
 		}
 		if (llamaLibraryPath != null) {
 			System.load(llamaLibraryPath.toAbsolutePath().toString());
-			logger.log(Level.WARNING, "llama.cpp library loaded from " + llamaLibraryPath);
+//			logger.log(Level.WARNING, "llama.cpp library loaded from " + llamaLibraryPath);
 		}
 
 		// GGML

@@ -1,11 +1,11 @@
 package org.argeo.jjml.ggml;
 
-import static java.lang.System.Logger.Level.INFO;
-import static java.lang.System.Logger.Level.WARNING;
+//import static java.lang.System.Logger.Level.INFO;
+//import static java.lang.System.Logger.Level.WARNING;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.System.Logger;
+//import java.lang.System.Logger;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -17,7 +17,7 @@ import java.util.List;
 
 /** A registered GGML backend. */
 public class GgmlBackend {
-	private final static Logger logger = System.getLogger(GgmlBackend.class.getName());
+//	private final static Logger logger = System.getLogger(GgmlBackend.class.getName());
 
 	private final static String GGML_DL_PREFIX = "ggml-";
 	// TODO rather rely on native-side registration
@@ -74,7 +74,7 @@ public class GgmlBackend {
 					// silent
 					continue basePaths;
 				}
-				logger.log(INFO, "Searching for ggml backends in: " + basePath);
+//				logger.log(INFO, "Searching for ggml backends in: " + basePath);
 				doLoadAllBackends(filePathToNative(basePath));
 			}
 		}
@@ -96,7 +96,7 @@ public class GgmlBackend {
 			// skip backends whose names are already loaded
 			for (GgmlBackend backend : loadedBackends) {
 				if (backendName.name().equals(backend.getName())) {
-					logger.log(WARNING, backendName.name() + " already loaded from " + backend.getPath());
+//					logger.log(WARNING, backendName.name() + " already loaded from " + backend.getPath());
 					System.err.println(backendName.name() + " already loaded from " + backend.getPath());
 					continue backendNames;
 				}
@@ -116,7 +116,7 @@ public class GgmlBackend {
 					// TODO log it
 					GgmlBackend backend = new GgmlBackend(pointer, backendName.name(), backendPath);
 					loadedBackends.add(backend);
-					logger.log(INFO, "Loaded backend " + backendName.name() + " from " + backend.getPath());
+//					logger.log(INFO, "Loaded backend " + backendName.name() + " from " + backend.getPath());
 					System.out.println("Loaded backend " + backendName.name() + " from " + backend.getPath());
 				}
 			}

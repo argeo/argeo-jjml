@@ -1,7 +1,5 @@
 package org.argeo.jjml.llm.util;
 
-import static java.lang.System.Logger.Level.DEBUG;
-import static java.lang.System.Logger.Level.INFO;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
@@ -9,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.System.Logger;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -20,15 +17,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.DoubleConsumer;
 
-import org.argeo.jjml.llm.LlamaCppModel;
-
 /**
  * Downloads a GGUF model (by defaults from HuggingFace) with the same naming
  * conventions as llama-cli. This is meant to be used for prototyping, not as a
  * full-fledged models management solution.
  */
 public class SimpleModelDownload {
-	private final static Logger logger = System.getLogger(LlamaCppModel.class.getName());
 
 	/** Default location for GGUF model files. */
 	private final static Path MODELS_BASE = File.separatorChar == '/'
@@ -93,14 +87,16 @@ public class SimpleModelDownload {
 		String currentEtag = null;
 		if (Files.exists(localFile)) {
 			try {
-				byte[] buf = (byte[]) Files.readAttributes(localFile, "user:etag").getOrDefault("etag", null);
+				byte[] buf = null; // (byte[]) Files.readAttributes(localFile, "user:etag").getOrDefault("etag",
+									// null);
 				if (buf != null)
 					currentEtag = new String(buf, StandardCharsets.US_ASCII);
-			} catch (IOException e) {
-				logger.log(DEBUG, "Cannot read attribute from " + localFile, e);
+			} catch (Exception e) {
+//				logger.log(DEBUG, "Cannot read attribute from " + localFile, e);
 			}
 			if (currentEtag == null) {
-				throw new IllegalStateException("File " + localFile + " already exist, remove it first");
+				return localFile;
+//				throw new IllegalStateException("File " + localFile + " already exist, remove it first");
 			}
 		}
 		Files.createDirectories(localFile.getParent());
@@ -116,13 +112,13 @@ public class SimpleModelDownload {
 			double contentLength = urlConnection.getContentLengthLong();
 			String etag = urlConnection.getHeaderField("etag");
 			if (responseCode == HttpURLConnection.HTTP_NOT_MODIFIED || etag.equals(currentEtag)) {
-				logger.log(INFO, "Use unmodified " + hfRepo + ":" + quantization + " file with etag=" + currentEtag);
+//				logger.log(INFO, "Use unmodified " + hfRepo + ":" + quantization + " file with etag=" + currentEtag);
 				return localFile;
 			}
-			logger.log(INFO, "Starting download of " + url + " to " + localFile);
-			logger.log(DEBUG, "Effective URL " + urlConnection.getURL());
+//			logger.log(INFO, "Starting download of " + url + " to " + localFile);
+//			logger.log(DEBUG, "Effective URL " + urlConnection.getURL());
 
-			long begin = System.currentTimeMillis();
+//			long begin = System.currentTimeMillis();
 			try (OutputStream out = Files.newOutputStream(localFile, CREATE, TRUNCATE_EXISTING)) {
 				byte[] buf = new byte[bufferSize];
 				double downloaded = 0;
@@ -136,10 +132,8 @@ public class SimpleModelDownload {
 			}
 			// Files.copy(in, localFile, StandardCopyOption.REPLACE_EXISTING);
 			if (etag != null) {
-				Files.setAttribute(localFile, "user:etag", StandardCharsets.US_ASCII.encode(etag));
+//				Files.setAttribute(localFile, "user:etag", StandardCharsets.US_ASCII.encode(etag));
 			}
-			logger.log(INFO,
-					"Download completed after " + (System.currentTimeMillis() - begin) / 1000 + " s, etag=" + etag);
 		}
 		return localFile;
 	}

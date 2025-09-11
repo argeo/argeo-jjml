@@ -227,6 +227,10 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doWriteArr
 		}
 	}
 
+	jint *sequence_ids_arr = env->GetIntArrayElements(sequenceIds, nullptr);
+	//jint sequence_ids_arr[1];
+	//env->GetIntArrayRegion(sequenceIds, 0 , 1, sequence_ids_arr);
+
 	jint newPosition;
 	try {
 		newPosition = jjml_llm_batch_processor_write(ctx, smpl, cur_pos, inputs,
