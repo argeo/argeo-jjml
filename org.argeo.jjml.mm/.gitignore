@@ -3,3 +3,5 @@
 /build/
 /META-INF/MANIFEST.MF
 /META-INF/MANIFEST.src.MF
+
+*.wav
