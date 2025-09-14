@@ -141,12 +141,17 @@
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="org_argeo_jjml_ggml"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="org_argeo_jjml_llm"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="org_argeo_jjml_mtmd"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="org_argeo_jjml_whisper"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/ggml/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/common"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/examples/embedding"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/examples/simple"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/examples/simple-chat"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/tools/mtmd"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/whisper.cpp/examples"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/whisper.cpp/src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
