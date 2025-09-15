@@ -13,16 +13,19 @@ The Java layer does not depend on any Argeo or third-party Java libraries, and i
 
 No tooling or application is provided, except some examples for testing and development purposes. Focus is on stability rather than supporting the latest features. Usable features such as chatbots, RAG, HTTP APIs, etc. should be implemented on top of this component, typically using third-party libraries and frameworks.
 
+While the applications targeted by this library are mostly enterprise Java systems in regulated industries (where on premise/private cloud LLMs are a requirement), it can also be helpful when developing or patching ggml-based native libraries, by providing a simple way to write robust scripted tests or small prototypes using modern java features such as `jdk.jshell`, `jdk.httpserver`, WebSocket client, etc.
+
 ## Features ##
 - Java 11, 17, 21 and 25 support
-- JPMS and OSGi metadata
-- Simple user/assistant dialog based on standard functional interfaces
-- Persistence of context state, typically in order to "pre-compile" propmt prefixes
+- Persistence of context state, typically in order to "pre-compile" prompt prefixes
 - Parallel batches
 - Embeddings
 - Chat templates (limited to those embedded in llama.cpp)
-- Combination and configuration of (native) samplers from the Java side
+- API-less user/assistant dialog based on standard `java.util.function` interfaces
+- Combination and configuration of the native samplers from the Java side
 - API for implementing samplers in pure Java
+- JPMS and OSGi metadata
+- Android support (from SDK version 26)
 
 ## Build ##
 The build relies only on CMake and the [argeo-build](https://github.com/argeo/argeo-build) scripts (as a git submodule). Pinned reference versions of both [ggml](https://github.com/ggml-org/ggml) and [llama.cpp](https://github.com/ggml-org/llama.cpp) are provided as git submodules as well. *One should therefore always use `git pull --recurse-submodules` when updating.*
@@ -30,28 +33,37 @@ The build relies only on CMake and the [argeo-build](https://github.com/argeo/ar
 ```
 git clone --recurse-submodules https://github.com/argeo/argeo-jjml
 cd argeo-jjml
-cmake -B ../output/argeo-jjml
+cmake -B ../output/argeo-jjml -DJAVA_HOME=/usr/lib/jvm/default-java
 cmake --build ../output/argeo-jjml
 ```
 
-If the shared libraries are found at the usual locations (/usr, /usr/local, etc., as well as Debian's /usr/lib/\*/ggml and /usr/lib/\*/llama) they will be used, then assuming that the related includes, camke configs, etc. are available as well. Otherwise, the referenced submodules will be built additionally to the Java bindings.
+If the shared libraries are found at the usual locations (`/usr`, `/usr/local`, etc., as well as Debian-specific `/usr/lib/\*/ggml` and `/usr/lib/\*/llama`) they will be used, then assuming that the related includes, cmake-* configs, etc. are available as well. Otherwise, the reference ggml and llama.cpp submodules will be built in addition to the Java bindings.
 
 In order to force building with the reference submodules even if the libraries are locally available, use `-DJJML_FORCE_BUILD_TP=ON` when configuring CMake.
+
+Reciprocally, use `-DJJML_DO_NOT_BUILD_TP=ON` in order to make sure that the build is using the system libraries for ggml and llama.cpp (and not automatically defaulting to build the submodules).
+
+When building the reference submodules, setting `-DJJML_FORCE_BUILD_LLAMA_GGML=ON` will build with the ggml version included in `native/tp/llama.cpp`. The default is to build with the separate `native/tp/ggml` reference submodule. This is useful when testing with the latest version of llama.cpp or a development branch.
+
+While a lot of work goes into making this build straightforward and portable, there must be a base line:
+- The reference build for Linux is on Debian Sid, using the official Debian packages for ggml and llama.cpp. (JJML's lead developer is a regular contributor to this Debian packaging effort)
+- The reference build for Windows is with the Microsoft MSVC compiler.
+When reporting build issues on a given platform, please first check whether a reference build is working.
 
 ## Status ##
 Argeo JJML is currently in open beta, the last phase before a first stable release.
 
 All features of the future stable release are implemented and should not change significantly. Work has already started on commercial projects using it in various industries.
 
+Now is a good time to start using it in a given context, as we can quickly fix issues or integrate feedback, while the APIs already have taken their shape.
+
 Future features:
-- Shift/rewind context
-- [whisper.cpp](https://github.com/ggerganov/whisper.cpp) integration
-- Android integration (low priority)
+- Shift/rewind/fork context
+- Speech recognition and transcription with [whisper.cpp](https://github.com/ggml-org/whisper.cpp) integration (already working in the `unstable` branch)
+- Image recognition and multimodal support with llama.cpp's [mtmd](https://github.com/ggml-org/llama.cpp/tree/master/tools/mtmd) (work-in-progress in the `unstable` branch)
 
 ## Contact, bugs, commercial support ##
 All queries should be directed to Mathieu Baudier via [LinkedIn](https://www.linkedin.com/in/mbaudier/). You can expect properly reported bugs to be fixed free of charge, and additional features to require a fee. We can also provide consulting services in order to help you integrate this capabilities into your existing Java systems.
-
-In line with general Argeo policy, no community support is provided, as all our pro-bono efforts always go to non-commercial upstream projects (in that case, mostly contributions to the Debian packaging of ggml and llama.cpp).
 
 ## Licensing ##
 Argeo JJML is dual-licensed:
