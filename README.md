@@ -47,8 +47,19 @@ When building the reference submodules, setting `-DJJML_FORCE_BUILD_LLAMA_GGML=O
 
 While a lot of work goes into making this build straightforward and portable, there must be a base line:
 - The reference build for Linux is on Debian Sid, using the official Debian packages for ggml and llama.cpp. (JJML's lead developer is a regular contributor to this Debian packaging effort)
-- The reference build for Windows is with the Microsoft MSVC compiler.
+- The reference build for Windows is with the Microsoft MSVC compiler. (see example below)
 When reporting build issues on a given platform, please first check whether a reference build is working.
+
+An example Windows build would be (in a PowerShell terminal):
+
+```
+winget install Microsoft.OpenJDK.21 # install MS JDK
+& "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" `
+ -B ..\output\argeo-jjml `
+ -DJAVA_HOME="C:/Program Files/Microsoft/jdk-21.0.8.9-hotspot" # Note regular slashes
+& "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" `
+ --build ..\output\argeo-jjml
+```
 
 ## Status ##
 Argeo JJML is currently in open beta, the last phase before a first stable release.
