@@ -22,7 +22,7 @@ TARGET_NATIVE_OUTPUT_JJML=$(TARGET_NATIVE_OUTPUT)/org.argeo.jjml
 
 # Activate various features via environment variables:
 GGML_BLAS ?= OFF
-GGML_VULKAN ?= ON
+GGML_VULKAN ?= OFF
 GGML_CUDA ?= OFF
 GGML_RPC ?= OFF
 GGML_OPENMP ?= OFF
