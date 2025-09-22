@@ -1,4 +1,4 @@
-module org.argeo.jjml.mm {
+module org.argeo.jjml.multimedia {
 	exports org.argeo.jjml.mtmd;
 	exports org.argeo.jjml.whisper;
 
