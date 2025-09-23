@@ -1,4 +1,11 @@
 #
+# OPTIONS
+#
+option(JJML_FORCE_BUILD_TP "Force build of reference third-party submodules even if they are available on the system")
+option(JJML_DO_NOT_BUILD_TP "Fail if third-party libraries are not found, instead of building them from the reference submodules")
+option(JJML_JDK_TP "Use third-party environment provided by a ggml-instrumented JDK (useful for Windows)")
+
+#
 # THIRD PARTY DETECTION
 #
 #set(CMAKE_FIND_DEBUG_MODE ON)
@@ -81,7 +88,8 @@ if(EXISTS "${llama_LIBRARY}") # llama.cpp as external library
 endif()
 
 if(NOT JJML_DO_NOT_BUILD_TP)
-	add_subdirectory(tp) # build locally if needed
+	# Build reference third-party submodules if needed
+	add_subdirectory(tp)
 endif()
 
 message(STATUS "GGML_BUILD_NUMBER=${GGML_BUILD_NUMBER} LLAMA_BUILD_NUMBER=${LLAMA_BUILD_NUMBER}")
@@ -93,12 +101,14 @@ if(GGML_BACKEND_DL)
 	message(STATUS "Build JNI libraries with support for dynamic ggml backends") 
 endif()
 
-# Force C++17 and ISO C++
-set(CMAKE_CXX_STANDARD 17)
-if (NOT MSVC)
-    add_compile_options(-pedantic-errors)
+# Force ISO C++
+if (MSVC)
+add_compile_options(/permissive-)
+else()
+add_compile_options(-pedantic-errors)
 endif()
 
+# JNI shared libraries
 add_subdirectory(org_argeo_jjml_ggml)
 add_subdirectory(org_argeo_jjml_llm)
                       
