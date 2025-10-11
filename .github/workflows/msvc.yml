@@ -1,4 +1,4 @@
-name: Ubuntu + Vulkan backend
+name: All Java versions with MSVC
 
 on:
   push:
@@ -8,28 +8,21 @@ on:
 
 jobs:
   build:
+    name: Java ${{ matrix.java }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
 
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        os: [windows-latest]
         build_type: [Release]
-        c_compiler: [gcc, clang]
+        c_compiler: [cl]
+        java: ['11', '17', '21', '25' ]
         include:
-          - os: ubuntu-24.04
-            c_compiler: gcc
-            cpp_compiler: g++
-          - os: ubuntu-24.04-arm
-            c_compiler: gcc
-            cpp_compiler: g++
-          - os: ubuntu-24.04
-            c_compiler: clang
-            cpp_compiler: clang++
-          - os: ubuntu-24.04-arm
-            c_compiler: clang
-            cpp_compiler: clang++
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
 
     steps:
     - uses: actions/checkout@v4
@@ -44,41 +37,43 @@ jobs:
       id: strings
       shell: bash
       run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        echo "build-output-dir=${{ github.workspace }}\build" >> "$GITHUB_OUTPUT"
+        echo "${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.tp.ggml" >> $GITHUB_PATH
 
-    - name: Dependencies
-      id: depends
-      run: |
-       sudo apt-get install -y default-jdk-headless glslc libvulkan-dev
+    - uses: actions/setup-java@v5
+      name: Setup Java
+      with:
+        distribution: 'semeru'
+        java-version: ${{ matrix.java }}
 
     - name: Configure CMake
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -G "Unix Makefiles"
-        -DJAVA_HOME=/usr/lib/jvm/default-java
+        -DJAVA_HOME=%JAVA_HOME%
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DCMAKE_SKIP_BUILD_RPATH=ON
         -DJJML_FORCE_BUILD_TP=ON
+        -DA2_INSTALL_MODE=a2
         -DLLAMA_CURL=OFF
         -DLLAMA_BUILD_COMMON=ON
         -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_TESTS=OFF
-        -DGGML_NATIVE=ON
-        -DGGML_BACKEND_DL=OFF
-        -DGGML_CPU_ALL_VARIANTS=OFF
-        -DGGML_VULKAN=ON
+        -DGGML_BACKEND_DL=ON
+        -DGGML_CPU_ALL_VARIANTS=ON
+        -DGGML_VULKAN=OFF
         -S ${{ github.workspace }}
 
     - name: Build
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} -j $(nproc)
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j $(nproc)
 
     - name: Test
       run: >
         java -ea
-        -Djava.library.path=${{ steps.strings.outputs.build-output-dir }}/../a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml:${{ steps.strings.outputs.build-output-dir }}/../a2/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml
-        --module-path ${{ steps.strings.outputs.build-output-dir }}/../a2/org.argeo.jjml
+        "-Djava.library.path=${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.jjml;${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.tp.ggml"
+        "--module-path=${{ github.workspace }}\a2\org.argeo.jjml"
         --add-modules org.argeo.jjml
         sdk/jbin/JjmlSmokeTests.java
         allenai/OLMo-2-0425-1B-Instruct-GGUF
