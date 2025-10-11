@@ -52,7 +52,9 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DCMAKE_SKIP_BUILD_RPATH=ON
         -DJJML_FORCE_BUILD_TP=ON
+        -DA2_INSTALL_MODE=a2
         -DLLAMA_CURL=OFF
         -DLLAMA_BUILD_COMMON=OFF
         -DLLAMA_BUILD_TOOLS=OFF
@@ -70,8 +72,8 @@ jobs:
     - name: Test
       run: >
         java -ea
-        -Djava.library.path=${{ steps.strings.outputs.build-output-dir }}\..\a2\lib\x86_64-win32-default\org.argeo.jjml;${{ steps.strings.outputs.build-output-dir }}\..\a2\lib\x86_64-win32-default\org.argeo.tp.ggml
-        --module-path ${{ steps.strings.outputs.build-output-dir }}\..\a2\org.argeo.jjml
+        -Djava.library.path="${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.jjml;${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.tp.ggml"
+        --module-path ${{ github.workspace }}\a2\org.argeo.jjml
         --add-modules org.argeo.jjml
         .\sdk\jbin\JjmlSmokeTests.java
         allenai/OLMo-2-0425-1B-Instruct-GGUF
