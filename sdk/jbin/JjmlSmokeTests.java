@@ -1,3 +1,4 @@
+
 //!/usr/bin/env -S java -ea -cp /usr/share/java/org.argeo.jjml.jar
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
@@ -32,7 +33,6 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
 
 import org.argeo.jjml.llm.LlamaCppBackend;
 import org.argeo.jjml.llm.LlamaCppContext;
@@ -77,6 +77,8 @@ class JjmlSmokeTests {
 			}).getAsBoolean();
 			logger.log(INFO, "Native libraries properly loaded.");
 
+			if (args.isEmpty())
+				throw new IllegalArgumentException("A model must be specified");
 			String arg0 = args.get(0);
 			Path modelPath = Paths.get(arg0);
 			if (!Files.exists(modelPath))
@@ -421,7 +423,18 @@ class JjmlSmokeTests {
 	 */
 	/** CLI entry point. */
 	public static void main(String[] args) throws Exception {
+		if (args.length == 0) {
+			printUsage();
+			System.exit(1);
+		}
 		new JjmlSmokeTests().main(Arrays.asList(args));
+	}
+
+	/** Print required arguments. */
+	static void printUsage() {
+		System.err.println("Usage: java " + JjmlSmokeTests.class.getName() + //
+				".java path/to/model.gguf | hf_repo/model[:quantization]\n" + //
+				"e.g. java " + JjmlSmokeTests.class.getName() + ".java allenai/OLMo-2-0425-1B-Instruct-GGUF");
 	}
 
 	/**
@@ -440,34 +453,5 @@ class JjmlSmokeTests {
 			sb.append(Integer.toString(in.get(i)));
 		}
 		return sb.toString();
-	}
-
-	/*
-	 * CLASSES
-	 */
-	static class LoadModelProgressCallback implements DoubleConsumer {
-		private int lastPerctPrinted = -1;
-
-		@Override
-		public void accept(double progress) {
-			char[] progressBar = new char[10];
-			int perct = (int) (progress * 100);
-
-			if (perct > lastPerctPrinted + 10 //
-					|| lastPerctPrinted == -1 //
-					|| progress == 1.0) {
-
-				for (int i = 0; i < perct / 10; i++)
-					progressBar[i] = '#';
-				for (int i = perct / 10; i < 10; i++)
-					progressBar[i] = '-';
-				System.err.print("\r" + new String(progressBar));
-
-				lastPerctPrinted = perct;
-				if (progress == 1.0)
-					System.err.print("\n");
-			}
-		}
-
 	}
 }

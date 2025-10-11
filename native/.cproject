@@ -166,7 +166,9 @@
 		<configuration configurationName="x86_64-linux-gnu">
 			<resource resourceType="PROJECT" workspacePath="/argeo-jjml-native"/>
 		</configuration>
-		<configuration configurationName="x86_64-linux-gnu+tp"/>
+		<configuration configurationName="x86_64-linux-gnu+tp">
+			<resource resourceType="PROJECT" workspacePath="/argeo-jjml-native"/>
+		</configuration>
 		<configuration configurationName="argeo-jjml">
 			<resource resourceType="PROJECT" workspacePath="/argeo-jjml-jni"/>
 		</configuration>

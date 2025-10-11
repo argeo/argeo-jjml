@@ -1,0 +1,84 @@
+name: JJML on Ubuntu
+
+on:
+  push:
+    branches: [ "testing", "unstable" ]
+  pull_request:
+    branches: [ "testing", "unstable" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        build_type: [Release]
+        c_compiler: [gcc, clang]
+        include:
+          - os: ubuntu-24.04
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: ubuntu-24.04-arm
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: ubuntu-24.04
+            c_compiler: clang
+            cpp_compiler: clang++
+          - os: ubuntu-24.04-arm
+            c_compiler: clang
+            cpp_compiler: clang++
+
+    steps:
+    - uses: actions/checkout@v4
+      name: Clone recursively with tags
+      with:
+        submodules: 'true'
+        fetch-depth: '0'
+        fetch-tags: 'true'
+
+    - name: Set reusable strings
+      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+    - name: Dependencies
+      id: depends
+      run: |
+       sudo apt-get install -y default-jdk-headless glslc libvulkan-dev
+
+    - name: Configure CMake
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -G "Unix Makefiles"
+        -DJAVA_HOME=/usr/lib/jvm/default-java
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DJJML_FORCE_BUILD_TP=ON
+        -DLLAMA_CURL=OFF
+        -DLLAMA_BUILD_COMMON=OFF
+        -DLLAMA_BUILD_TOOLS=OFF
+        -DLLAMA_BUILD_EXAMPLES=OFF
+        -DLLAMA_BUILD_TESTS=OFF
+        -DGGML_NATIVE=ON
+        -DGGML_BACKEND_DL=OFF
+        -DGGML_CPU_ALL_VARIANTS=OFF
+        -DGGML_VULKAN=ON
+        -S ${{ github.workspace }}
+
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} -j $(nproc)
+
+    - name: Test
+      run: >
+        java -ea
+        -Djava.library.path=${{ steps.strings.outputs.build-output-dir }}/../a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml:${{ steps.strings.outputs.build-output-dir }}/../a2/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml
+        --module-path ${{ steps.strings.outputs.build-output-dir }}/../a2/org.argeo.jjml
+        --add-modules org.argeo.jjml
+        sdk/jbin/JjmlSmokeTests.java
+        allenai/OLMo-2-0425-1B-Instruct-GGUF

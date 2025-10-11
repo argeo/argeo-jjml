@@ -6,6 +6,10 @@ DESCRIPTION "Enterprise-grade Java bindings for GGML-based libraries"
 set(A2_JAVA_RELEASE 11)
 set(A2_CATEGORY org.argeo.jjml)
 
+# Can build with headless JDK
+set(JAVA_AWT_LIBRARY NotNeeded)
+set(JAVA_AWT_INCLUDE_PATH NotNeeded)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/sdk/argeo-build/cmake")
 find_package(ArgeoBuild)
 
