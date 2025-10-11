@@ -48,6 +48,7 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        echo "a2-output=${{ github.workspace }}/build/../a2" >> "$GITHUB_OUTPUT"
 
     - name: Dependencies
       id: depends
@@ -75,10 +76,9 @@ jobs:
 
     - name: Test
       run: >
-        LD_LIBRARY_PATH=${{ steps.strings.outputs.build-output-dir }}/../a2/lib/x86_64-linux-gnu/org.argeo.tp.ggml:${{ steps.strings.outputs.build-output-dir }}/../a2/lib/aarch64-linux-gnu/org.argeo.tp.ggml
         java -ea
-        -Djava.library.path=${{ steps.strings.outputs.build-output-dir }}/../a2/lib/x86_64-linux-gnu/org.argeo.jjml:${{ steps.strings.outputs.build-output-dir }}/../a2/lib/aarch64-linux-gnu/org.argeo.jjml
-        --module-path ${{ steps.strings.outputs.build-output-dir }}/../a2/org.argeo.jjml
+        -Djava.library.path=${{ a2-output }}/lib/$(uname -m)-linux-gnu/org.argeo.jjml:${{ a2-output }}/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml
+        --module-path ${{ a2-output }}/org.argeo.jjml
         --add-modules org.argeo.jjml
         sdk/jbin/JjmlSmokeTests.java
         allenai/OLMo-2-0425-1B-Instruct-GGUF
