@@ -56,6 +56,13 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
+    - name: Dependencies
+      id: depends
+      run: |
+       sudo apt-get update -y
+       sudo apt-get install -y default-jdk
+       sudo apt-get install -y glslc libvulkan-dev
+
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
@@ -64,6 +71,11 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DJAVA_HOME=/usr/lib/jvm/default-java
+        -DLLAMA_CURL=OFF
+        -DGGML_BACKEND_DL=ON
+        -DGGML_CPU_ALL_VARIANTS=ON
+        -DGGML_VULKAN=ON
         -S ${{ github.workspace }}
 
     - name: Build
