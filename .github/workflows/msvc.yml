@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Java ${{ matrix.java }}
+    name: Java ${{ matrix.java }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -42,7 +42,7 @@ jobs:
     - uses: actions/setup-java@v5
       name: Setup Java
       with:
-        distribution: 'temurin'
+        distribution: 'semeru'
         java-version: ${{ matrix.java }}
 
     - name: Configure CMake
@@ -70,7 +70,7 @@ jobs:
     - name: Test
       run: >
         java -ea
-        -Djava.library.path=${{ steps.strings.outputs.build-output-dir }}\..\a2\lib\x86_64-win32-default\org.argeo.jjml:${{ steps.strings.outputs.build-output-dir }}\..\a2\lib\x86_64-win32-default\org.argeo.tp.ggml
+        -Djava.library.path=${{ steps.strings.outputs.build-output-dir }}\..\a2\lib\x86_64-win32-default\org.argeo.jjml;${{ steps.strings.outputs.build-output-dir }}\..\a2\lib\x86_64-win32-default\org.argeo.tp.ggml
         --module-path ${{ steps.strings.outputs.build-output-dir }}\..\a2\org.argeo.jjml
         --add-modules org.argeo.jjml
         .\sdk\jbin\JjmlSmokeTests.java
