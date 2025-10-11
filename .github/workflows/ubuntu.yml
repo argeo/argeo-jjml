@@ -2,9 +2,9 @@ name: JJML on Ubuntu
 
 on:
   push:
-    branches: [ "testing" ]
+    branches: [ "testing", "unstable" ]
   pull_request:
-    branches: [ "testing" ]
+    branches: [ "testing", "unstable" ]
 
 jobs:
   build:
@@ -81,4 +81,4 @@ jobs:
         --module-path ${{ steps.strings.outputs.build-output-dir }}/../a2/org.argeo.jjml
         --add-modules org.argeo.jjml
         sdk/jbin/JjmlSmokeTests.java
-        ibm-granite/granite-3.3-2b-instruct-GGUF
+        allenai/OLMo-2-0425-1B-Instruct-GGUF
