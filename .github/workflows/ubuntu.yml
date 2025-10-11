@@ -1,4 +1,4 @@
-name: JJML on Ubuntu
+name: Ubuntu + Vulkan backend
 
 on:
   push:
