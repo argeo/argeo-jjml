@@ -25,7 +25,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
         build_type: [Release]
-        c_compiler: [gcc]
+        c_compiler: [gcc, clang]
         include:
           - os: ubuntu-24.04
             c_compiler: gcc
@@ -33,6 +33,12 @@ jobs:
           - os: ubuntu-24.04-arm
             c_compiler: gcc
             cpp_compiler: g++
+          - os: ubuntu-24.04
+            c_compiler: clang
+            cpp_compiler: clang++
+          - os: ubuntu-24.04-arm
+            c_compiler: clang
+            cpp_compiler: clang++
 
     steps:
     - uses: actions/checkout@v4
@@ -65,13 +71,14 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DJAVA_HOME=/usr/lib/jvm/default-java
         -DLLAMA_CURL=OFF
-        -DGGML_BACKEND_DL=ON
-        -DGGML_CPU_ALL_VARIANTS=ON
+        -DGGML_BACKEND_DL=OFF
+        -DGGML_CPU_ALL_VARIANTS=OFF
+        -DGGML_NATIVE=ON
         -DGGML_VULKAN=ON
         -S ${{ github.workspace }}
 
     - name: Build
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }}
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} -j $(nproc)
 
     - name: Test
       run: >
