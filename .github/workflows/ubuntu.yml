@@ -26,6 +26,10 @@ jobs:
         os: [ubuntu-24.04]
         build_type: [Release]
         c_compiler: [gcc]
+        include:
+          - os: ubuntu-24.04
+            c_compiler: gcc
+            cpp_compiler: g++
 
     steps:
     - uses: actions/checkout@v4
