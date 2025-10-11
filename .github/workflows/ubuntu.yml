@@ -1,6 +1,4 @@
-# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms
+name: JJML on Ubuntu
 
 on:
   push:
@@ -13,15 +11,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
 
-      # Set up a matrix to run the following 3 configurations:
-      # 1. <Windows, Release, latest MSVC compiler toolchain on the default runner image, default generator>
-      # 2. <Linux, Release, latest GCC compiler toolchain on the default runner image, default generator>
-      # 3. <Linux, Release, latest Clang compiler toolchain on the default runner image, default generator>
-      #
-      # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
         build_type: [Release]
@@ -58,9 +49,7 @@ jobs:
     - name: Dependencies
       id: depends
       run: |
-       sudo apt-get update -y
-       sudo apt-get install -y default-jdk-headless
-       sudo apt-get install -y glslc libvulkan-dev
+       sudo apt-get install -y default-jdk-headless glslc libvulkan-dev
 
     - name: Configure CMake
       run: >
@@ -70,6 +59,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DJJML_FORCE_BUILD_TP=ON
         -DLLAMA_CURL=OFF
         -DLLAMA_BUILD_COMMON=OFF
         -DLLAMA_BUILD_TOOLS=OFF
@@ -91,4 +81,4 @@ jobs:
         --module-path ${{ steps.strings.outputs.build-output-dir }}/../a2/org.argeo.jjml
         --add-modules org.argeo.jjml
         sdk/jbin/JjmlSmokeTests.java
-        allenai/OLMo-2-0425-1B-Instruct-GGUF
+        ibm-granite/granite-3.3-2b-instruct-GGUF
