@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: Java ${{ matrix.java }}
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -17,6 +18,7 @@ jobs:
         os: [windows-latest]
         build_type: [Release]
         c_compiler: [cl]
+        java: ['11', '17', '21', '25' ]
         include:
           - os: windows-latest
             c_compiler: cl
@@ -35,13 +37,13 @@ jobs:
       id: strings
       shell: bash
       run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        echo "build-output-dir=${{ github.workspace }}\build" >> "$GITHUB_OUTPUT"
 
     - uses: actions/setup-java@v5
       name: Setup Java
       with:
         distribution: 'temurin'
-        java-version: '21'
+        java-version: ${{ matrix.java }}
 
     - name: Configure CMake
       run: >
