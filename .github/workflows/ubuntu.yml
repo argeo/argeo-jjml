@@ -59,21 +59,25 @@ jobs:
       id: depends
       run: |
        sudo apt-get update -y
-       sudo apt-get install -y default-jdk
+       sudo apt-get install -y default-jdk-headless
        sudo apt-get install -y glslc libvulkan-dev
 
     - name: Configure CMake
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -G "Unix Makefiles"
+        -DJAVA_HOME=/usr/lib/jvm/default-java
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DJAVA_HOME=/usr/lib/jvm/default-java
         -DLLAMA_CURL=OFF
+        -DLLAMA_BUILD_COMMON=OFF
+        -DLLAMA_BUILD_TOOLS=OFF
+        -DLLAMA_BUILD_EXAMPLES=OFF
+        -DLLAMA_BUILD_TESTS=OFF
+        -DGGML_NATIVE=ON
         -DGGML_BACKEND_DL=OFF
         -DGGML_CPU_ALL_VARIANTS=OFF
-        -DGGML_NATIVE=ON
         -DGGML_VULKAN=ON
         -S ${{ github.workspace }}
 
