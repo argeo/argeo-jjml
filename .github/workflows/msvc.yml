@@ -1,4 +1,4 @@
-name: All Java verisons with MSVC
+name: All Java versions with MSVC
 
 on:
   push:
@@ -61,7 +61,6 @@ jobs:
         -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_TESTS=OFF
-        -DGGML_NATIVE=ON
         -DGGML_BACKEND_DL=ON
         -DGGML_CPU_ALL_VARIANTS=ON
         -DGGML_VULKAN=OFF
