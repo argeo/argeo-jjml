@@ -37,7 +37,8 @@ jobs:
       id: strings
       shell: bash
       run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        echo "build-output-dir=${{ github.workspace }}\build" >> "$GITHUB_OUTPUT"
+        echo "${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.tp.ggml" >> $GITHUB_PATH
 
     - uses: actions/setup-java@v5
       name: Setup Java
