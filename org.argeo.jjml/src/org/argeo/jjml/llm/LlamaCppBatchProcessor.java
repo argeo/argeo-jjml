@@ -17,9 +17,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * A lightweight object coordinating the processing of multiple sequences.
- * 
- * @see llama.h - llama_batch
+ * A lightweight object coordinating the processing of multiple sequences. (see
+ * struct <code>llama_batch</code>, in llama.h)
  */
 public class LlamaCppBatchProcessor {
 	private final LlamaCppContext context;

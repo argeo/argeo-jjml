@@ -1,9 +1,8 @@
 package org.argeo.jjml.llm;
 
 /**
- * A native llama.cpp sampler chain.
- * 
- * @see llama.h - llama_sampler_chain_init
+ * A native llama.cpp sampler chain. (see <code>llama_sampler_chain_init</code>,
+ * in llama.h)
  */
 public class LlamaCppSamplerChain extends LlamaCppNativeSampler {
 	private static native long doInit();

@@ -3,9 +3,7 @@ package org.argeo.jjml.llm.params;
 import java.util.function.IntSupplier;
 
 /**
- * Pooling type.
- * 
- * @see llama.h - enum llama_pooling_type
+ * Pooling type. (see enum <code>llama_pooling_type</code>, in llama.h)
  */
 public enum PoolingType implements IntSupplier {
 	LLAMA_POOLING_TYPE_UNSPECIFIED(-1), //

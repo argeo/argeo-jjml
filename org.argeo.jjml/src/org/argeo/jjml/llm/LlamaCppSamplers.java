@@ -5,9 +5,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import org.argeo.jjml.llm.params.DefaultSamplerChainParams;
 
 /**
- * Access to the native standard samplers.
- * 
- * @see llama.h - llama_sampler_init_*
+ * Access to the native standard samplers. (see
+ * <code>llama_sampler_init_*</code>, in llama.h)
  */
 public class LlamaCppSamplers {
 
