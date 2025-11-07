@@ -32,7 +32,7 @@ The build relies only on CMake and the [argeo-build](https://github.com/argeo/ar
 
 ```
 sudo apt install default-jdk # install Java
-# sudo apt install libllama-dev # llama.cpp  dev package, where available
+# sudo apt install libllama-dev # llama.cpp dev packages, where available
 
 git clone --recurse-submodules https://github.com/argeo/argeo-jjml
 cd argeo-jjml
@@ -101,7 +101,8 @@ Argeo JJML is dual-licensed:
 - LGPL v2.1 (or later version)
 - EPL v2, with GPL as a possible secondary license
 
-```Copyright 2024-2025 Mathieu Baudier
+```
+Copyright 2024-2025 Mathieu Baudier
 
 Copyright 2024-2025 Argeo GmbH
 
