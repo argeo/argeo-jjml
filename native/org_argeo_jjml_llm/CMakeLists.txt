@@ -24,24 +24,10 @@ endif()
 # of a given JJML branch. To be trimmed when a new branch
 # is created.
 
-if(LLAMA_BUILD_NUMBER LESS 6325)
-# Breaks flash attention context parameters
-target_compile_definitions(${TARGET} PRIVATE JJML_PRE_LLAMA_0_0_6325)
-endif()
-
-if(LLAMA_BUILD_NUMBER LESS 5913)
-# Introduce kv_unified context parameter
-target_compile_definitions(${TARGET} PRIVATE JJML_PRE_LLAMA_0_0_5913)
-endif()
-
-if(LLAMA_BUILD_NUMBER LESS 5882)
-# KV cache API change
-target_compile_definitions(${TARGET} PRIVATE JJML_PRE_LLAMA_0_0_5882)
-endif()
-
-if(LLAMA_BUILD_NUMBER LESS 4881)
-# KV cache API change
-target_compile_definitions(${TARGET} PRIVATE JJML_PRE_LLAMA_0_0_4881)
-endif()
+# for example:
+#if(LLAMA_BUILD_NUMBER LESS 6325)
+## Breaks flash attention context parameters
+#target_compile_definitions(${TARGET} PRIVATE JJML_PRE_LLAMA_0_0_6325)
+#endif()
 
 a2_jni_target(${TARGET})
