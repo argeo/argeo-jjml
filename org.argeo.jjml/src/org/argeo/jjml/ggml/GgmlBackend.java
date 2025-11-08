@@ -81,10 +81,12 @@ public class GgmlBackend {
 		}
 
 		// load
+		Path lastRelevantPath = null;
 		basePaths: for (Path basePath : basePaths) {
 			if (Files.exists(basePath)) {
 				// loadBackends(basePath);
-				try (DirectoryStream<Path> ds = Files.newDirectoryStream(basePath, System.mapLibraryName("ggml-*"))) {
+				try (DirectoryStream<Path> ds = Files.newDirectoryStream(basePath,
+						System.mapLibraryName("ggml-cpu*"))) {
 					Iterator<Path> it = ds.iterator();
 					// scanning some directories causes crashes on Windows,
 					// so we skip irrelevant ones
@@ -94,16 +96,20 @@ public class GgmlBackend {
 					// silent
 					continue basePaths;
 				}
-				
-				//
-				// ACTUAL SEARCH
-				//
-//				logger.log(INFO, "Searching for ggml backends in: " + basePath);
-				// loadBackends(basePath);
-				doLoadAllBackends(filePathToNative(basePath));
-				//
+				lastRelevantPath = basePath;
 			}
 		}
+
+		//
+		// ACTUAL SEARCH
+		//
+//		logger.log(INFO, "Searching for ggml backends in: " + basePath);
+		// loadBackends(basePath);
+		if (lastRelevantPath != null)
+			doLoadAllBackends(filePathToNative(lastRelevantPath));
+		else
+			System.err.println("Could not find ggml backends in any of " + basePaths);
+		//
 	}
 
 	public String getName() {
