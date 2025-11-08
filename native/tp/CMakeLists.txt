@@ -26,9 +26,6 @@ if(NOT EXISTS ${GGML_LIBRARY})
 		set(GGML_BACKEND_DL ON)
 		message(STATUS "Enabling GGML_BACKEND_DL by default")
 	endif()
-	if(GGML_BACKEND_DL)
-		set(GGML_CPU_ALL_VARIANTS ON)
-	endif()
 
 	# build locally
 	if(JJML_FORCE_BUILD_LLAMA_GGML)
