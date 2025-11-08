@@ -2,17 +2,17 @@ package org.argeo.jjml.ggml;
 
 /** Standard GGML backends. */
 public enum StandardBackend {
-	blas, //
-	cann, //
+	cpu, //
+	vulkan, //
 	cuda, //
 	hip, //
-	kompute, //
-	metal, //
+	blas, //
 	rpc, //
+	// unsupported:
+	cann, //
+	metal, //
 	sycl, //
-	vulkan, //
 	opencl, //
 	musa, //
-	cpu, //
 	;
 }
