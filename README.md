@@ -30,11 +30,12 @@ The applications targeted by this library are mostly enterprise Java systems in 
 ## Build ##
 The build relies only on CMake and the [argeo-build](https://github.com/argeo/argeo-build) scripts (as a git submodule). Pinned reference versions of both [ggml](https://github.com/ggml-org/ggml) and [llama.cpp](https://github.com/ggml-org/llama.cpp) are provided as git submodules as well. *One should therefore always use `git pull --recurse-submodules` when updating.*
 
-### Debian (reference), Ubuntu #
+### Debian (reference) #
 Install dependencies:
 ```
 sudo apt install default-jdk # install Java
-sudo apt install libllama-dev # llama.cpp dev packages, where available
+sudo apt install cmake gcc g++ # install build tools
+sudo apt install libllama-dev # (optional) llama.cpp dev packages, where available
 ```
 
 Build:
