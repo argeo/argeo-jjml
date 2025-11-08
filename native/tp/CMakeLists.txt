@@ -22,9 +22,11 @@ endif()
 
 if(NOT EXISTS ${GGML_LIBRARY})
 	## multiple backends libraries
-	if(NOT DEFINED GGML_BACKEND_DL)
+	if(NOT DEFINED GGML_BACKEND_DL AND NOT DEFINED GGML_NATIVE AND NOT DEFINED GGML_CPU_ALL_VARIANTS)
 		set(GGML_BACKEND_DL ON)
-		message(STATUS "Enabling GGML_BACKEND_DL by default")
+		set(GGML_CPU_ALL_VARIANTS ON)
+		set(GGML_NATIVE OFF)
+		message(STATUS "Enabling GGML_BACKEND_DL with all CPU variants by default")
 	endif()
 
 	# build locally

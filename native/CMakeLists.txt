@@ -65,6 +65,7 @@ if(EXISTS ${GGML_LIBRARY}) # ggml as external libraries
 	endif()
 	
 	if(NOT DEFINED GGML_BACKEND_DL)
+			message(STATUS "## CHECK ###")
 		include(CheckIncludeFileCXX)
 		check_include_file_cxx(ggml-backend.h JJML_BACKEND_INCLUDE_FOUND)
 		if(JJML_BACKEND_INCLUDE_FOUND)
