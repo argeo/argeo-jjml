@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.14)
 
 project("argeo-jjml"
-DESCRIPTION "Enterprise-grade Java bindings for GGML-based libraries"
+DESCRIPTION "Enterprise-grade Java bindings for the ggml ecosystem"
 )
-set(A2_JAVA_RELEASE 11)
 set(A2_CATEGORY org.argeo.jjml)
+
+if(NOT DEFINED A2_JAVA_RELEASE)
+set(A2_JAVA_RELEASE 11)
+endif()
 
 # Can build with headless JDK
 set(JAVA_AWT_LIBRARY NotNeeded)

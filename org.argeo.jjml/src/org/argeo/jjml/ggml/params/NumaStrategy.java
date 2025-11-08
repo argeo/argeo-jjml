@@ -3,9 +3,8 @@ package org.argeo.jjml.ggml.params;
 import java.util.function.IntSupplier;
 
 /**
- * GGML NUMA strategy enumeration.
- * 
- * @see ggml.h - enum ggml_numa_strategy
+ * GGML NUMA strategy enumeration. (see enum <code>ggml_numa_strategy</code>, in
+ * ggml.h)
  */
 public enum NumaStrategy implements IntSupplier {
 	GGML_NUMA_STRATEGY_DISABLED(0), //

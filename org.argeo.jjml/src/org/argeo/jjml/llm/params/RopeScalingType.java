@@ -3,9 +3,8 @@ package org.argeo.jjml.llm.params;
 import java.util.function.IntSupplier;
 
 /**
- * Rope scaling type.
- * 
- * @see llama.h - enum llama_rope_scaling_type
+ * Rope scaling type. (see enum <code>llama_rope_scaling_type</code>, in
+ * llama.h)
  */
 public enum RopeScalingType implements IntSupplier {
 	LLAMA_ROPE_SCALING_TYPE_UNSPECIFIED(-1), //

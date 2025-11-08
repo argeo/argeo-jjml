@@ -20,7 +20,7 @@ public class GgmlBackend {
 //	private final static Logger logger = System.getLogger(GgmlBackend.class.getName());
 
 	private final static String GGML_DL_PREFIX = "ggml-";
-	// TODO rather rely on native-side registration
+	// FIXME currently unused
 	private final static List<GgmlBackend> loadedBackends = new ArrayList<>();
 
 	/** Pointer to ggml_backend_reg_t. */
@@ -40,31 +40,53 @@ public class GgmlBackend {
 
 	public static void loadAllBackends() {
 		List<Path> basePaths = new ArrayList<>();
-		// java.library.path
-		String javaLibraryPath = System.getProperty("java.library.path");
-		if (javaLibraryPath != null && !"".equals(javaLibraryPath.trim())) {
-			System.out.println(javaLibraryPath);
-			String[] paths = javaLibraryPath.split(File.pathSeparator);
-			for (String p : paths)
-				basePaths.add(Paths.get(p));
-		}
 
-		// "standard" deployment paths
+		// First try the "standard" deployment paths, so that they can be overridden
 		// TODO make it cleaner and more configurable
 		// TODO hardcode some paths on the native side and configure at build?
 		// Debian
-		Path path = Paths.get("/usr/lib/x86_64-linux-gnu/ggml/backends0");
-		System.out.println(path);
+		String arch = System.getProperty("os.arch");
+		String gnuArch;
+		if ("arm64".equals(arch) || "aarch64".equals(arch))
+			gnuArch = "aarch64";
+		else
+			gnuArch = "x86_64";
+		Path path = Paths.get("/usr/lib/" + gnuArch + "-linux-gnu/ggml/backends0");
+		//System.out.println(path);
 		if (Files.exists(path))
 			basePaths.add(path);
 		else // Argeo
-			basePaths.add(Paths.get("/usr/libexec/x86_64-linux-gnu/ggml"));
+			basePaths.add(Paths.get("/usr/libexec/" + gnuArch + "-linux-gnu/ggml"));
+
+		// Try the JNI path
+		{
+			String javaLibraryPath = System.getProperty("java.library.path");
+			if (javaLibraryPath != null && !"".equals(javaLibraryPath.trim())) {
+				// System.out.println(javaLibraryPath);
+				String[] paths = javaLibraryPath.split(File.pathSeparator);
+				for (String p : paths)
+					basePaths.add(Paths.get(p));
+			}
+		}
+
+		// As a last override option, environment path LD_LIBRARY_PATH
+		{
+			String ldLibraryPath = System.getenv("LD_LIBRARY_PATH");
+			if (ldLibraryPath != null && !"".equals(ldLibraryPath.trim())) {
+				// System.out.println(ldLibraryPath);
+				String[] paths = ldLibraryPath.split(File.pathSeparator);
+				for (String p : paths)
+					basePaths.add(Paths.get(p));
+			}
+		}
 
 		// load
+		Path lastRelevantPath = null;
 		basePaths: for (Path basePath : basePaths) {
 			if (Files.exists(basePath)) {
 				// loadBackends(basePath);
-				try (DirectoryStream<Path> ds = Files.newDirectoryStream(basePath, System.mapLibraryName("ggml-*"))) {
+				try (DirectoryStream<Path> ds = Files.newDirectoryStream(basePath,
+						System.mapLibraryName("ggml-cpu*"))) {
 					Iterator<Path> it = ds.iterator();
 					// scanning some directories causes crashes on Windows,
 					// so we skip irrelevant ones
@@ -74,10 +96,20 @@ public class GgmlBackend {
 					// silent
 					continue basePaths;
 				}
-//				logger.log(INFO, "Searching for ggml backends in: " + basePath);
-				doLoadAllBackends(filePathToNative(basePath));
+				lastRelevantPath = basePath;
 			}
 		}
+
+		//
+		// ACTUAL SEARCH
+		//
+//		logger.log(INFO, "Searching for ggml backends in: " + basePath);
+		// loadBackends(basePath);
+		if (lastRelevantPath != null)
+			doLoadAllBackends(filePathToNative(lastRelevantPath));
+		else
+			System.err.println("Could not find ggml backends in any of " + basePaths);
+		//
 	}
 
 	public String getName() {
@@ -111,7 +143,7 @@ public class GgmlBackend {
 			}
 			Path backendPath = basePath.resolve(dllName);
 			if (Files.exists(backendPath)) {
-				long pointer = doLoadBackend(filePathToNative(basePath));
+				long pointer = doLoadBackend(filePathToNative(backendPath));
 				if (pointer > 0) {
 					// TODO log it
 					GgmlBackend backend = new GgmlBackend(pointer, backendName.name(), backendPath);

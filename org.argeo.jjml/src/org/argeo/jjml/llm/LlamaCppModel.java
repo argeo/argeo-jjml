@@ -25,9 +25,7 @@ import org.argeo.jjml.llm.params.ModelParams;
 import org.argeo.jjml.llm.util.InstructRole;
 
 /**
- * Access to a llama.cpp model
- * 
- * @see llama.h - llama_model
+ * Access to a llama.cpp model. (see <code>llama_model</code>, in llama.h)
  */
 public class LlamaCppModel implements LongSupplier, AutoCloseable {
 

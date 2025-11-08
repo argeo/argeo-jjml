@@ -17,7 +17,7 @@ import org.argeo.jjml.llm.LlamaCppModel;
  * Note: it provides record-style getters, in order to ease transition to Java
  * records in the future.
  * 
- * @see llama.h - llama_model_params
+ * (see <code>llama_model_params</code>, in llama.h)
  */
 public class ModelParams {
 	private final int n_gpu_layers;

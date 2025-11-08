@@ -15,9 +15,7 @@ import org.argeo.jjml.llm.params.ContextParams;
 import org.argeo.jjml.llm.params.PoolingType;
 
 /**
- * Access to a llama.cpp context
- * 
- * @see llama.h - llama_context
+ * Access to a llama.cpp context. (see <code>llama_context</code>, in llama.h)
  */
 public class LlamaCppContext implements LongSupplier, AutoCloseable {
 

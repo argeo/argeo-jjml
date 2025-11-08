@@ -44,8 +44,6 @@ public class LlamaCppBackend {
 
 	/**
 	 * Initialize NUMA strategy.
-	 * 
-	 * @see llama.h - llama_numa_init()
 	 */
 	public static void numaInit(NumaStrategy numaStrategy) {
 		if (numaStrategy != null)
@@ -55,8 +53,6 @@ public class LlamaCppBackend {
 	/**
 	 * Destroy the backend. Note that the JNI library won't be unloaded until the
 	 * related classloader has been garbage-collected.
-	 * 
-	 * @see llama.h - llama_backend_free()
 	 */
 	public static void destroy() {
 		doDestroy();

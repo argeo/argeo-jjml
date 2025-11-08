@@ -3,9 +3,7 @@ package org.argeo.jjml.ggml.params;
 import java.util.function.IntSupplier;
 
 /**
- * GGML type.
- * 
- * @see ggml.h - enum ggml_type
+ * GGML type. (see enum <code>ggml_type</code>, in ggml.h)
  */
 public enum GgmlType implements IntSupplier {
 	GGML_TYPE_F32(0), //

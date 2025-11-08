@@ -3,9 +3,7 @@ package org.argeo.jjml.llm.params;
 import java.util.function.IntSupplier;
 
 /**
- * Attention type.
- * 
- * @see llama.h - enum llama_attention_type
+ * Attention type. (see enum <code>llama_attention_type</code>, in llama.h)
  */
 public enum AttentionType implements IntSupplier {
 	LLAMA_ATTENTION_TYPE_UNSPECIFIED(-1), //
