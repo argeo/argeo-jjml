@@ -30,10 +30,15 @@ The applications targeted by this library are mostly enterprise Java systems in 
 ## Build ##
 The build relies only on CMake and the [argeo-build](https://github.com/argeo/argeo-build) scripts (as a git submodule). Pinned reference versions of both [ggml](https://github.com/ggml-org/ggml) and [llama.cpp](https://github.com/ggml-org/llama.cpp) are provided as git submodules as well. *One should therefore always use `git pull --recurse-submodules` when updating.*
 
+### Debian (reference), Ubuntu #
+Install dependencies:
 ```
 sudo apt install default-jdk # install Java
-# sudo apt install libllama-dev # llama.cpp dev packages, where available
+sudo apt install libllama-dev # llama.cpp dev packages, where available
+```
 
+Build:
+```
 git clone --recurse-submodules https://github.com/argeo/argeo-jjml
 cd argeo-jjml
 cmake -B build/default -DJAVA_HOME=/usr/lib/jvm/default-java
@@ -46,7 +51,7 @@ One can then run some smoke tests:
 ```
 java -ea \
  -cp "build/a2/org.argeo.jjml/*" \
- -Djava.library.path=build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml \
+ -Djava.library.path=build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml:build/a2/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml \
  sdk/jbin/JjmlSmokeTests.java \
  allenai/OLMo-2-0425-1B-Instruct-GGUF
 ```
@@ -54,18 +59,18 @@ or a basic CLI:
 ```
 java \
  -cp "build/a2/org.argeo.jjml/*" \
- -Djava.library.path=build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml \
+ -Djava.library.path=build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml:build/a2/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml \
  sdk/jbin/JjmlDummyCli.java \
  allenai/OLMo-2-0425-1B-Instruct-GGUF
 ```
 
 If the shared libraries are found at the usual locations (`/usr`, `/usr/local`, etc., as well as Debian-specific `/usr/lib/\*/ggml` and `/usr/lib/\*/llama`) they will be used, then assuming that the related includes, cmake-* configs, etc. are available as well. Otherwise, the reference ggml and llama.cpp submodules will be built in addition to the Java bindings.
 
-If the ggml and llama.cpp libraries are rebuilt, all the `GGML_*` and `LLAMA_*` CMake options are available to their respective builds, which can therefore be customized exactly like regular llama.cpp builds. In order to add them when testing, extend the JNI path, using `-Djava.library.path=build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml:build/a2/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml`.
+If the ggml and llama.cpp libraries are rebuilt, all the `GGML_*` and `LLAMA_*` CMake options are available to their respective builds, which can therefore be customized exactly like regular llama.cpp builds.
 
-In order to force building with the reference submodules even if the libraries are locally available, use `-DJJML_FORCE_BUILD_TP=ON` when configuring CMake.
+In order to force building with the reference submodules even if the libraries are locally available, use `-DJJML_FORCE_BUILD_TP=ON` when configuring CMake. Reciprocally, use `-DJJML_DO_NOT_BUILD_TP=ON` in order to make sure that the build is using the system libraries for ggml and llama.cpp (and not automatically defaulting to build the submodules).
 
-Reciprocally, use `-DJJML_DO_NOT_BUILD_TP=ON` in order to make sure that the build is using the system libraries for ggml and llama.cpp (and not automatically defaulting to build the submodules).
+If both ggml and llama.cpp are available as system libraries, only the (tiny) JJML shared libraries are needed. In that case use only In order to add them when testing, extend the JNI path, using `-Djava.library.path=build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml` as JNI path.
 
 When building the reference submodules, setting `-DJJML_FORCE_BUILD_LLAMA_GGML=ON` will build with the ggml version included in `native/tp/llama.cpp`. The default is to build with the separate `native/tp/ggml` reference submodule. This is useful when testing with the latest version of llama.cpp or a development branch.
 
@@ -77,6 +82,7 @@ While a lot of work goes into making this build straightforward and portable, th
 - Other operating systems (notably MacOS, Android) could work but are not currently considered
 When reporting build issues on a given platform, please first check whether a reference build is working.
 
+### Windows notes #
 An example Windows build would be (in a PowerShell terminal):
 
 ```
@@ -86,6 +92,21 @@ winget install Microsoft.OpenJDK.21 # install MS JDK
  -DJAVA_HOME="C:/Program Files/Microsoft/jdk-21.0.8.9-hotspot" # Note regular slashes
 & "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" `
  --build build\default
+```
+
+### Red Hat Enterprise Linux notes #
+On RHEL9, build in a dedicated toolset:
+
+```
+scl enable gcc-toolset-14 -- cmake -B build/default -DJAVA_HOME=/usr/lib/jvm/java
+scl enable gcc-toolset-14 -- cmake --build build/default -j $(nproc)
+```
+
+For CUDA, explicitely set the CUDA compiler:
+
+```
+scl enable gcc-toolset-14 -- cmake -B build/default -DJAVA_HOME=/usr/lib/jvm/java \
+ -DGGML_CUDA=ON -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc
 ```
 
 ## Status ##
