@@ -52,7 +52,7 @@ public class GgmlBackend {
 		else
 			gnuArch = "x86_64";
 		Path path = Paths.get("/usr/lib/" + gnuArch + "-linux-gnu/ggml/backends0");
-		System.out.println(path);
+		//System.out.println(path);
 		if (Files.exists(path))
 			basePaths.add(path);
 		else // Argeo
