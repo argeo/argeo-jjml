@@ -69,9 +69,12 @@ Reciprocally, use `-DJJML_DO_NOT_BUILD_TP=ON` in order to make sure that the bui
 
 When building the reference submodules, setting `-DJJML_FORCE_BUILD_LLAMA_GGML=ON` will build with the ggml version included in `native/tp/llama.cpp`. The default is to build with the separate `native/tp/ggml` reference submodule. This is useful when testing with the latest version of llama.cpp or a development branch.
 
-While a lot of work goes into making this build straightforward and portable, there must be a baseline:
-- The reference build for Linux is on Debian Sid, using the official Debian packages for ggml and llama.cpp. (JJML's lead developer is a regular contributor to this Debian packaging effort)
+By default, the Java part of JJML is built for the minimal supported Java version (that is, Java 11). In order to build for a later Java version, set `A2_JAVA_RELEASE` when configuring the CMake build, e.g. `-DA2_JAVA_RELEASE=21`.
+
+While a lot of work goes into making this build straightforward and portable, there must be a clear baseline:
+- The reference build for Linux is on Debian Sid (amd64/x86_64 and arm64/aarch64), using the official Debian packages for ggml and llama.cpp. (JJML's lead developer is a regular contributor to this Debian packaging effort)
 - The reference build for Windows is with the Microsoft MSVC compiler. (see example below)
+- Other operating systems (notably MacOS, Android) could work but are not currently considered
 When reporting build issues on a given platform, please first check whether a reference build is working.
 
 An example Windows build would be (in a PowerShell terminal):
@@ -79,13 +82,11 @@ An example Windows build would be (in a PowerShell terminal):
 ```
 winget install Microsoft.OpenJDK.21 # install MS JDK
 & "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" `
- -B ..\output\argeo-jjml `
+ -B build\default `
  -DJAVA_HOME="C:/Program Files/Microsoft/jdk-21.0.8.9-hotspot" # Note regular slashes
 & "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" `
- --build ..\output\argeo-jjml
+ --build build\default
 ```
-
-By default, the Java part of JJML is built for Java 11. In order to build for a later Java version, set `A2_JAVA_RELEASE` when configuring the CMake build, e.g. `-DA2_JAVA_RELEASE=21`.
 
 ## Status ##
 Argeo JJML is currently in open beta, the last phase before a first stable release.
@@ -99,7 +100,7 @@ Future features:
 - Speech recognition and transcription with [whisper.cpp](https://github.com/ggml-org/whisper.cpp) integration (already working in the `unstable` branch)
 - Image recognition and multimodal support with llama.cpp's [mtmd](https://github.com/ggml-org/llama.cpp/tree/master/tools/mtmd) (work-in-progress in the `unstable` branch)
 
-## Contact, commercial support ##
+## Contact ##
 Issues can be raised via [GitHub](https://github.com/argeo/argeo-jjml/issues) or Debian's [Salsa](https://salsa.debian.org/mbaudier/libjjml-java/-/issues) (especially when related to packaging or portability).
 
 All other queries, typically new features, should be directed to Mathieu Baudier via [LinkedIn](https://www.linkedin.com/in/mbaudier/). Argeo GmbH also provide support and consulting services around the integration of JJML into existing Java systems.
