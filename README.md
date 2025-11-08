@@ -1,6 +1,6 @@
-# Enterprise-grade bindings for LLMs on premise ###
+# Enterprise-grade Java bindings for the ggml ecosystem ###
 
-## Core LLM capabilities locally, integrated in existing Java systems ##
+## Generative AI locally, integrated into existing Java systems ##
 Argeo JJML provides low-level Java bindings for the [ggml](https://github.com/ggml-org/ggml) family of machine learning libraries, especially [llama.cpp](https://github.com/ggml-org/llama.cpp) which allows to run locally open-weights large language models (LLMs, aka. "generative AI").
 
 The main goal of this lightweight component is to provide an enterprise-grade quality mechanism to integrate local LLMs into existing Java systems, with stable Java APIs, a small auditable code base, and essentially no impact on other components.
@@ -36,28 +36,32 @@ sudo apt install default-jdk # install Java
 
 git clone --recurse-submodules https://github.com/argeo/argeo-jjml
 cd argeo-jjml
-cmake -B build -DJAVA_HOME=/usr/lib/jvm/default-java
-cmake --build build -j $(nproc)
+cmake -B build/default -DJAVA_HOME=/usr/lib/jvm/default-java
+cmake --build build/default -j $(nproc)
 ```
+
+The built artifacts are located under `<CMake build dir>/../a2`.
 
 One can then run some smoke tests:
 ```
 java -ea \
- -cp "a2/org.argeo.jjml/*" \
- -Djava.library.path=a2/lib/x86_64-linux-gnu/org.argeo.jjml:a2/lib/x86_64-linux-gnu/org.argeo.tp.ggml \
+ -cp "build/a2/org.argeo.jjml/*" \
+ -Djava.library.path=build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml \
  sdk/jbin/JjmlSmokeTests.java \
  allenai/OLMo-2-0425-1B-Instruct-GGUF
 ```
 or a basic CLI:
 ```
-java -ea \
- -cp "a2/org.argeo.jjml/*" \
- -Djava.library.path=a2/lib/x86_64-linux-gnu/org.argeo.jjml:a2/lib/x86_64-linux-gnu/org.argeo.tp.ggml \
+java \
+ -cp "build/a2/org.argeo.jjml/*" \
+ -Djava.library.path=build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml \
  sdk/jbin/JjmlDummyCli.java \
  allenai/OLMo-2-0425-1B-Instruct-GGUF
 ```
 
 If the shared libraries are found at the usual locations (`/usr`, `/usr/local`, etc., as well as Debian-specific `/usr/lib/\*/ggml` and `/usr/lib/\*/llama`) they will be used, then assuming that the related includes, cmake-* configs, etc. are available as well. Otherwise, the reference ggml and llama.cpp submodules will be built in addition to the Java bindings.
+
+If the ggml and llama.cpp libraries are rebuilt, all the `GGML_*` and `LLAMA_*` CMake options are available to their respective builds, which can therefore be customized exactly like regular llama.cpp builds. In order to add them when testing, extend the JNI path, using `-Djava.library.path=build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml:build/a2/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml`.
 
 In order to force building with the reference submodules even if the libraries are locally available, use `-DJJML_FORCE_BUILD_TP=ON` when configuring CMake.
 
@@ -81,6 +85,8 @@ winget install Microsoft.OpenJDK.21 # install MS JDK
  --build ..\output\argeo-jjml
 ```
 
+By default, the Java part of JJML is built for Java 11. In order to build for a later Java version, set `A2_JAVA_RELEASE` when configuring the CMake build, e.g. `-DA2_JAVA_RELEASE=21`.
+
 ## Status ##
 Argeo JJML is currently in open beta, the last phase before a first stable release.
 
@@ -93,8 +99,10 @@ Future features:
 - Speech recognition and transcription with [whisper.cpp](https://github.com/ggml-org/whisper.cpp) integration (already working in the `unstable` branch)
 - Image recognition and multimodal support with llama.cpp's [mtmd](https://github.com/ggml-org/llama.cpp/tree/master/tools/mtmd) (work-in-progress in the `unstable` branch)
 
-## Contact, bugs, commercial support ##
-All queries should be directed to Mathieu Baudier via [LinkedIn](https://www.linkedin.com/in/mbaudier/). You can expect properly reported bugs to be fixed free of charge, and additional features to require a fee. Argeo GmbH can also provide consulting services in order to help you integrate this capabilities into your existing Java systems.
+## Contact, commercial support ##
+Issues can be raised via [GitHub](https://github.com/argeo/argeo-jjml/issues) or Debian's [Salsa](https://salsa.debian.org/mbaudier/libjjml-java/-/issues) (especially when related to packaging or portability).
+
+All other queries, typically new features, should be directed to Mathieu Baudier via [LinkedIn](https://www.linkedin.com/in/mbaudier/). Argeo GmbH also provide support and consulting services around the integration of JJML into existing Java systems.
 
 ## Licensing ##
 Argeo JJML is dual-licensed:
