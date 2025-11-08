@@ -86,12 +86,26 @@ When reporting build issues on a given platform, please first check whether a re
 An example Windows build would be (in a PowerShell terminal):
 
 ```
-winget install Microsoft.OpenJDK.21 # install MS JDK
-& "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" `
- -B build\default `
- -DJAVA_HOME="C:/Program Files/Microsoft/jdk-21.0.8.9-hotspot" # Note regular slashes
-& "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" `
- --build build\default
+# install a JDK
+winget install Microsoft.OpenJDK.21
+$env:JAVA_HOME = "C:/Program Files/Microsoft/jdk-21.0.8.9-hotspot"
+
+# use CMake from Visual Studio 2022
+$env:CMAKE_HOME = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake"
+
+& "$env:CMAKE_HOME\bin\cmake.exe" -B build/default -DJAVA_HOME=$env:JAVA_HOME
+& "$env:CMAKE_HOME\bin\cmake.exe" --build build/default
+```
+Of course, one should rather use an existing Java installation, just note that `-DJAVA_HOME` must be specified with regular slashes (`/`).
+
+Run the smoke tests:
+```
+$env:Path = "build/a2/lib/x86_64-win32-default/org.argeo.tp.ggml"
+& "$env:JAVA_HOME/bin/java" -ea `
+ -cp "build/a2/org.argeo.jjml/*" `
+ "-Djava.library.path=build/a2/lib/x86_64-win32-default/org.argeo.jjml;build/a2/lib/x86_64-win32-default/org.argeo.tp.ggml" `
+ sdk/jbin/JjmlSmokeTests.java `
+ allenai/OLMo-2-0425-1B-Instruct-GGUF
 ```
 
 ### Red Hat Enterprise Linux notes #
