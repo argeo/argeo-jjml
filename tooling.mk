@@ -31,12 +31,33 @@ GGML_CCACHE ?= ON
 LLAMA_BUILD_TOOLS ?= ON
 JJML_FORCE_BUILD_LLAMA_GGML ?= OFF
 
-rebuild-force-tp: clean-local
+ifneq (,$(VCIDEInstallDir))
+MSVC_IDE_BASE=$(shell cygpath -m '$(VCIDEInstallDir)\\..')
+else
+MSVC_IDE_BASE=$(shell cygpath -m 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/IDE/')
+endif
+#MSVC_CMAKE_BASE="$(MSVC_BUILD_TOOLS)/Common7/IDE/CommonExtensions/Microsoft/CMake"
+MSVC_CMAKE_BASE=$(MSVC_IDE_BASE)CommonExtensions/Microsoft/CMake
+MSVC_CMAKE="$(MSVC_CMAKE_BASE)/CMake/bin/cmake.exe"
+
+ifeq ($(MSYS_VERSION),0)
+JJML_CMAKE ?= $(CMAKE)
+LLAMA_CURL ?= ON
+else
+JJML_CMAKE ?= $(MSVC_CMAKE)
+LLAMA_CURL ?= OFF
+
+# To build with MinGW compiler
+# JJML_CMAKE=cmake LLAMA_CURL=ON make -f tooling.mk clean-local rebuild-force-tp
+# (and add runtime to path)
+endif
+
+rebuild-force-tp:
 	echo CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 	
-	$(CMAKE) -B $(BUILD_BASE) . \
+	$(JJML_CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
-		-DJJML_FORCE_BUILD_LLAMA_GGML=${JJML_FORCE_BUILD_LLAMA_GGML} \
+		-DJJML_FORCE_BUILD_LLAMA_GGML=$(JJML_FORCE_BUILD_LLAMA_GGML) \
 		-DA2_INSTALL_MODE=a2 \
 		-DJAVA_HOME=$(JAVA_HOME) \
 		\
@@ -44,8 +65,9 @@ rebuild-force-tp: clean-local
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
 		-DGGML_CCACHE=$(GGML_CCACHE) \
 		\
-		-DLLAMA_BUILD_COMMON=${LLAMA_BUILD_TOOLS} \
-		-DLLAMA_BUILD_TOOLS=${LLAMA_BUILD_TOOLS} \
+		-DLLAMA_CURL=$(LLAMA_CURL) \
+		-DLLAMA_BUILD_COMMON=$(LLAMA_BUILD_TOOLS) \
+		-DLLAMA_BUILD_TOOLS=$(LLAMA_BUILD_TOOLS) \
 		-DLLAMA_BUILD_EXAMPLES=OFF \
 		-DLLAMA_BUILD_TESTS=OFF \
 		\
@@ -141,15 +163,6 @@ standalone-release: clean-local
 #MSVC_BUILD_TOOLS="C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools"
 #MSVC_ENV="/Common7/Tools/VsDevCmd.bat"
 
-ifneq (,$(VCIDEInstallDir))
-MSVC_IDE_BASE=$(shell cygpath -m '$(VCIDEInstallDir)\\..')
-else
-MSVC_IDE_BASE=$(shell cygpath -m 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/IDE/')
-endif
-#MSVC_CMAKE_BASE="$(MSVC_BUILD_TOOLS)/Common7/IDE/CommonExtensions/Microsoft/CMake"
-MSVC_CMAKE_BASE=$(MSVC_IDE_BASE)CommonExtensions/Microsoft/CMake
-MSVC_CMAKE="$(MSVC_CMAKE_BASE)/CMake/bin/cmake.exe"
-
 msvc-release:
 	$(MSVC_CMAKE) \
 		-B "$(BUILD_BASE)" \
@@ -169,6 +182,8 @@ msvc-release:
 		"$(SDK_SRC_BASE)"
 
 	$(MSVC_CMAKE) --build $(BUILD_BASE) --config Release -j $(shell nproc)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 
 jmod-jjml:
 	$(RM) -r $(JMODS_BASE)/$(JMOD_JJML)
