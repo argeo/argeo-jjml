@@ -84,6 +84,23 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		}
 	}
 
+	public String nextToken() {
+		if (isGenerationCompleted(0))
+			return null;
+		ByteBuffer nativeBuf = ByteBuffer.allocateDirect(1 * Integer.BYTES);
+		nativeBuf.order(ByteOrder.nativeOrder());
+		IntBuffer output = nativeBuf.asIntBuffer();
+		// IntBuffer output = IntBuffer.allocate(1);
+
+		CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
+		CompletableFuture<Boolean> allCompleted = readBatchAsync(new IntBuffer[] { output }, generationCompleted);
+		allCompleted.join();
+
+		output.flip();
+		String outputStr = vocabulary.deTokenize(output);
+		return outputStr;
+	}
+
 	public void readMessage(PrintStream out) throws IOException {
 		out.flush();
 		// FIXME deal properly with charset, esp. on Windows
@@ -95,23 +112,11 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 
 		boolean reading = true;
 		reads: while (reading) {
-			ByteBuffer nativeBuf = ByteBuffer.allocateDirect(1 * Integer.BYTES);
-			nativeBuf.order(ByteOrder.nativeOrder());
-			IntBuffer output = nativeBuf.asIntBuffer();
-			// IntBuffer output = IntBuffer.allocate(1);
-
-			CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
-			CompletableFuture<Boolean> allCompleted = readBatchAsync(new IntBuffer[] { output }, generationCompleted);
-			allCompleted.join();
-
-			output.flip();
-			String outputStr = vocabulary.deTokenize(output);
+			String outputStr = nextToken();
+			if (outputStr == null)
+				break reads;
 			writer.write(outputStr);
 			writer.flush();
-			// System.out.print(outputStr);
-
-			if (isGenerationCompleted(0))
-				break reads;
 		}
 	}
 }
