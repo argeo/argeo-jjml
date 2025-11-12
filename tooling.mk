@@ -91,8 +91,10 @@ rebuild-force-tp:
 
 # Remove locally built libraries
 clean-local:
+	$(RM) -r $(A2_OUTPUT)/org.argeo.jjml
 	$(RM) -r $(BUILD_BASE)
-	@$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
+	$(RM) -r $(TARGET_NATIVE_OUTPUT_JJML)
+	$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
