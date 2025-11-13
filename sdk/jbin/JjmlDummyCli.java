@@ -1,3 +1,4 @@
+
 //!/usr/bin/env -S java -cp /usr/share/java/org.argeo.jjml.jar
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.parseBoolean;
@@ -19,14 +20,11 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.System.Logger;
 import java.nio.IntBuffer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -35,14 +33,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import org.argeo.jjml.llm.LlamaCppBackend;
 import org.argeo.jjml.llm.LlamaCppBatchProcessor;
 import org.argeo.jjml.llm.LlamaCppChatMessage;
 import org.argeo.jjml.llm.LlamaCppContext;
-import org.argeo.jjml.llm.LlamaCppEmbeddingProcessor;
 import org.argeo.jjml.llm.LlamaCppModel;
 import org.argeo.jjml.llm.LlamaCppNative;
 import org.argeo.jjml.llm.LlamaCppSamplerChain;
@@ -51,7 +46,6 @@ import org.argeo.jjml.llm.LlamaCppVocabulary;
 import org.argeo.jjml.llm.params.ContextParam;
 import org.argeo.jjml.llm.params.ModelParam;
 import org.argeo.jjml.llm.params.ModelParams;
-import org.argeo.jjml.llm.params.PoolingType;
 import org.argeo.jjml.llm.util.SimpleModelDownload;
 import org.argeo.jjml.llm.util.SimpleProgressCallback;
 
@@ -84,27 +78,14 @@ public class JjmlDummyCli {
 		if (!Files.exists(modelPath))
 			throw new IllegalArgumentException("Could not find GGUF model " + modelPath);
 
-		boolean embeddings = Boolean.parseBoolean(System.getProperty(ContextParam.embeddings.asSystemProperty()));
-		int chunkSize = 0;
-		String embeddingsFormat = "csv";
 		String systemPrompt = DEFAULT_SYSTEM_PROMPT;
-		if (embeddings) {
-			if (args.length > 1) {
-				chunkSize = Integer.parseInt(args[1]);
-				if (args.length > 2) {
-					embeddingsFormat = args[2];
-				}
-			}
-		} else {
-			if (args.length > 1) {
-				systemPrompt = args[1];
-				if (systemPrompt.contains(File.separator) || systemPrompt.contains("/")) {
-					try {// try to interpret as file
-						systemPrompt = Files.readString(Paths.get(systemPrompt), UTF_8);
-					} catch (IOException e) {
-						System.err
-								.println("Could not interpret '" + systemPrompt + "' as a file, using it as value...");
-					}
+		if (args.length > 1) {
+			systemPrompt = args[1];
+			if (systemPrompt.contains(File.separator) || systemPrompt.contains("/")) {
+				try {// try to interpret as file
+					systemPrompt = Files.readString(Paths.get(systemPrompt), UTF_8);
+				} catch (IOException e) {
+					System.err.println("Could not interpret '" + systemPrompt + "' as a file, using it as value...");
 				}
 			}
 		}
@@ -128,13 +109,7 @@ public class JjmlDummyCli {
 		try (LlamaCppModel model = loaded.get(); //
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams()); //
 		) {
-			Object processor;
-			if (embeddings) {
-				processor = new SimpleEmbedding(context, chunkSize);
-			} else {
-				processor = new SimpleChat(systemPrompt, context);
-			}
-
+			SimpleChat processor = new SimpleChat(systemPrompt, context);
 			Console console = System.console();
 			final boolean isConsoleTerminal = console != null;
 			// From Java 22, it will be:
@@ -151,20 +126,13 @@ public class JjmlDummyCli {
 						String line;
 						while ((line = reader.readLine()) != null) {
 							String input = handleHereDocument(line, reader);
-							if (processor instanceof SimpleChat) {
-								((SimpleChat) processor).apply(input, (str) -> {
-									out.print(str);
-									out.flush();
-								}).thenAccept((v) -> {
-									out.print("\n> ");
-									out.flush();
-								});
-							} else if (processor instanceof SimpleEmbedding) {
-								float[][] res = ((SimpleEmbedding) processor).apply(input);
-								printEmbeddings(out, res, embeddingsFormat);
+							processor.apply(input, (str) -> {
+								out.print(str);
+								out.flush();
+							}).thenAccept((v) -> {
 								out.print("\n> ");
 								out.flush();
-							}
+							});
 						}
 					}
 				} else {// batch
@@ -178,30 +146,21 @@ public class JjmlDummyCli {
 							sb.append(buf, 0, numCharsRead);
 						input = sb.toString();
 					}
-					if (processor instanceof SimpleChat) {
-						((SimpleChat) processor).apply(input, (str) -> {
-							System.out.print(str);
-							System.out.flush();
-						}).toCompletableFuture().join();
-					} else if (processor instanceof SimpleEmbedding) {
-						float[][] res = ((SimpleEmbedding) processor).apply(input);
-						printEmbeddings(new PrintWriter(System.out, true, StandardCharsets.UTF_8), res,
-								embeddingsFormat);
-					}
+					processor.apply(input, (str) -> {
+						System.out.print(str);
+						System.out.flush();
+					}).toCompletableFuture().join();
 				}
 			} finally {
 				// make sure that we are not reading before cleaning up backend
-				if (processor instanceof SimpleChat)
-					((SimpleChat) processor).cancelCurrentRead();
+				processor.cancelCurrentRead();
 			}
 		}
 	}
 
 	private static void printUsage(PrintStream out) {
 		out.println("Usage: java " + JjmlDummyCli.class.getName() //
-				+ " <path/to/model.gguf> [<system prompt>]");
-		out.println("Usage: java -Djjml.llama.context.embeddings=true " + JjmlDummyCli.class.getName() //
-				+ " <path/to/model.gguf> [<chunk size>] [ csv | pgvector ]");
+				+ " <path/to/model.gguf | hf/repo > [<system prompt>]");
 
 		out.println();
 		out.println("- Opens a basic interactive chat when in a terminal.");
@@ -211,8 +170,6 @@ public class JjmlDummyCli {
 		out.println("- If <system prompt> contains a file separator or /, it will be loaded as a file.");
 		out.println("- <system prompt> default is '" + DEFAULT_SYSTEM_PROMPT + "'.");
 		out.println("- If <system prompt> is set to \"\", message formatting with chat template is disabled.");
-		out.println("- For embeddings, a <chunk size> of 0 (default) disable chunking.");
-		out.println("- For embeddings, default output format is 'csv', while 'pgvector' generates VALUES.");
 
 		out.println();
 		out.println("# In interactive mode, use <<EOF for multi-line input. For example:");
@@ -267,29 +224,6 @@ public class JjmlDummyCli {
 			}
 		}
 		return sb.toString();
-	}
-
-	/** The float array in a usable format. */
-	private static void printEmbeddings(PrintWriter out, float[][] embeddings, String format) {
-		if ("csv".equals(format))
-			printEmbeddings(out, embeddings, "\n", () -> new StringJoiner(","));
-		else if ("pgvector".equals(format))
-			printEmbeddings(out, embeddings, ",\n", () -> new StringJoiner(",", "('[", "]')"));
-		else
-			throw new IllegalArgumentException("Unknown output format " + format);
-	}
-
-	/** Format a float array. */
-	private static void printEmbeddings(PrintWriter out, float[][] embeddings, String vecorSep,
-			Supplier<StringJoiner> valueSj) {
-		for (int i = 0; i < embeddings.length; i++) {
-			if (i != 0)
-				out.print(vecorSep);
-			StringJoiner sj = valueSj.get();
-			for (int j = 0; j < embeddings[i].length; j++)
-				sj.add(Float.toString(embeddings[i][j]));
-			out.print(sj);
-		}
 	}
 }
 
@@ -455,44 +389,5 @@ class SimpleChat extends LlamaCppBatchProcessor implements BiFunction<String, Co
 
 	private void setCurrentRead(FutureTask<Void> currentRead) {
 		this.currentRead = currentRead;
-	}
-}
-
-/** Computes embeddings based on chunks of a given size. */
-class SimpleEmbedding extends LlamaCppEmbeddingProcessor implements Function<String, float[][]> {
-	private final LlamaCppVocabulary vocabulary;
-
-	private final int chunkSize;
-
-	/**
-	 * Constructor.
-	 * 
-	 * @param context   The context used to initialize this processor.
-	 * @param chunkSize The size of the chunks. If <=0, the strings will be
-	 *                  processed as a whole.
-	 */
-	public SimpleEmbedding(LlamaCppContext context, int chunkSize) {
-		super(context);
-		this.vocabulary = getContext().getModel().getVocabulary();
-		this.chunkSize = chunkSize;
-	}
-
-	@Override
-	public float[][] apply(String str) {
-		if (chunkSize <= 0 || PoolingType.LLAMA_POOLING_TYPE_NONE.equals(getContext().getPoolingType())) {
-			return processEmbeddings(Collections.singletonList(str));
-		}
-		int totalLength = str.length();
-		IntBuffer[] inputs = new IntBuffer[totalLength / chunkSize + (totalLength % chunkSize == 0 ? 0 : 1)];
-		for (int i = 0; i < inputs.length; i++) {
-			String chunk;
-			if (i == inputs.length - 1) {
-				chunk = str.substring(i * chunkSize);
-			} else {
-				chunk = str.substring(i * chunkSize, (i + 1) * chunkSize);
-			}
-			inputs[i] = vocabulary.tokenize(chunk);
-		}
-		return processEmbeddings(inputs);
 	}
 }
