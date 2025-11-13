@@ -86,7 +86,7 @@ rebuild-force-tp:
 		-DGGML_CUDA_FA_ALL_QUANTS=OFF \
 		-DGGML_RPC=$(GGML_RPC) \
 	
-	$(CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
+	$(JJML_CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
@@ -150,7 +150,7 @@ JDK_JJML_ARTIFACT = $(JDK_JJML)-$(TARGET_NATIVE_CATEGORY_PREFIX)
 JDK_JJML_DIR = $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)
 
 standalone-release: clean-local
-	$(CMAKE) -B $(BUILD_BASE) . \
+	$(JJML_CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
 		-DA2_INSTALL_MODE=a2 \
 		-DJAVA_HOME="$(JAVA_HOME)" \
@@ -195,16 +195,22 @@ jmod-jjml:
 	$(RM) -r $(JMODS_BASE)/$(JMOD_JJML)
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/legal
+	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/man/examples
 
 	$(COPY) COPYING.LESSER NOTICE $(JMODS_BASE)/$(JMOD_JJML)/legal
 
-	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_JJML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml*$(shlib_suffix) \
+	 $(JMODS_BASE)/$(JMOD_JJML)/lib
+	
+	# examples
+	$(COPY) -v sdk/jbin/*.java $(JMODS_BASE)/$(JMOD_JJML)/man/examples
 
 	$(RM) $(A2_JMODS)/$(JMOD_JJML).jmod
 	$(JLINK_HOME)/bin/jmod create \
 	 --class-path $(A2_OUTPUT)/org.argeo.jjml/org.argeo.jjml.$(major).$(minor).jar \
 	 --module-version $(A2_LAYER_VERSION) \
 	 --libs $(JMODS_BASE)/$(JMOD_JJML)/lib \
+	 --man-pages $(JMODS_BASE)/$(JMOD_JJML)/man \
 	 --legal-notices $(JMODS_BASE)/$(JMOD_JJML)/legal \
 	 $(A2_JMODS)/$(JMOD_JJML).jmod
 	# list content
