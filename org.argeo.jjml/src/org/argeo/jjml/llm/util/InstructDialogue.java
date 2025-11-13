@@ -22,34 +22,34 @@ import org.argeo.jjml.llm.params.DefaultSamplerChainParams;
  * between a system ("user") and an LLM ("assistant") trained for instructions
  * ("chat").
  */
-public class InstructDialog implements AutoCloseable, Function<String, String>, Consumer<String> {
+public class InstructDialogue implements AutoCloseable, Function<String, String>, Consumer<String> {
 	private final LlamaCppContext context;
 	private final LlamaCppInstructProcessor processor;
 
 	/*
 	 * CONSTRUCTORS
 	 */
-	public InstructDialog(LlamaCppModel model, int contextSize, int parallelism, String systemPrompt) {
+	public InstructDialogue(LlamaCppModel model, int contextSize, int parallelism, String systemPrompt) {
 		this(model, contextSize, parallelism, systemPrompt, 0);
 	}
 
-	public InstructDialog(LlamaCppModel model, int contextSize, int parallelism, Path stateFile) throws IOException {
+	public InstructDialogue(LlamaCppModel model, int contextSize, int parallelism, Path stateFile) throws IOException {
 		this(model, contextSize, parallelism, stateFile, 0);
 	}
 
-	public InstructDialog(LlamaCppModel model, int contextSize, int parallelism, String systemPrompt,
+	public InstructDialogue(LlamaCppModel model, int contextSize, int parallelism, String systemPrompt,
 			float temperature) {
 		this(model, contextSize, parallelism, temperature);
 		processor.write(getSystemRole(), systemPrompt);
 	}
 
-	public InstructDialog(LlamaCppModel model, int contextSize, int parallelism, Path stateFile, float temperature)
+	public InstructDialogue(LlamaCppModel model, int contextSize, int parallelism, Path stateFile, float temperature)
 			throws IOException {
 		this(model, contextSize, parallelism, temperature);
 		processor.loadStateFile(stateFile);
 	}
 
-	protected InstructDialog(LlamaCppModel model, int contextSize, int parallelism, float temperature) {
+	protected InstructDialogue(LlamaCppModel model, int contextSize, int parallelism, float temperature) {
 		ContextParams contextParams = newContextParams() //
 				.with(ContextParam.n_ctx, contextSize) //
 				.with(ContextParam.n_threads, parallelism) //
