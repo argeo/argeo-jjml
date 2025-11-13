@@ -1,5 +1,3 @@
-
-//!/usr/bin/env -S java -cp /usr/share/java/org.argeo.jjml.jar
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.System.Logger.Level.INFO;

@@ -1,2 +1,5 @@
 /bin/
 *.log
+
+# llama.cpp state cache
+*.ggsn
