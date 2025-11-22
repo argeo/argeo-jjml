@@ -131,7 +131,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_mtmd_MtmdContext_doInit(JNIEnv *env,
 		mparams.use_gpu = useGpu;
 		mparams.print_timings = true;
 		mparams.n_threads = threads;
-		mparams.verbosity = GGML_LOG_LEVEL_DEBUG; // GGML_LOG_LEVEL_INFO;
+		//mparams.verbosity = GGML_LOG_LEVEL_DEBUG; // GGML_LOG_LEVEL_INFO;
 		mtmd_context *mtmd_ctx = mtmd_init_from_file(mmproj_path.c_str(), model,
 				mparams);
 		return (jlong) mtmd_ctx;
