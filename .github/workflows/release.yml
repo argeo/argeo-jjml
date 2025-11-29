@@ -49,6 +49,8 @@ jobs:
         -DJAVA_HOME=$JAVA_HOME
         -DJJML_FORCE_BUILD_TP=ON
         -DA2_INSTALL_MODE=a2
+        -DCMAKE_SKIP_BUILD_RPATH=ON
+        -DCMAKE_INSTALL_RPATH='@loader_path'
         -DGGML_METAL_USE_BF16=ON
         -DGGML_METAL_EMBED_LIBRARY=ON
         -DLLAMA_CURL=ON
@@ -82,8 +84,9 @@ jobs:
         brew install make
 
     - name: Create JDK
-      run: >
+      run: |
         gmake -f tooling.mk jdk-jjml
+        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/lib/llama-cli
 
     - name: Test JJML JDK
       continue-on-error: true
