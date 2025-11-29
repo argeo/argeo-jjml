@@ -26,7 +26,7 @@ jobs:
     - name: Prepare A2 output
       run: |
         mkdir -p ${{ github.workspace }}/a2/lib/aarch64-macosx-default
-        ln -sr ${{ github.workspace }}/a2/lib/aarch64-macosx-default ${{ github.workspace }}/a2/lib/local
+        cd ${{ github.workspace }}/a2/lib && ln -s aarch64-macosx-default local
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -93,7 +93,7 @@ jobs:
     - name: Create JDK
       run: |
         gmake -f tooling.mk jdk-jjml
-        ln -sr ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9
+        cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macosx-default jdk-jjml-21-openj9
         chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
 
     - name: Test JJML JDK
