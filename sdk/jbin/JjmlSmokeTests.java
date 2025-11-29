@@ -427,10 +427,6 @@ class JjmlSmokeTests {
 	 */
 	/** CLI entry point. */
 	public static void main(String[] args) throws Exception {
-		if (args.length == 0) {
-			printUsage();
-			System.exit(1);
-		}
 		new JjmlSmokeTests().main(Arrays.asList(args));
 	}
 
