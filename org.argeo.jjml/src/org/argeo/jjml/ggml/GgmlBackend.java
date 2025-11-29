@@ -78,6 +78,15 @@ public class GgmlBackend {
 				for (String p : paths)
 					basePaths.add(Paths.get(p));
 			}
+			
+			// MacOS
+			ldLibraryPath = System.getenv("DYLD_LIBRARY_PATH");
+			if (ldLibraryPath != null && !"".equals(ldLibraryPath.trim())) {
+				// System.out.println(ldLibraryPath);
+				String[] paths = ldLibraryPath.split(File.pathSeparator);
+				for (String p : paths)
+					basePaths.add(Paths.get(p));
+			}
 		}
 
 		// load
