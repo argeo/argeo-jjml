@@ -299,7 +299,7 @@ jdk-jjml: package-jmods
 	$(RM) -r $(JDK_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
 	 --module-path "$(JLINK_JMODS)$(file_path_sep)$(A2_JMODS)" \
-	 --add-modules $(JLINK_MODULES),$(JMOD_OS_LIBS),$(JJML_JMODS) \
+	 --add-modules $(JLINK_MODULES),$(JJML_JMODS) \
 	 --output "$(JDK_JJML_DIR)"
 	
 	mkdir -p $(JDK_JJML_DIR)/src
