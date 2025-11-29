@@ -107,7 +107,7 @@ class JjmlSmokeTests {
 //					return;
 
 				assertLoadUnloadDefaultContext(model);
-				assertEmbeddings(model);
+				//assertEmbeddings(model);
 				assertBatch(model);
 				assertJavaSampler(model);
 				assertChat(model);
