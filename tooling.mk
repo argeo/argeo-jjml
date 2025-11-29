@@ -182,7 +182,7 @@ msvc-release:
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 
-jmod-jjml:
+jmod-jjml: a2-prepare-output
 	$(RM) -r $(JMODS_BASE)/$(JMOD_JJML)
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/legal
@@ -207,7 +207,7 @@ jmod-jjml:
 	# list content
 	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
 
-jmod-ggml:
+jmod-ggml: a2-prepare-output
 	$(RM) -r $(JMODS_BASE)/$(JMOD_GGML)
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/java
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML)/classes
@@ -239,7 +239,7 @@ jmod-ggml:
 	# list content
 	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_GGML).jmod
 
-jmod-ggml-llm:
+jmod-ggml-llm: a2-prepare-output
 	$(RM) -r $(JMODS_BASE)/$(JMOD_GGML_LLM)
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/java
 	mkdir -p $(JMODS_BASE)/$(JMOD_GGML_LLM)/classes
@@ -275,7 +275,7 @@ jmod-ggml-llm:
 #
 # DISTRIBUTABLE PACKAGES
 #
-rt-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
+rt-jjml: standalone-release jmod-jjml jmod-ggml jmod-ggml-llm
 	$(RM) -r $(RT_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
 	 --module-path "$(JLINK_JMODS)$(file_path_sep)$(A2_JMODS)" \
