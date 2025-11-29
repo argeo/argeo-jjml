@@ -88,13 +88,14 @@ jobs:
     - name: Test JJML JDK
       continue-on-error: true
       run: >
-        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/bin/java
+        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/bin/java -ea
         ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/man/examples/JjmlSmokeTests.java
+        allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Test llama-cli
       continue-on-error: true
       run: >
-        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/bin/llama-cli
+        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/lib/llama-cli
         --threads $(sysctl -n hw.logicalcpu)
         --no-conversation
         --hf-repo allenai/OLMo-2-0425-1B-Instruct-GGUF
