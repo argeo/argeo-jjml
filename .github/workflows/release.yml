@@ -85,10 +85,16 @@ jobs:
       run: >
         gmake -f tooling.mk jdk-jjml
 
+    - name: Test JJML JDK
+      continue-on-error: true
+      run: >
+        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/bin/java
+        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/man/examples/JjmlSmokeTests.java
+
     - name: Test llama-cli
       continue-on-error: true
       run: >
-        ${{ github.workspace }}/build/jdk-jjml-21-openj9-aarch64-macosx-default/llama-cli
+        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/bin/llama-cli
         --threads $(sysctl -n hw.logicalcpu)
         --no-conversation
         --hf-model allenai/OLMo-2-0425-1B-Instruct-GGUF
