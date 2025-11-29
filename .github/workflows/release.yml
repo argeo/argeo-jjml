@@ -53,7 +53,7 @@ jobs:
         -DJAVA_HOME=$JAVA_HOME
         -DJJML_FORCE_BUILD_TP=ON
         -DA2_INSTALL_MODE=a2
-        -DGGML_METAL_USE_BF16=OFF
+        -DGGML_METAL_USE_BF16=ON
         -DGGML_METAL_EMBED_LIBRARY=ON
         -DLLAMA_CURL=OFF
         -DLLAMA_BUILD_COMMON=ON
@@ -84,4 +84,14 @@ jobs:
     - name: Create JDK
       run: >
         gmake -f tooling.mk jdk-jjml
+
+    - name: Test llama-cli
+      continue-on-error: true
+      run: >
+        ${{ github.workspace }}/build/jdk-jjml-21-openj9-aarch64-macosx-default/llama-cli
+        --threads $(sysctl -n hw.logicalcpu)
+        --no-conversation
+        --hf-model allenai/OLMo-2-0425-1B-Instruct-GGUF
+        --prompt "Describe the Java programming language in two sentences."
+
 
