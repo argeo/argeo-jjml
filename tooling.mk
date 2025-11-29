@@ -313,7 +313,6 @@ jdk-jjml: package-jmods
 	mkdir -p $(JDK_JJML_DIR)/jmods
 	$(COPY) $(A2_JMODS)/$(JMOD_JJML).jmod \
 	 $(A2_JMODS)/$(JMOD_GGML)*.jmod \
-	 $(A2_JMODS)/$(JMOD_OS_LIBS).jmod \
 	 $(JDK_JJML_DIR)/jmods
 
 	mkdir -p $(JDK_JJML_DIR)/lib/a2/org.argeo.jjml
