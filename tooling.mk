@@ -288,7 +288,7 @@ rt-jjml: standalone-release jmod-os-libc jmod-jjml jmod-ggml jmod-ggml-llm
 	 $(A2_JMODS)/$(JMOD_OS_LIBS).jmod \
 	 $(RT_JJML_DIR)/jmods
 
-package-jmods: jmod-os-libs jmod-jjml jmod-ggml jmod-ggml-llm
+package-jmods: jmod-jjml jmod-ggml jmod-ggml-llm
 
 jdk-jjml: package-jmods
 	$(RM) -r $(JDK_JJML_DIR)
