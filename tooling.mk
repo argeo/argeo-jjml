@@ -3,6 +3,7 @@
 # Low-level build only uses CMake.
 -include sdk.mk
 include sdk/argeo-build/cmake/default.mk
+include sdk/argeo-build/jpms.mk
 
 TARGET_NATIVE_OUTPUT_GGML=$(TARGET_NATIVE_OUTPUT)/org.argeo.tp.ggml
 TARGET_NATIVE_OUTPUT_JJML=$(TARGET_NATIVE_OUTPUT)/org.argeo.jjml
@@ -125,12 +126,6 @@ endif
 #
 # PACKAGING
 #
-ifneq ($(git_commit_count),)
-PACKAGE_VERSION=$(major).$(minor).$(micro).$(git_commit_count)
-else
-PACKAGE_VERSION=$(major).$(minor).$(micro)$(qualifier)
-endif
-
 JMOD_JJML=org.argeo.jjml
 JMOD_GGML=org.argeo.tp.ggml
 JMOD_GGML_LLM=org.argeo.tp.ggml.llm
@@ -322,7 +317,7 @@ jdk-jjml: package-jmods
 zip-jdk-jjml: jdk-jjml
 	# create archive
 	cd $(BUILD_BASE) && zip -r -q \
-	 $(JDK_JJML_ARTIFACT)-$(PACKAGE_VERSION).zip \
+	 $(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).zip \
 	 $(shell basename $(JDK_JJML_DIR))
 	#rm -rf $(JDK_JJML_DIR)
 
@@ -333,7 +328,7 @@ msi-jdk-jjml: jdk-jjml
 	 --runtime-image $(JDK_JJML_DIR) \
 	 --type msi \
 	 --name $(JDK_JJML) \
-	 --app-version $(PACKAGE_VERSION) \
+	 --app-version $(A2_LAYER_VERSION) \
 	 --dest $(BUILD_BASE) \
 	 --description "JDK $(JLINK_JAVA_RELEASE) with additional machine learning features" \
 	 --vendor "Argeo GmbH" \
@@ -343,8 +338,8 @@ msi-jdk-jjml: jdk-jjml
 	 --win-upgrade-uuid $(shell uuidgen --sha1 --namespace $(ARGEO_ENTERPRISE_NUMBER_UUID) --name $(JDK_JJML)) \
 	 --install-dir "$(JDK_JJML)" \
 	
-	mv $(BUILD_BASE)/$(JDK_JJML)-$(PACKAGE_VERSION).msi \
-	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(PACKAGE_VERSION).msi
+	mv $(BUILD_BASE)/$(JDK_JJML)-$(A2_LAYER_VERSION).msi \
+	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).msi
 endif
 	
 # Note: On Windows, use dumpbin.exe in order to find depedencies of a DLL

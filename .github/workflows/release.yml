@@ -37,6 +37,17 @@ jobs:
         distribution: 'semeru'
         java-version: 21
 
+    - name: brew dependencies
+      run: |
+        brew update
+        brew install make
+
+    - name: ccache
+      uses: ggml-org/ccache-action@v1.2.16
+      with:
+        key: macos-arm64
+        evict-old-files: 1d
+
     - name: Configure CMake
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
@@ -68,3 +79,8 @@ jobs:
         --add-modules org.argeo.jjml
         sdk/jbin/JjmlSmokeTests.java
         allenai/OLMo-2-0425-1B-Instruct-GGUF
+
+    - name: Create JDK
+      run: >
+        gmake -f tooling.mk jdk-jjml
+
