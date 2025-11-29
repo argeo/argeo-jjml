@@ -220,12 +220,17 @@ jmod-ggml: a2-prepare-output
 	
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+ifeq ($(TARGET_OS),macosx)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-cpu-*.so $(JMODS_BASE)/$(JMOD_GGML)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-metal.so $(JMODS_BASE)/$(JMOD_GGML)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-blas.so $(JMODS_BASE)/$(JMOD_GGML)/lib
+else
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-cpu-*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 	#$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-vulkan$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 	# MSVC linker libs
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
-
+endif
 	echo "module $(JMOD_GGML) {}" > $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
 	$(JLINK_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_GGML)/classes $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
 
