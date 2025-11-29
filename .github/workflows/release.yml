@@ -37,10 +37,6 @@ jobs:
         distribution: 'semeru'
         java-version: 21
 
-    - name: brew dependencies
-      run: |
-        brew install make
-
     - name: ccache
       uses: ggml-org/ccache-action@v1.2.16
       with:
@@ -64,7 +60,7 @@ jobs:
         -DGGML_CPU_ALL_VARIANTS=OFF
         -DGGML_VULKAN=OFF
         -DGGML_CCACHE=ON
-        -DGGML_NATIVE=OFF
+        -DGGML_NATIVE=ON
         -S ${{ github.workspace }}
 
     - name: Build
@@ -73,13 +69,16 @@ jobs:
     - name: Test
       continue-on-error: true
       run: >
-        DYLD_LIBRARY_PATH=${{ github.workspace }}/a2/lib/aarch64-macosx-default/org.argeo.tp.ggml
         java -ea
         "-Djava.library.path=${{ github.workspace }}/a2/lib/aarch64-macosx-default/org.argeo.jjml:${{ github.workspace }}/a2/lib/aarch64-macosx-default/org.argeo.tp.ggml"
         "--module-path=${{ github.workspace }}/a2/org.argeo.jjml"
         --add-modules org.argeo.jjml
         sdk/jbin/JjmlSmokeTests.java
         allenai/OLMo-2-0425-1B-Instruct-GGUF
+
+    - name: GNU Make installation
+      run: |
+        brew install make
 
     - name: Create JDK
       run: >
