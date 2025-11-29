@@ -23,13 +23,18 @@ jobs:
         fetch-depth: '0'
         fetch-tags: 'true'
 
+    - name: Prepare A2 output
+      run: |
+        mkdir -p ${{ github.workspace }}/a2/lib/aarch64-macosx-default
+        ln -sr ${{ github.workspace }}/a2/lib/aarch64-macosx-default ${{ github.workspace }}/a2/lib/local
+
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
       shell: bash
       run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-        echo "${{ github.workspace }}/a2/lib/aarch64-macosx-default/org.argeo.tp.ggml" >> $GITHUB_PATH
+        echo "build-output-dir=${{ github.workspace }}/argeo-jjml" >> "$GITHUB_OUTPUT"
+        #echo "${{ github.workspace }}/a2/lib/local/org.argeo.tp.ggml" >> $GITHUB_PATH
 
     - uses: actions/setup-java@v5
       name: Setup Java
@@ -64,8 +69,8 @@ jobs:
         -DGGML_CPU_ALL_VARIANTS=OFF
         -DGGML_VULKAN=OFF
         -DGGML_CCACHE=ON
-        -DGGML_METAL=OFF
-        -DGGML_BLAS=OFF
+        -DGGML_METAL=ON
+        -DGGML_BLAS=ON
         -S ${{ github.workspace }}
 
     - name: Build
@@ -74,9 +79,9 @@ jobs:
     - name: Test
       continue-on-error: true
       run: >
-        DYLD_LIBRARY_PATH=${{ github.workspace }}/a2/lib/aarch64-macosx-default/org.argeo.tp.ggml
+        DYLD_LIBRARY_PATH=${{ github.workspace }}/a2/lib/local/org.argeo.tp.ggml
         java -ea
-        "-Djava.library.path=${{ github.workspace }}/a2/lib/aarch64-macosx-default/org.argeo.jjml:${{ github.workspace }}/a2/lib/aarch64-macosx-default/org.argeo.tp.ggml"
+        "-Djava.library.path=${{ github.workspace }}/a2/lib/local/org.argeo.jjml"
         "--module-path=${{ github.workspace }}/a2/org.argeo.jjml"
         --add-modules org.argeo.jjml
         sdk/jbin/JjmlSmokeTests.java
@@ -88,20 +93,21 @@ jobs:
     - name: Create JDK
       run: |
         gmake -f tooling.mk jdk-jjml
-        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/lib/llama-cli
+        ln -sr ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9
+        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
 
     - name: Test JJML JDK
       continue-on-error: true
       run: >
-        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/bin/java -ea
-        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/man/examples/JjmlSmokeTests.java
+        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin/java -ea
+        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/man/examples/JjmlSmokeTests.java
         allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Test llama-cli
       continue-on-error: true
       run: >
-        DYLD_LIBRARY_PATH=${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/lib
-        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/lib/llama-cli
+        DYLD_LIBRARY_PATH=${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib
+        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
         --threads $(sysctl -n hw.logicalcpu)
         --no-conversation
         --hf-repo allenai/OLMo-2-0425-1B-Instruct-GGUF
