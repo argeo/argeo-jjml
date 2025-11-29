@@ -25,7 +25,7 @@ jobs:
 
     - name: Prepare A2 output
       run: |
-        mkdir -p ${{ github.workspace }}/a2/lib/aarch64-macosx-default
+        mkdir -p ${{ github.workspace }}/a2/lib/aarch64-macosx-default/jmods
         cd ${{ github.workspace }}/a2/lib && ln -s aarch64-macosx-default local
 
     - name: Set reusable strings
@@ -34,7 +34,6 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/argeo-jjml" >> "$GITHUB_OUTPUT"
-        #echo "${{ github.workspace }}/a2/lib/local/org.argeo.tp.ggml" >> $GITHUB_PATH
 
     - uses: actions/setup-java@v5
       name: Setup Java
