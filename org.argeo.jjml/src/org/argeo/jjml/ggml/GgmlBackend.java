@@ -52,7 +52,7 @@ public class GgmlBackend {
 		else
 			gnuArch = "x86_64";
 		Path path = Paths.get("/usr/lib/" + gnuArch + "-linux-gnu/ggml/backends0");
-		//System.out.println(path);
+		// System.out.println(path);
 		if (Files.exists(path))
 			basePaths.add(path);
 		else // Argeo
@@ -85,8 +85,10 @@ public class GgmlBackend {
 		basePaths: for (Path basePath : basePaths) {
 			if (Files.exists(basePath)) {
 				// loadBackends(basePath);
-				try (DirectoryStream<Path> ds = Files.newDirectoryStream(basePath,
-						System.mapLibraryName("ggml-cpu*"))) {
+
+				// We cannot use System.mapLibraryName("ggml-cpu*"),
+				// because backends are *.so and not *.dylib on MacOS
+				try (DirectoryStream<Path> ds = Files.newDirectoryStream(basePath, "*ggml-cpu*")) {
 					Iterator<Path> it = ds.iterator();
 					// scanning some directories causes crashes on Windows,
 					// so we skip irrelevant ones
