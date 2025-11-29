@@ -205,7 +205,7 @@ jmod-jjml: a2-prepare-output
 	 --legal-notices $(JMODS_BASE)/$(JMOD_JJML)/legal \
 	 $(A2_JMODS)/$(JMOD_JJML).jmod
 	# list content
-	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
+	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
 
 jmod-ggml: a2-prepare-output
 	$(RM) -r $(JMODS_BASE)/$(JMOD_GGML)

@@ -97,7 +97,7 @@ jobs:
         ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macosx-default/bin/llama-cli
         --threads $(sysctl -n hw.logicalcpu)
         --no-conversation
-        --hf-model allenai/OLMo-2-0425-1B-Instruct-GGUF
+        --hf-repo allenai/OLMo-2-0425-1B-Instruct-GGUF
         --prompt "Describe the Java programming language in two sentences."
 
 
