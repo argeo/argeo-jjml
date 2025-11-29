@@ -53,16 +53,16 @@ jobs:
         -DGGML_METAL_EMBED_LIBRARY=ON
         -DCMAKE_SKIP_BUILD_RPATH=ON
         -DCMAKE_INSTALL_RPATH='@loader_path'
-        -DLLAMA_CURL=OFF
+        -DLLAMA_CURL=ON
         -DLLAMA_BUILD_COMMON=ON
         -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_TESTS=OFF
+        -DGGML_CPU_ARM_ARCH=OFF
+        -DBUILD_SHARED_LIBS=ON
         -DGGML_BACKEND_DL=ON
         -DGGML_CPU_ALL_VARIANTS=ON
         -DGGML_VULKAN=OFF
-        -DGGML_CCACHE=ON
-        -DGGML_NATIVE=OFF
         -S ${{ github.workspace }}
 
     - name: Build
