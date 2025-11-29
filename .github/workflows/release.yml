@@ -75,7 +75,6 @@ jobs:
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release -j $(sysctl -n hw.logicalcpu)
 
     - name: Test
-      continue-on-error: true
       run: >
         DYLD_LIBRARY_PATH=${{ github.workspace }}/a2/lib/local/org.argeo.tp.ggml
         java -ea
@@ -95,7 +94,6 @@ jobs:
         chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
 
     - name: Test JJML JDK
-      continue-on-error: true
       run: >
         ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin/java -ea
         ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/man/examples/JjmlSmokeTests.java
@@ -104,7 +102,6 @@ jobs:
     - name: Test llama-cli
       continue-on-error: true
       run: >
-        DYLD_LIBRARY_PATH=${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib
         ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
         --threads $(sysctl -n hw.logicalcpu)
         --no-conversation
