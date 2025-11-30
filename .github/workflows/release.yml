@@ -40,8 +40,13 @@ jobs:
 
     - name: Dependencies
       run: |
-        winget install -e --accept-source-agreements --accept-package-agreements --id WiXToolset.WiXToolset
-        winget install -e --accept-source-agreements --accept-package-agreements --id GnuWin32.Make
+        where gmake.exe
+
+    - name: ccache
+      uses: ggml-org/ccache-action@v1.2.16
+      with:
+        key: windows-x86_64
+        evict-old-files: 1d
 
     - name: Configure CMake
       run: >
@@ -50,6 +55,7 @@ jobs:
         -DCMAKE_SKIP_BUILD_RPATH=ON
         -DJJML_FORCE_BUILD_TP=ON
         -DA2_INSTALL_MODE=a2
+        -DGGML_CCACHE=ON
         -DLLAMA_CURL=OFF
         -DLLAMA_BUILD_COMMON=ON
         -DLLAMA_BUILD_TOOLS=ON
@@ -93,8 +99,8 @@ jobs:
 
     - name: Prepare A2 output
       run: |
-        mkdir -p ${{ github.workspace }}/a2/lib/aarch64-macosx-default/jmods
-        cd ${{ github.workspace }}/a2/lib && ln -s aarch64-macosx-default local
+        mkdir -p ${{ github.workspace }}/a2/lib/aarch64-macos-default/jmods
+        cd ${{ github.workspace }}/a2/lib && ln -s aarch64-macos-default local
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -123,6 +129,7 @@ jobs:
         -DA2_INSTALL_MODE=a2
         -DCMAKE_SKIP_BUILD_RPATH=ON
         -DCMAKE_INSTALL_RPATH='@loader_path'
+        -DGGML_CCACHE=ON
         -DGGML_METAL_USE_BF16=ON
         -DGGML_METAL_EMBED_LIBRARY=ON
         -DLLAMA_CURL=ON
@@ -134,7 +141,6 @@ jobs:
         -DGGML_BACKEND_DL=OFF
         -DGGML_CPU_ALL_VARIANTS=OFF
         -DGGML_VULKAN=OFF
-        -DGGML_CCACHE=ON
         -DGGML_METAL=OFF
         -DGGML_BLAS=ON
         -S ${{ github.workspace }}
@@ -158,7 +164,7 @@ jobs:
     - name: Create JDK
       run: |
         gmake -f tooling.mk jdk-jjml
-        cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macosx-default jdk-jjml-21-openj9
+        cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macos-default jdk-jjml-21-openj9
         chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin/llama-cli
         
         # Make sure build artifacts won't be loaded during tests
