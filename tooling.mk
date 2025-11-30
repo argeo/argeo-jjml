@@ -370,7 +370,7 @@ msi-jdk-jjml:
 	 --type msi \
 	 --name $(JDK_JJML) \
 	 --app-version $(A2_LAYER_VERSION) \
-	 --dest $(BUILD_BASE) \
+	 --dest "$(BUILD_BASE)" \
 	 --description "JDK $(JLINK_JAVA_RELEASE) with additional machine learning features" \
 	 --vendor "Argeo GmbH" \
 	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
@@ -392,7 +392,7 @@ pkg-jdk-jjml:
 	 --type pkg \
 	 --name $(JDK_JJML) \
 	 --app-version $(major).$(minor).$(micro) \
-	 --dest $(BUILD_BASE) \
+	 --dest "$(BUILD_BASE)" \
 	 --description "JDK $(JLINK_JAVA_RELEASE) with additional machine learning features" \
 	 --vendor "Argeo GmbH" \
 	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
