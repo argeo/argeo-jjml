@@ -74,7 +74,6 @@ jobs:
     - name: Create JDK
       run: |
         gmake -f tooling.mk jdk-jjml
-        cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-x86_64-win32-default jdk-jjml-21-openj9
 
     - name: Create JDK .msi
       run: |
