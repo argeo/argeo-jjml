@@ -12,6 +12,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
+##
+## WINDOWS
+##
   windows-x86_64:
     runs-on: windows-2025
     if: true
@@ -25,7 +29,6 @@ jobs:
         fetch-tags: 'true'
 
     - name: Set reusable strings
-      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
       shell: bash
       run: |
@@ -51,6 +54,8 @@ jobs:
         evict-old-files: 1d
 
     - name: Configure CMake
+      env:
+        CURL_PATH: ${{ steps.get_libcurl.outputs.curl_path }}
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DJAVA_HOME=%JAVA_HOME%
@@ -59,7 +64,7 @@ jobs:
         -DA2_INSTALL_MODE=a2
         -DGGML_CCACHE=ON
         -DLLAMA_CURL=ON
-        -DCURL_LIBRARY="%CURL_PATH%/lib/libcurl.dll.a" -DCURL_INCLUDE_DIR="%CURL_PATH%/include" ^
+        -DCURL_LIBRARY="%CURL_PATH%/lib/libcurl.dll.a" -DCURL_INCLUDE_DIR="%CURL_PATH%/include"
         -DLLAMA_BUILD_COMMON=ON
         -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF
@@ -70,8 +75,6 @@ jobs:
         -S ${{ github.workspace }}
 
     - name: Build
-      env:
-        CURL_PATH: ${{ steps.get_libcurl.outputs.curl_path }}
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release -j $(nproc)
 
     - name: Test
@@ -91,6 +94,10 @@ jobs:
       run: |
         gmake -f tooling.mk msi-jdk-jjml
 
+
+##
+## MACOS
+##
   macos-aarch64:
     runs-on: macos-14
 
@@ -108,7 +115,6 @@ jobs:
         cd ${{ github.workspace }}/a2/lib && ln -s aarch64-macos-default local
 
     - name: Set reusable strings
-      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
       shell: bash
       run: |
@@ -170,7 +176,12 @@ jobs:
       run: |
         gmake -f tooling.mk jdk-jjml
         cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macos-default jdk-jjml-21-openj9
-        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin/llama-cli
+
+        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
+        cd cd ${{ github.workspace }}/argeo-jjml/bin ln -s ../lib/llama-cli 
+        
+        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-bench
+        cd cd ${{ github.workspace }}/argeo-jjml/bin ln -s ../lib/llama-bench 
         
         # Make sure build artifacts won't be loaded during tests
         rm -rf ${{ github.workspace }}/a2

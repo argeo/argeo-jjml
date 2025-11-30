@@ -289,7 +289,14 @@ jmod-ggml-llm: a2-prepare-output
 	# MSVC linker libs
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.lib $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 	#$(COPY) $(BUILD_BASE)/bin/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
+
+ifeq ($(TARGET_OS),macos)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-bench* $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+else
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-bench* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
+endif
 
 # TODO add requires to ggml
 	echo "module $(JMOD_GGML_LLM) {}" > $(JMODS_BASE)/$(JMOD_GGML_LLM)/java/module-info.java
