@@ -97,15 +97,17 @@ jobs:
 
     - name: Test JJML JDK
       continue-on-error: true
+      shell: cmd
       run: >
-        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9\bin\java" -ea
-        ${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9\man\examples\JjmlSmokeTests.java
+        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\bin\java" -ea
+        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\man\examples\JjmlSmokeTests.java"
         allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Test llama-cli
       continue-on-error: true
+      shell: cmd
       run: >
-        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9\bin\llama-cli"
+        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\bin\llama-cli"
         --no-conversation
         --hf-repo allenai/OLMo-2-0425-1B-Instruct-GGUF
         --prompt "Describe the Java programming language in two sentences."
