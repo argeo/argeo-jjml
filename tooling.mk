@@ -401,7 +401,6 @@ pkg-jdk-jjml:
 	 --description "JDK $(JLINK_JAVA_RELEASE) with additional machine learning features" \
 	 --vendor "Argeo GmbH" \
 	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
-	 --install-dir "/Library/Java/JavaVirtualMachines/$(JDK_JJML)" \
 	
 	ls -lash $(BUILD_BASE)/$(JDK_JJML)-*
 	mv $(BUILD_BASE)/$(JDK_JJML)-$(major).$(minor).$(micro).pkg \
