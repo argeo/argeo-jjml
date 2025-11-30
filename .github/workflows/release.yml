@@ -38,9 +38,11 @@ jobs:
         distribution: 'semeru'
         java-version: 21
 
-    - name: Dependencies
-      run: |
-        where gmake.exe
+    - name: libCURL
+      id: get_libcurl
+      uses: ./.github/actions/windows-setup-curl
+      with:
+        architecture: win64
 
     - name: ccache
       uses: ggml-org/ccache-action@v1.2.16
@@ -56,7 +58,8 @@ jobs:
         -DJJML_FORCE_BUILD_TP=ON
         -DA2_INSTALL_MODE=a2
         -DGGML_CCACHE=ON
-        -DLLAMA_CURL=OFF
+        -DLLAMA_CURL=ON
+        -DCURL_LIBRARY="%CURL_PATH%/lib/libcurl.dll.a" -DCURL_INCLUDE_DIR="%CURL_PATH%/include" ^
         -DLLAMA_BUILD_COMMON=ON
         -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF
@@ -67,6 +70,8 @@ jobs:
         -S ${{ github.workspace }}
 
     - name: Build
+      env:
+        CURL_PATH: ${{ steps.get_libcurl.outputs.curl_path }}
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release -j $(nproc)
 
     - name: Test
@@ -132,7 +137,7 @@ jobs:
         -DGGML_CCACHE=ON
         -DGGML_METAL_USE_BF16=ON
         -DGGML_METAL_EMBED_LIBRARY=ON
-        -DLLAMA_CURL=OFF
+        -DLLAMA_CURL=ON
         -DLLAMA_BUILD_COMMON=ON
         -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF

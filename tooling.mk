@@ -312,7 +312,7 @@ jmod-ggml-llm: a2-prepare-output
 #
 rt-jjml: standalone-release jmod-jjml jmod-ggml jmod-ggml-llm
 	$(RM) -r $(RT_JJML_DIR)
-	$(JLINK_HOME)/bin/jlink \
+	"$(JLINK_HOME)/bin/jlink" \
 	 --module-path "$(JLINK_JMODS)$(file_path_sep)$(A2_JMODS)" \
 	 --add-modules $(RT_JJML_JMODS),$(JMOD_OS_LIBS),$(JJML_JMODS) \
 	 --output "$(RT_JJML_DIR)"
@@ -327,7 +327,7 @@ package-jmods: jmod-jjml jmod-jjml-jni jmod-ggml jmod-ggml-llm
 
 jdk-jjml: package-jmods
 	$(RM) -r $(JDK_JJML_DIR)
-	$(JLINK_HOME)/bin/jlink \
+	"$(JLINK_HOME)/bin/jlink" \
 	 --module-path "$(JLINK_JMODS)$(file_path_sep)$(A2_JMODS)" \
 	 --add-modules $(JLINK_MODULES),$(JJML_JMODS) \
 	 --output "$(JDK_JJML_DIR)"
@@ -355,10 +355,9 @@ zip-jdk-jjml: jdk-jjml
 	 $(shell basename $(JDK_JJML_DIR))
 	#rm -rf $(JDK_JJML_DIR)
 
-ifneq (,$(shell which $(JLINK_HOME)/bin/jpackage))
 msi-jdk-jjml:
 	# winget install -e --id WiXToolset.WiXToolset
-	$(JLINK_HOME)/bin/jpackage \
+	"$(JLINK_HOME)/bin/jpackage" \
 	 --runtime-image $(JDK_JJML_DIR) \
 	 --type msi \
 	 --name $(JDK_JJML) \
@@ -391,8 +390,6 @@ pkg-jdk-jjml:
 	ls -lash $(BUILD_BASE)/$(JDK_JJML)-*
 	mv $(BUILD_BASE)/$(JDK_JJML)-$(major).$(minor).$(micro).pkg \
 	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).pkg
-
-endif
 	
 # Note: On Windows, use dumpbin.exe in order to find depedencies of a DLL
 # (similar to ldd on Linux). E.g. "C:\Program Files (x86)\Microsoft Visual
