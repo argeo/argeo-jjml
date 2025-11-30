@@ -331,7 +331,7 @@ zip-jdk-jjml: jdk-jjml
 	#rm -rf $(JDK_JJML_DIR)
 
 ifneq (,$(shell which $(JLINK_HOME)/bin/jpackage))
-msi-jdk-jjml: jdk-jjml
+msi-jdk-jjml:
 	PATH=/usr/libexec/x86_64-win32-default/wix3:$(PATH) && \
 	$(JLINK_HOME)/bin/jpackage \
 	 --runtime-image $(JDK_JJML_DIR) \
@@ -349,6 +349,22 @@ msi-jdk-jjml: jdk-jjml
 	
 	mv $(BUILD_BASE)/$(JDK_JJML)-$(A2_LAYER_VERSION).msi \
 	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).msi
+
+pkg-jdk-jjml:
+	$(JLINK_HOME)/bin/jpackage \
+	 --runtime-image $(JDK_JJML_DIR) \
+	 --type pkg \
+	 --name $(JDK_JJML) \
+	 --app-version $(A2_LAYER_VERSION) \
+	 --dest $(BUILD_BASE) \
+	 --description "JDK $(JLINK_JAVA_RELEASE) with additional machine learning features" \
+	 --vendor "Argeo GmbH" \
+	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
+	 --install-dir "/Library/Java/JavaVirtualMachines/$(JDK_JJML)" \
+	
+	mv $(BUILD_BASE)/$(JDK_JJML)-$(A2_LAYER_VERSION).msi \
+	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).msi
+
 endif
 	
 # Note: On Windows, use dumpbin.exe in order to find depedencies of a DLL

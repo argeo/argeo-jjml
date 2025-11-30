@@ -93,6 +93,10 @@ jobs:
         cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macosx-default jdk-jjml-21-openj9
         chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
 
+    - name: Create JDK .pkg
+      run: |
+        gmake -f tooling.mk pkg-jdk-jjml
+
     - name: Test JJML JDK
       run: >
         ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin/java -ea
