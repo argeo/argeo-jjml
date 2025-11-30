@@ -75,6 +75,8 @@ jobs:
         -S ${{ github.workspace }}
 
     - name: Build
+      env:
+        CURL_PATH: ${{ steps.get_libcurl.outputs.curl_path }}
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release -j $(nproc)
 
     - name: Test
