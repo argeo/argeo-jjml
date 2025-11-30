@@ -91,7 +91,7 @@ jobs:
       run: |
         gmake -f tooling.mk jdk-jjml
         cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macosx-default jdk-jjml-21-openj9
-        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
+        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin/llama-cli
         
         # Make sure build artifacts won't be loaded during tests
         rm -rf ${{ github.workspace }}/a2
@@ -109,7 +109,8 @@ jobs:
     - name: Test llama-cli
       continue-on-error: true
       run: >
-        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
+        DYLD_LIBRARY_PATH= ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib
+        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin/llama-cli
         --threads $(sysctl -n hw.logicalcpu)
         --no-conversation
         --hf-repo allenai/OLMo-2-0425-1B-Instruct-GGUF
