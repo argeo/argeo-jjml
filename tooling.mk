@@ -232,7 +232,7 @@ jmod-jjml-jni: a2-prepare-output
 	 --legal-notices $(JMODS_BASE)/$(JMOD_JJML_JNI)/legal \
 	 $(A2_JMODS)/$(JMOD_JJML_JNI)-$(TARGET_NATIVE_CATEGORY_PREFIX).jmod
 	# list content
-	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML_JNI).jmod
+	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML_JNI)-$(TARGET_NATIVE_CATEGORY_PREFIX).jmod
 
 jmod-ggml: a2-prepare-output
 	$(RM) -r $(JMODS_BASE)/$(JMOD_GGML)
