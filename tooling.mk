@@ -209,7 +209,11 @@ jmod-jjml: a2-prepare-output
 	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
 
 jmod-jjml-jni: a2-prepare-output
+	$(JLINK_HOME)/bin/jmod describe $(JLINK_HOME)/jmods/java.base.jmod | grep -i platform
+	
 	$(RM) -r $(JMODS_BASE)/$(JMOD_JJML_JNI)
+	mkdir -p $(JMODS_BASE)/$(JMOD_JJML_JNI)/java
+	mkdir -p $(JMODS_BASE)/$(JMOD_JJML_JNI)/classes
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML_JNI)/lib
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML_JNI)/legal
 
@@ -218,9 +222,14 @@ jmod-jjml-jni: a2-prepare-output
 	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml*$(shlib_suffix) \
 	 $(JMODS_BASE)/$(JMOD_JJML_JNI)/lib
 
+	echo "module $(JMOD_JJML_JNI) {}" > $(JMODS_BASE)/$(JMOD_JJML_JNI)/java/module-info.java
+	$(JLINK_HOME)/bin/javac --release $(JLINK_JAVA_VERSION) -d $(JMODS_BASE)/$(JMOD_JJML_JNI)/classes $(JMODS_BASE)/$(JMOD_JJML_JNI)/java/module-info.java
+
 	$(RM) $(A2_JMODS)/$(JMOD_JJML_JNI)-$(TARGET_NATIVE_CATEGORY_PREFIX).jmod
 	$(JLINK_HOME)/bin/jmod create \
+	 --class-path $(JMODS_BASE)/$(JMOD_JJML_JNI)/classes \
 	 --module-version $(A2_LAYER_VERSION) \
+	 --target-platform $(JMOD_TARGET_PLATFORM) \
 	 --libs $(JMODS_BASE)/$(JMOD_JJML_JNI)/lib \
 	 --legal-notices $(JMODS_BASE)/$(JMOD_JJML_JNI)/legal \
 	 $(A2_JMODS)/$(JMOD_JJML_JNI)-$(TARGET_NATIVE_CATEGORY_PREFIX).jmod
@@ -257,11 +266,12 @@ else
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
 endif
 	echo "module $(JMOD_GGML) {}" > $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
-	$(JLINK_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_GGML)/classes $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
+	$(JLINK_HOME)/bin/javac --release $(JLINK_JAVA_VERSION) -d $(JMODS_BASE)/$(JMOD_GGML)/classes $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
 
 	$(RM) $(A2_JMODS)/$(JMOD_GGML).jmod
 	$(JLINK_HOME)/bin/jmod create \
 	 --class-path $(JMODS_BASE)/$(JMOD_GGML)/classes \
+	 --target-platform $(JMOD_TARGET_PLATFORM) \
 	 --libs $(JMODS_BASE)/$(JMOD_GGML)/lib \
 	 --header-files $(JMODS_BASE)/$(JMOD_GGML)/include \
 	 --legal-notices $(JMODS_BASE)/$(JMOD_GGML)/legal \
@@ -289,11 +299,12 @@ jmod-ggml-llm: a2-prepare-output
 
 # TODO add requires to ggml
 	echo "module $(JMOD_GGML_LLM) {}" > $(JMODS_BASE)/$(JMOD_GGML_LLM)/java/module-info.java
-	$(JLINK_HOME)/bin/javac --release 11 -d $(JMODS_BASE)/$(JMOD_GGML_LLM)/classes $(JMODS_BASE)/$(JMOD_GGML_LLM)/java/module-info.java
+	$(JLINK_HOME)/bin/javac --release $(JLINK_JAVA_VERSION) -d $(JMODS_BASE)/$(JMOD_GGML_LLM)/classes $(JMODS_BASE)/$(JMOD_GGML_LLM)/java/module-info.java
 	
 	$(RM) $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
 	$(JLINK_HOME)/bin/jmod create \
 	 --class-path $(JMODS_BASE)/$(JMOD_GGML_LLM)/classes \
+	 --target-platform $(JMOD_TARGET_PLATFORM) \
 	 --libs $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib \
 	 --cmds $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin \
 	 --header-files $(JMODS_BASE)/$(JMOD_GGML_LLM)/include \
@@ -321,8 +332,6 @@ rt-jjml: standalone-release jmod-jjml jmod-ggml jmod-ggml-llm
 package-jmods: jmod-jjml jmod-jjml-jni jmod-ggml jmod-ggml-llm
 
 jdk-jjml: package-jmods
-	$(JLINK_HOME)/bin/jmod describe $(JLINK_HOME)/jmods/java.base.jmod | grep -i platform
-	
 	$(RM) -r $(JDK_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
 	 --module-path "$(JLINK_JMODS)$(file_path_sep)$(A2_JMODS)" \
