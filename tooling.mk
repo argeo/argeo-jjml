@@ -366,9 +366,9 @@ zip-jdk-jjml: jdk-jjml
 msi-jdk-jjml:
 	# winget install -e --id WiXToolset.WiXToolset
 	"$(JLINK_HOME)/bin/jpackage" \
-	 --runtime-image $(JDK_JJML_DIR) \
+	 --runtime-image "$(JDK_JJML_DIR)" \
 	 --type msi \
-	 --name $(JDK_JJML) \
+	 --name "$(JDK_JJML)" \
 	 --app-version $(A2_LAYER_VERSION) \
 	 --dest "$(BUILD_BASE)" \
 	 --description "JDK $(JLINK_JAVA_RELEASE) with additional machine learning features" \
@@ -382,15 +382,15 @@ msi-jdk-jjml:
 	mv $(BUILD_BASE)/$(JDK_JJML)-$(A2_LAYER_VERSION).msi \
 	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).msi
 
-	install-msi-jdk-jjml:
+install-msi-jdk-jjml:
 	msiexec /i "$(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).msi" /qn /norestart
 
 pkg-jdk-jjml:
 	# .pkg format does not support versions with more than 3 components
 	$(JLINK_HOME)/bin/jpackage \
-	 --runtime-image $(JDK_JJML_DIR) \
+	 --runtime-image "$(JDK_JJML_DIR)" \
 	 --type pkg \
-	 --name $(JDK_JJML) \
+	 --name "$(JDK_JJML)" \
 	 --app-version $(major).$(minor).$(micro) \
 	 --dest "$(BUILD_BASE)" \
 	 --description "JDK $(JLINK_JAVA_RELEASE) with additional machine learning features" \
@@ -404,6 +404,7 @@ pkg-jdk-jjml:
 
 install-pkg-jdk-jjml:
 	sudo installer -store -pkg "$(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).pkg" -target /
+	ls -lash /Library/Java/JavaVirtualMachines/
 	
 # Note: On Windows, use dumpbin.exe in order to find depedencies of a DLL
 # (similar to ldd on Linux). E.g. "C:\Program Files (x86)\Microsoft Visual
