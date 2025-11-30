@@ -99,6 +99,22 @@ jobs:
     - name: Test JDK .msi installation
       run: |
         gmake -f tooling.mk install-msi-jdk-jjml
+        dir $env:LOCALAPPDATA\jdk-jjml-21-openj9
+
+    - name: Test JJML JDK
+      continue-on-error: true
+      run: >
+        $env:LOCALAPPDATA\jdk-jjml-21-openj9\bin\java -ea
+        $env:LOCALAPPDATA\jdk-jjml-21-openj9\man\examples\JjmlSmokeTests.java
+        allenai/OLMo-2-0425-1B-Instruct-GGUF
+
+    - name: Test llama-cli
+      continue-on-error: true
+      run: >
+        $env:LOCALAPPDATA\jdk-jjml-21-openj9\bin\llama-cli
+        --no-conversation
+        --hf-repo allenai/OLMo-2-0425-1B-Instruct-GGUF
+        --prompt "Describe the Java programming language in two sentences."
 
 
 ##
@@ -212,7 +228,6 @@ jobs:
       continue-on-error: true
       run: >
         ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
-        --threads $(sysctl -n hw.logicalcpu)
         --no-conversation
         --hf-repo allenai/OLMo-2-0425-1B-Instruct-GGUF
         --prompt "Describe the Java programming language in two sentences."
