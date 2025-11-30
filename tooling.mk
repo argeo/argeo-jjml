@@ -357,7 +357,7 @@ zip-jdk-jjml: jdk-jjml
 
 ifneq (,$(shell which $(JLINK_HOME)/bin/jpackage))
 msi-jdk-jjml:
-	PATH=/usr/libexec/x86_64-win32-default/wix3:$(PATH) && \
+	# winget install -e --id WiXToolset.WiXToolset
 	$(JLINK_HOME)/bin/jpackage \
 	 --runtime-image $(JDK_JJML_DIR) \
 	 --type msi \

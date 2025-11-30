@@ -12,6 +12,74 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  windows-x86_64:
+    runs-on: windows-2025
+
+    steps:
+    - uses: actions/checkout@v4
+      name: Clone recursively with tags
+      with:
+        submodules: 'true'
+        fetch-depth: '0'
+        fetch-tags: 'true'
+
+    - name: Set reusable strings
+      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}\build" >> "$GITHUB_OUTPUT"
+        echo "${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.tp.ggml" >> $GITHUB_PATH
+
+    - uses: actions/setup-java@v5
+      name: Setup Java
+      with:
+        distribution: 'semeru'
+        java-version: 21
+
+    - name: Dependencies
+      run: |
+        winget install -e --id WiXToolset.WiXToolset
+        winget install -e --id GnuWin32.Make
+
+    - name: Configure CMake
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DJAVA_HOME=%JAVA_HOME%
+        -DCMAKE_SKIP_BUILD_RPATH=ON
+        -DJJML_FORCE_BUILD_TP=ON
+        -DA2_INSTALL_MODE=a2
+        -DLLAMA_CURL=OFF
+        -DLLAMA_BUILD_COMMON=ON
+        -DLLAMA_BUILD_TOOLS=ON
+        -DLLAMA_BUILD_EXAMPLES=OFF
+        -DLLAMA_BUILD_TESTS=OFF
+        -DGGML_BACKEND_DL=ON
+        -DGGML_CPU_ALL_VARIANTS=ON
+        -DGGML_VULKAN=OFF
+        -S ${{ github.workspace }}
+
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j $(nproc)
+
+    - name: Test
+      run: >
+        java -ea
+        "-Djava.library.path=${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.jjml;${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.tp.ggml"
+        "--module-path=${{ github.workspace }}\a2\org.argeo.jjml"
+        --add-modules org.argeo.jjml
+        sdk/jbin/JjmlSmokeTests.java
+        allenai/OLMo-2-0425-1B-Instruct-GGUF
+
+    - name: Create JDK
+      run: |
+        gmake -f tooling.mk jdk-jjml
+        cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-x86_64-win32-default jdk-jjml-21-openj9
+
+    - name: Create JDK .msi
+      run: |
+        gmake -f tooling.mk msi-jdk-jjml
+
   macos-aarch64:
     runs-on: macos-14
 
@@ -109,7 +177,7 @@ jobs:
     - name: Test llama-cli
       continue-on-error: true
       run: >
-        DYLD_LIBRARY_PATH= ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib
+        DYLD_LIBRARY_PATH=${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib
         ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin/llama-cli
         --threads $(sysctl -n hw.logicalcpu)
         --no-conversation
