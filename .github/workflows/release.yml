@@ -39,8 +39,8 @@ jobs:
 
     - name: Dependencies
       run: |
-        winget install -e --id WiXToolset.WiXToolset
-        winget install -e --id GnuWin32.Make
+        winget install -e --accept-source-agreements --accept-package-agreements --id WiXToolset.WiXToolset
+        winget install -e --accept-source-agreements --accept-package-agreements --id GnuWin32.Make
 
     - name: Configure CMake
       run: >
