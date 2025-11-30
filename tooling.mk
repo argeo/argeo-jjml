@@ -209,8 +209,6 @@ jmod-jjml: a2-prepare-output
 	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
 
 jmod-jjml-jni: a2-prepare-output
-	$(JLINK_HOME)/bin/jmod describe $(JLINK_HOME)/jmods/java.base.jmod | grep -i platform
-	
 	$(RM) -r $(JMODS_BASE)/$(JMOD_JJML_JNI)
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML_JNI)/java
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML_JNI)/classes
