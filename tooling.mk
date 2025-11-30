@@ -223,7 +223,7 @@ jmod-jjml-jni: a2-prepare-output
 	 $(JMODS_BASE)/$(JMOD_JJML_JNI)/lib
 
 	echo "module $(JMOD_JJML_JNI) {}" > $(JMODS_BASE)/$(JMOD_JJML_JNI)/java/module-info.java
-	$(JLINK_HOME)/bin/javac --release $(JLINK_JAVA_VERSION) -d $(JMODS_BASE)/$(JMOD_JJML_JNI)/classes $(JMODS_BASE)/$(JMOD_JJML_JNI)/java/module-info.java
+	$(JLINK_HOME)/bin/javac --release $(JLINK_JAVA_RELEASE) -d $(JMODS_BASE)/$(JMOD_JJML_JNI)/classes $(JMODS_BASE)/$(JMOD_JJML_JNI)/java/module-info.java
 
 	$(RM) $(A2_JMODS)/$(JMOD_JJML_JNI)-$(TARGET_NATIVE_CATEGORY_PREFIX).jmod
 	$(JLINK_HOME)/bin/jmod create \
@@ -266,7 +266,7 @@ else
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
 endif
 	echo "module $(JMOD_GGML) {}" > $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
-	$(JLINK_HOME)/bin/javac --release $(JLINK_JAVA_VERSION) -d $(JMODS_BASE)/$(JMOD_GGML)/classes $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
+	$(JLINK_HOME)/bin/javac --release $(JLINK_JAVA_RELEASE) -d $(JMODS_BASE)/$(JMOD_GGML)/classes $(JMODS_BASE)/$(JMOD_GGML)/java/module-info.java
 
 	$(RM) $(A2_JMODS)/$(JMOD_GGML).jmod
 	$(JLINK_HOME)/bin/jmod create \
@@ -299,7 +299,7 @@ jmod-ggml-llm: a2-prepare-output
 
 # TODO add requires to ggml
 	echo "module $(JMOD_GGML_LLM) {}" > $(JMODS_BASE)/$(JMOD_GGML_LLM)/java/module-info.java
-	$(JLINK_HOME)/bin/javac --release $(JLINK_JAVA_VERSION) -d $(JMODS_BASE)/$(JMOD_GGML_LLM)/classes $(JMODS_BASE)/$(JMOD_GGML_LLM)/java/module-info.java
+	$(JLINK_HOME)/bin/javac --release $(JLINK_JAVA_RELEASE) -d $(JMODS_BASE)/$(JMOD_GGML_LLM)/classes $(JMODS_BASE)/$(JMOD_GGML_LLM)/java/module-info.java
 	
 	$(RM) $(A2_JMODS)/$(JMOD_GGML_LLM).jmod
 	$(JLINK_HOME)/bin/jmod create \
