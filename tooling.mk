@@ -190,9 +190,6 @@ jmod-jjml: a2-prepare-output
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/man/examples
 
 	$(COPY) COPYING.LESSER NOTICE $(JMODS_BASE)/$(JMOD_JJML)/legal
-
-	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml*$(shlib_suffix) \
-	 $(JMODS_BASE)/$(JMOD_JJML)/lib
 	
 	# examples
 	$(COPY) -v sdk/jbin/*.java $(JMODS_BASE)/$(JMOD_JJML)/man/examples
@@ -201,7 +198,6 @@ jmod-jjml: a2-prepare-output
 	$(JLINK_HOME)/bin/jmod create \
 	 --class-path $(A2_OUTPUT)/org.argeo.jjml/org.argeo.jjml.$(major).$(minor).jar \
 	 --module-version $(A2_LAYER_VERSION) \
-	 --libs $(JMODS_BASE)/$(JMOD_JJML)/lib \
 	 --man-pages $(JMODS_BASE)/$(JMOD_JJML)/man \
 	 --legal-notices $(JMODS_BASE)/$(JMOD_JJML)/legal \
 	 $(A2_JMODS)/$(JMOD_JJML).jmod
