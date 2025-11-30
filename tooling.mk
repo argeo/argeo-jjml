@@ -363,8 +363,9 @@ pkg-jdk-jjml:
 	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
 	 --install-dir "/Library/Java/JavaVirtualMachines/$(JDK_JJML)" \
 	
-	mv $(BUILD_BASE)/$(JDK_JJML)-$(A2_LAYER_VERSION).msi \
-	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).msi
+	ls -lash $(BUILD_BASE)/$(JDK_JJML)-*
+	mv $(BUILD_BASE)/$(JDK_JJML)-$(A2_LAYER_VERSION).pkg \
+	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).pkg
 
 endif
 	
