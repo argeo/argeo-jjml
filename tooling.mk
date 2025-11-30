@@ -343,8 +343,9 @@ jdk-jjml: package-jmods
 	cp $(JLINK_HOME)/lib/src.zip $(JDK_JJML_DIR)/lib
 	mkdir -p $(JDK_JJML_DIR)/src
 	cp -r org.argeo.jjml/src $(JDK_JJML_DIR)/src/org.argeo.jjml
-	cd $(JDK_JJML_DIR)/src \
-	 && zip -q -ur $(JDK_JJML_DIR)/lib/src.zip *
+# FIXME make it portable
+#	cd $(JDK_JJML_DIR)/src \
+#	 && zip -q -ur $(JDK_JJML_DIR)/lib/src.zip *
 	$(RM) -r $(JDK_JJML_DIR)/src
 	
 	mkdir -p $(JDK_JJML_DIR)/jmods
@@ -381,6 +382,9 @@ msi-jdk-jjml:
 	mv $(BUILD_BASE)/$(JDK_JJML)-$(A2_LAYER_VERSION).msi \
 	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).msi
 
+	install-msi-jdk-jjml:
+	msiexec /i "$(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).msi" /qn /norestart
+
 pkg-jdk-jjml:
 	# .pkg format does not support versions with more than 3 components
 	$(JLINK_HOME)/bin/jpackage \
@@ -397,6 +401,9 @@ pkg-jdk-jjml:
 	ls -lash $(BUILD_BASE)/$(JDK_JJML)-*
 	mv $(BUILD_BASE)/$(JDK_JJML)-$(major).$(minor).$(micro).pkg \
 	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).pkg
+
+install-pkg-jdk-jjml:
+	sudo installer -store -pkg "$(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).pkg" -target /
 	
 # Note: On Windows, use dumpbin.exe in order to find depedencies of a DLL
 # (similar to ldd on Linux). E.g. "C:\Program Files (x86)\Microsoft Visual
