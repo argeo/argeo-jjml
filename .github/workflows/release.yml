@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  macos-arm64:
+  macos-aarch64:
     runs-on: macos-14
 
     steps:
@@ -92,6 +92,9 @@ jobs:
         gmake -f tooling.mk jdk-jjml
         cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macosx-default jdk-jjml-21-openj9
         chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
+        
+        # Make sure build artifacts won't be loaded during tests
+        rm -rf ${{ github.workspace }}/a2
 
     - name: Create JDK .pkg
       run: |
