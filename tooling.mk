@@ -127,10 +127,11 @@ endif
 # PACKAGING
 #
 JMOD_JJML=org.argeo.jjml
+JMOD_JJML_JNI=org.argeo.jjml.jni
 JMOD_GGML=org.argeo.tp.ggml
 JMOD_GGML_LLM=org.argeo.tp.ggml.llm
 
-JJML_JMODS ?= $(JMOD_JJML),$(JMOD_GGML),$(JMOD_GGML_LLM)
+JJML_JMODS ?= $(JMOD_JJML),$(JMOD_JJML_JNI),$(JMOD_GGML),$(JMOD_GGML_LLM)
 
 RT_JJML ?= rt-jjml
 RT_JJML_DIR = $(BUILD_BASE)/$(RT_JJML)-$(JLINK_JAVA_RELEASE)-$(JLINK_JVM_VARIANT)-$(TARGET_DEB_ARCH)
@@ -206,6 +207,25 @@ jmod-jjml: a2-prepare-output
 	 $(A2_JMODS)/$(JMOD_JJML).jmod
 	# list content
 	#$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML).jmod
+
+jmod-jjml-jni: a2-prepare-output
+	$(RM) -r $(JMODS_BASE)/$(JMOD_JJML_JNI)
+	mkdir -p $(JMODS_BASE)/$(JMOD_JJML_JNI)/lib
+	mkdir -p $(JMODS_BASE)/$(JMOD_JJML_JNI)/legal
+
+	$(COPY) COPYING.LESSER NOTICE $(JMODS_BASE)/$(JMOD_JJML_JNI)/legal
+
+	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml*$(shlib_suffix) \
+	 $(JMODS_BASE)/$(JMOD_JJML_JNI)/lib
+
+	$(RM) $(A2_JMODS)/$(JMOD_JJML_JNI)-$(TARGET_NATIVE_CATEGORY_PREFIX).jmod
+	$(JLINK_HOME)/bin/jmod create \
+	 --module-version $(A2_LAYER_VERSION) \
+	 --libs $(JMODS_BASE)/$(JMOD_JJML_JNI)/lib \
+	 --legal-notices $(JMODS_BASE)/$(JMOD_JJML_JNI)/legal \
+	 $(A2_JMODS)/$(JMOD_JJML_JNI)-$(TARGET_NATIVE_CATEGORY_PREFIX).jmod
+	# list content
+	$(JLINK_HOME)/bin/jmod list $(A2_JMODS)/$(JMOD_JJML_JNI).jmod
 
 jmod-ggml: a2-prepare-output
 	$(RM) -r $(JMODS_BASE)/$(JMOD_GGML)
@@ -363,8 +383,9 @@ pkg-jdk-jjml:
 	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
 	 --install-dir "/Library/Java/JavaVirtualMachines/$(JDK_JJML)" \
 	
+	$(JLINK_HOME)/bin/jmod describe $(JLINK_HOME)/jmods/java.base.jmod | grep -i platform
 	ls -lash $(BUILD_BASE)/$(JDK_JJML)-*
-	mv $(BUILD_BASE)/$(JDK_JJML)-$(A2_LAYER_VERSION).pkg \
+	mv $(BUILD_BASE)/$(JDK_JJML)-$(major).$(minor).$(micro).pkg \
 	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).pkg
 
 endif
