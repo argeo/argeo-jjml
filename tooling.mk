@@ -363,6 +363,11 @@ zip-jdk-jjml: jdk-jjml
 	 $(shell basename $(JDK_JJML_DIR))
 	#rm -rf $(JDK_JJML_DIR)
 
+
+JDK_JJML_WIN_UPGRADE_ID=d87918b9-88e7-51fb-92d5-7186ca73314b
+# FIXME make it portable on non-MSYS Windows
+#JDK_JJML_WIN_UPGRADE_ID=$(shell uuidgen --sha1 --namespace $(ARGEO_ENTERPRISE_NUMBER_UUID) --name $(JDK_JJML))
+
 msi-jdk-jjml:
 	# winget install -e --id WiXToolset.WiXToolset
 	"$(JLINK_HOME)/bin/jpackage" \
@@ -376,7 +381,7 @@ msi-jdk-jjml:
 	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
 	 --win-dir-chooser \
 	 --win-per-user-install \
-	 --win-upgrade-uuid $(shell uuidgen --sha1 --namespace $(ARGEO_ENTERPRISE_NUMBER_UUID) --name $(JDK_JJML)) \
+	 --win-upgrade-uuid $(JDK_JJML_WIN_UPGRADE_ID) \
 	 --install-dir "$(JDK_JJML)" \
 	
 	mv $(BUILD_BASE)/$(JDK_JJML)-$(A2_LAYER_VERSION).msi \
@@ -405,6 +410,8 @@ pkg-jdk-jjml:
 install-pkg-jdk-jjml:
 	sudo installer -store -pkg "$(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).pkg" -target /
 	ls -lash /Library/Java/JavaVirtualMachines/
+	ls -lash /Library/Java/JavaVirtualMachines/$(JDK_JJML)
+	ls -lash /Library/Java/JavaVirtualMachines/$(JDK_JJML)/Contents/Home/bin
 	
 # Note: On Windows, use dumpbin.exe in order to find depedencies of a DLL
 # (similar to ldd on Linux). E.g. "C:\Program Files (x86)\Microsoft Visual
