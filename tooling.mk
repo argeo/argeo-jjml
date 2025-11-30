@@ -351,11 +351,12 @@ msi-jdk-jjml:
 	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).msi
 
 pkg-jdk-jjml:
+	# .pkg format does not support versions with more than 3 components
 	$(JLINK_HOME)/bin/jpackage \
 	 --runtime-image $(JDK_JJML_DIR) \
 	 --type pkg \
 	 --name $(JDK_JJML) \
-	 --app-version $(A2_LAYER_VERSION) \
+	 --app-version $(major).$(minor).$(micro) \
 	 --dest $(BUILD_BASE) \
 	 --description "JDK $(JLINK_JAVA_RELEASE) with additional machine learning features" \
 	 --vendor "Argeo GmbH" \
