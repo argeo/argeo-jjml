@@ -318,9 +318,11 @@ rt-jjml: standalone-release jmod-jjml jmod-ggml jmod-ggml-llm
 	 $(A2_JMODS)/$(JMOD_OS_LIBS).jmod \
 	 $(RT_JJML_DIR)/jmods
 
-package-jmods: jmod-jjml jmod-ggml jmod-ggml-llm
+package-jmods: jmod-jjml jmod-jjml-jni jmod-ggml jmod-ggml-llm
 
 jdk-jjml: package-jmods
+	$(JLINK_HOME)/bin/jmod describe $(JLINK_HOME)/jmods/java.base.jmod | grep -i platform
+	
 	$(RM) -r $(JDK_JJML_DIR)
 	$(JLINK_HOME)/bin/jlink \
 	 --module-path "$(JLINK_JMODS)$(file_path_sep)$(A2_JMODS)" \
@@ -383,7 +385,6 @@ pkg-jdk-jjml:
 	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
 	 --install-dir "/Library/Java/JavaVirtualMachines/$(JDK_JJML)" \
 	
-	$(JLINK_HOME)/bin/jmod describe $(JLINK_HOME)/jmods/java.base.jmod | grep -i platform
 	ls -lash $(BUILD_BASE)/$(JDK_JJML)-*
 	mv $(BUILD_BASE)/$(JDK_JJML)-$(major).$(minor).$(micro).pkg \
 	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).pkg
