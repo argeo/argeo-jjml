@@ -96,7 +96,6 @@ jobs:
         gmake -f tooling.mk msi-jdk-jjml
 
     - name: Test JJML JDK
-      continue-on-error: true
       shell: cmd
       run: >
         "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\bin\java" -ea
@@ -109,7 +108,7 @@ jobs:
       run: >
         "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\bin\llama-cli"
         --no-conversation
-        --hf-repo allenai/OLMo-2-0425-1B-Instruct-GGUF
+        --model "%LOCALAPPDATA%\llama.cpp\allenai_OLMo-2-0425-1B-Instruct-GGUF_OLMo-2-0425-1B-Instruct-Q4_K_M.gguf"
         --prompt "Describe the Java programming language in two sentences."
 
 
