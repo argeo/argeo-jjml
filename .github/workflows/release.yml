@@ -86,7 +86,6 @@ jobs:
         "--module-path=${{ github.workspace }}\a2\org.argeo.jjml"
         --add-modules org.argeo.jjml
         sdk/jbin/JjmlSmokeTests.java
-        allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Create JDK
       run: |
@@ -99,14 +98,14 @@ jobs:
     - name: Test JJML JDK
       continue-on-error: true
       run: >
-        ${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9\bin\java -ea
+        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9\bin\java" -ea
         ${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9\man\examples\JjmlSmokeTests.java
         allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Test llama-cli
       continue-on-error: true
       run: >
-        ${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9\bin\llama-cli
+        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9\bin\llama-cli"
         --no-conversation
         --hf-repo allenai/OLMo-2-0425-1B-Instruct-GGUF
         --prompt "Describe the Java programming language in two sentences."
@@ -213,16 +212,15 @@ jobs:
         gmake -f tooling.mk install-pkg-jdk-jjml
 
     - name: Test JJML JDK
-      continue-on-error: true
       run: >
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/bin/java -ea
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/man/examples/JjmlSmokeTests.java
         allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Test llama-cli
-      continue-on-error: true
       run: >
-        ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
+        DYLD_LIBRARY_PATH=/Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/lib
+        /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/lib/llama-cli
         --no-conversation
         --hf-repo allenai/OLMo-2-0425-1B-Instruct-GGUF
         --prompt "Describe the Java programming language in two sentences."
