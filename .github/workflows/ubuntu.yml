@@ -70,7 +70,7 @@ jobs:
         -DGGML_NATIVE=ON
         -DGGML_BACKEND_DL=OFF
         -DGGML_CPU_ALL_VARIANTS=OFF
-        -DGGML_VULKAN=ON
+        -DGGML_VULKAN=OFF
         -S ${{ github.workspace }}
 
     - name: Build
