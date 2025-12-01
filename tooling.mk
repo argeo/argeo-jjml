@@ -343,9 +343,8 @@ jdk-jjml: package-jmods
 	cp $(JLINK_HOME)/lib/src.zip $(JDK_JJML_DIR)/lib
 	mkdir -p $(JDK_JJML_DIR)/src
 	cp -r org.argeo.jjml/src $(JDK_JJML_DIR)/src/org.argeo.jjml
-# FIXME make it portable
-#	cd $(JDK_JJML_DIR)/src \
-#	 && zip -q -ur $(JDK_JJML_DIR)/lib/src.zip *
+	"$(JLINK_HOME)/bin/jar" -u -f $(JDK_JJML_DIR)/lib/src.zip \
+	 -C $(JDK_JJML_DIR)/src org.argeo.jjml
 	$(RM) -r $(JDK_JJML_DIR)/src
 	
 	mkdir -p $(JDK_JJML_DIR)/jmods
