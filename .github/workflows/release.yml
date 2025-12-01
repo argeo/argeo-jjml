@@ -4,6 +4,8 @@ on:
   workflow_dispatch: # allows manual triggering
   push:
     branches: [ "unstable" ]
+    tags:
+    - '*'
   pull_request:
     branches: [ "testing", "unstable" ]
 
@@ -101,6 +103,14 @@ jobs:
         "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\bin\java" -ea
         "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\man\examples\JjmlSmokeTests.java"
         allenai/OLMo-2-0425-1B-Instruct-GGUF
+
+    - uses: ncipollo/release-action@v1
+      with:
+        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-x86_64-win32-default-*.msi"
+        allowUpdates: true
+        artifactErrorsFailBuild: true
+        draft: true
+        omitBody: true
 
     - name: Test llama-cli
       continue-on-error: true
@@ -217,6 +227,14 @@ jobs:
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/bin/java -ea
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/man/examples/JjmlSmokeTests.java
         allenai/OLMo-2-0425-1B-Instruct-GGUF
+
+    - uses: ncipollo/release-action@v1
+      with:
+        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macos-default-*.pkg"
+        allowUpdates: true
+        artifactErrorsFailBuild: true
+        draft: true
+        omitBody: true
 
     - name: Test llama-cli
       run: >
