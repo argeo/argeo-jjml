@@ -273,7 +273,7 @@ msi-jdk-jjml:
 	$(call a2_jpackage_create_msi,jdk-jjml,JDK $(JLINK_JAVA_RELEASE) with additional machine learning features,Argeo GmbH,$(JDK_JJML_WIN_UPGRADE_ID))
 
 install-msi-jdk-jjml:
-	msiexec /i "$(BUILD_BASE)/jdk-jjml-$(JLINK_SUFFIX)-$(A2_LAYER_VERSION).msi" /passive
+	msiexec /i "$(BUILD_BASE)/jdk-jjml-$(JLINK_SUFFIX)-$(A2_LAYER_VERSION).msi" /passive /qn
 
 pkg-jdk-jjml:
 	$(call a2_jpackage_create_pkg,jdk-jjml,JDK $(JLINK_JAVA_RELEASE) with additional machine learning features,Argeo GmbH)

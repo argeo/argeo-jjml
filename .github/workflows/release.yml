@@ -98,18 +98,18 @@ jobs:
       run: |
         gmake -f tooling.mk msi-jdk-jjml
 
-    - name: Test JDK .msi installation
-      continue-on-error: true
-      shell: cmd
-      run: |
-        gmake -f tooling.mk install-msi-jdk-jjml
-
     - name: Test JJML JDK
       shell: cmd
       run: >
         "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\bin\java" -ea
         "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\man\examples\JjmlSmokeTests.java"
         allenai/OLMo-2-0425-1B-Instruct-GGUF
+
+    - name: Test JDK .msi installation
+      continue-on-error: true
+      shell: cmd
+      run: |
+        gmake -f tooling.mk install-msi-jdk-jjml
 
     - name: Release
       uses: ncipollo/release-action@v1
@@ -176,7 +176,7 @@ jobs:
         -DA2_INSTALL_MODE=a2
         -DCMAKE_SKIP_BUILD_RPATH=ON
         -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0
-        -DGGML_CPU_ARM_ARCH=apple-m1
+        -DGGML_CPU_ARM_ARCH=armv8.4-a
         -DGGML_NATIVE=OFF
         -DGGML_CCACHE=ON
         -DGGML_METAL_USE_BF16=ON
