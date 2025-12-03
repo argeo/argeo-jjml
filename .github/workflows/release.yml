@@ -65,7 +65,7 @@ jobs:
         -DJJML_FORCE_BUILD_TP=ON
         -DA2_INSTALL_MODE=a2
         -DGGML_CCACHE=ON
-        -DLLAMA_CURL=ON
+        -DLLAMA_CURL=OFF
         -DCURL_LIBRARY="$env:CURL_PATH/lib/libcurl.dll.a" -DCURL_INCLUDE_DIR="$env:CURL_PATH/include"
         -DLLAMA_BUILD_COMMON=ON
         -DLLAMA_BUILD_TOOLS=ON
@@ -97,6 +97,12 @@ jobs:
     - name: Create JDK .msi
       run: |
         gmake -f tooling.mk msi-jdk-jjml
+
+    - name: Test JDK .msi installation
+      continue-on-error: true
+      shell: cmd
+      run: |
+        gmake -f tooling.mk install-msi-jdk-jjml
 
     - name: Test JJML JDK
       shell: cmd
@@ -203,7 +209,6 @@ jobs:
 
     - name: Create JDK
       run: |
-        cat $JAVA_HOME/release
         gmake -f tooling.mk jdk-jjml
         cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macos-default jdk-jjml-21-openj9
 
