@@ -267,10 +267,10 @@ zip-jdk-jjml: jdk-jjml
 
 JDK_JJML_WIN_UPGRADE_ID=d87918b9-88e7-51fb-92d5-7186ca73314b
 # FIXME make it portable on non-MSYS Windows
-#JDK_JJML_WIN_UPGRADE_ID=$(shell uuidgen --sha1 --namespace $(ARGEO_ENTERPRISE_NUMBER_UUID) --name $(JDK_JJML))
+#JDK_JJML_WIN_UPGRADE_ID=$(shell uuidgen --sha1 --namespace $(ARGEO_ENTERPRISE_NUMBER_UUID) --name jdk-jjml-$(JLINK_JAVA_RELEASE)-$(JLINK_JVM_VARIANT))
 
 msi-jdk-jjml:
-	$(call a2_jpackage_create_pkg,jdk-jjml,JDK $(JLINK_JAVA_RELEASE) with additional machine learning features,Argeo GmbH,$(JDK_JJML_WIN_UPGRADE_ID))
+	$(call a2_jpackage_create_msi,jdk-jjml,JDK $(JLINK_JAVA_RELEASE) with additional machine learning features,Argeo GmbH,$(JDK_JJML_WIN_UPGRADE_ID))
 
 install-msi-jdk-jjml:
 	msiexec /i "$(BUILD_BASE)/jdk-jjml-$(JLINK_SUFFIX)-$(A2_LAYER_VERSION).msi" /passive

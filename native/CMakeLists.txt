@@ -89,11 +89,6 @@ if(EXISTS "${llama_LIBRARY}") # llama.cpp as external library
 endif()
 
 if(NOT JJML_DO_NOT_BUILD_TP)
-	if (MSVC)
-	# disable third party warnings
-	add_compile_options(/W0)
-	endif()
-
 	# Build reference third-party submodules if needed
 	add_subdirectory(tp)
 endif()
