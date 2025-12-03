@@ -203,6 +203,7 @@ jobs:
 
     - name: Create JDK
       run: |
+        cat $JAVA_HOME/release
         gmake -f tooling.mk jdk-jjml
         cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macos-default jdk-jjml-21-openj9
 
