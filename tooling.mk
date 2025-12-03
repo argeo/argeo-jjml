@@ -270,48 +270,16 @@ JDK_JJML_WIN_UPGRADE_ID=d87918b9-88e7-51fb-92d5-7186ca73314b
 #JDK_JJML_WIN_UPGRADE_ID=$(shell uuidgen --sha1 --namespace $(ARGEO_ENTERPRISE_NUMBER_UUID) --name $(JDK_JJML))
 
 msi-jdk-jjml:
-	# winget install -e --id WiXToolset.WiXToolset
-	"$(JLINK_HOME)/bin/jpackage" \
-	 --runtime-image "$(JDK_JJML_DIR)" \
-	 --type msi \
-	 --name "$(JDK_JJML)" \
-	 --app-version $(A2_LAYER_VERSION) \
-	 --dest "$(BUILD_BASE)" \
-	 --description "JDK $(JLINK_JAVA_RELEASE) with additional machine learning features" \
-	 --vendor "Argeo GmbH" \
-	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
-	 --win-dir-chooser \
-	 --win-per-user-install \
-	 --win-upgrade-uuid $(JDK_JJML_WIN_UPGRADE_ID) \
-	 --install-dir "$(JDK_JJML)" \
-	
-	mv $(BUILD_BASE)/$(JDK_JJML)-$(A2_LAYER_VERSION).msi \
-	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).msi
+	$(call a2_jpackage_create_pkg jdk-jjml,JDK $(JLINK_JAVA_RELEASE) with additional machine learning features,Argeo GmbH,$(JDK_JJML_WIN_UPGRADE_ID))
 
 install-msi-jdk-jjml:
-	msiexec /i "$(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).msi" /qn /norestart
+	msiexec /i "$(BUILD_BASE)/jdk-jjml-$(JLINK_SUFFIX)-$(A2_LAYER_VERSION).msi" /passive
 
 pkg-jdk-jjml:
-	# .pkg format does not support versions with more than 3 components
-	$(JLINK_HOME)/bin/jpackage \
-	 --runtime-image "$(JDK_JJML_DIR)" \
-	 --type pkg \
-	 --name "$(JDK_JJML)" \
-	 --app-version $(major).$(minor).$(micro) \
-	 --dest "$(BUILD_BASE)" \
-	 --description "JDK $(JLINK_JAVA_RELEASE) with additional machine learning features" \
-	 --vendor "Argeo GmbH" \
-	 --license-file "$(SDK_SRC_BASE)/NOTICE" \
-	
-	ls -lash $(BUILD_BASE)/$(JDK_JJML)-*
-	mv $(BUILD_BASE)/$(JDK_JJML)-$(major).$(minor).$(micro).pkg \
-	 $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).pkg
+	$(call a2_jpackage_create_pkg jdk-jjml,JDK $(JLINK_JAVA_RELEASE) with additional machine learning features,Argeo GmbH)
 
 install-pkg-jdk-jjml:
-	sudo installer -store -pkg "$(BUILD_BASE)/$(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).pkg" -target /
-	ls -lash /Library/Java/JavaVirtualMachines/
-	ls -lash /Library/Java/JavaVirtualMachines/$(JDK_JJML)
-	ls -lash /Library/Java/JavaVirtualMachines/$(JDK_JJML)/Contents/Home/bin
+	$(call a2_jpackage_install_pkg jdk-jjml)
 	
 # Note: On Windows, use dumpbin.exe in order to find depedencies of a DLL
 # (similar to ldd on Linux). E.g. "C:\Program Files (x86)\Microsoft Visual
