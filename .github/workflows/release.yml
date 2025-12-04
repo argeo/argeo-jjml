@@ -109,6 +109,7 @@ jobs:
       uses: ncipollo/release-action@v1
       continue-on-error: true
       with:
+        # Windows x86_64 is reference for portable jmod
         artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.msi,${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*.jmod"
         allowUpdates: true
         artifactErrorsFailBuild: true
@@ -213,14 +214,14 @@ jobs:
         cd ${{ github.workspace }}/argeo-jjml/bin && ln -s ../lib/llama-cli 
         
         chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-bench
-        cd ${{ github.workspace }}/argeo-jjml/bin && ln -s ../lib/llama-bench 
+        cd ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin && ln -s ../lib/llama-bench 
         
-        ls -lash ${{ github.workspace }}/argeo-jjml/bin
+        ls -lash ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin
         
         # Make sure build artifacts won't be loaded during tests
         rm -rf ${{ github.workspace }}/a2
         
-        ls -1 ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/jmods/
+        ls -1ash ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*-macos-*.jmod
 
     - name: Create JDK .pkg
       run: |
@@ -240,7 +241,7 @@ jobs:
       uses: ncipollo/release-action@v1
       continue-on-error: true
       with:
-        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.pkg,${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*.jmod"
+        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.pkg,${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*-macos-*.jmod"
         allowUpdates: true
         artifactErrorsFailBuild: true
         draft: true
