@@ -4,6 +4,7 @@
 -include sdk.mk
 include sdk/argeo-build/cmake/default.mk
 include sdk/argeo-build/jpms.mk
+-include native/tp/versions.mk
 
 A2_CATEGORY=org.argeo.jjml
 TARGET_NATIVE_OUTPUT_GGML=$(TARGET_NATIVE_OUTPUT)/org.argeo.tp.ggml
@@ -224,7 +225,7 @@ endif
 	
 	$(call a2_jmod_bare_module,$(JMOD_GGML))
 # TODO use the actual ggml version 
-	$(call a2_jmod_create_native,$(JMOD_GGML),$(A2_LAYER_VERSION))
+	$(call a2_jmod_create_native,$(JMOD_GGML),$(GGML_VERSION))
 
 jmod-ggml-llm-libs: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_GGML_LLM))
@@ -247,7 +248,7 @@ endif
 
 	$(call a2_jmod_bare_module,$(JMOD_GGML_LLM))
 # TODO use the actual llama.cpp version 
-	$(call a2_jmod_create_native,$(JMOD_GGML_LLM),$(A2_LAYER_VERSION))
+	$(call a2_jmod_create_native,$(JMOD_GGML_LLM),$(LLAMA_VERSION))
 
 #
 # DISTRIBUTABLE PACKAGES
