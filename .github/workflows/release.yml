@@ -35,7 +35,7 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}\argeo-jjml" >> "$GITHUB_OUTPUT"
-        echo "${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.tp.ggml" >> $GITHUB_PATH
+        echo "${{ github.workspace }}\a2\lib\x86_64-windows-std\org.argeo.tp.ggml" >> $GITHUB_PATH
 
     - uses: actions/setup-java@v5
       name: Setup Java
@@ -85,7 +85,7 @@ jobs:
     - name: Test
       run: >
         java -ea
-        "-Djava.library.path=${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.jjml;${{ github.workspace }}\a2\lib\x86_64-win32-default\org.argeo.tp.ggml"
+        "-Djava.library.path=${{ github.workspace }}\a2\lib\x86_64-windows-std\org.argeo.jjml;${{ github.workspace }}\a2\lib\x86_64-windows-std\org.argeo.tp.ggml"
         "--module-path=${{ github.workspace }}\a2\org.argeo.jjml"
         --add-modules org.argeo.jjml
         sdk/jbin/JjmlSmokeTests.java
@@ -101,15 +101,15 @@ jobs:
     - name: Test JJML JDK
       shell: cmd
       run: >
-        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\bin\java" -ea
-        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\man\examples\JjmlSmokeTests.java"
+        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-windows-std\bin\java" -ea
+        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-windows-std\man\examples\JjmlSmokeTests.java"
         allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Release
       uses: ncipollo/release-action@v1
       continue-on-error: true
       with:
-        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-x86_64-win32-default-*.msi"
+        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.msi,${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*.jmod"
         allowUpdates: true
         artifactErrorsFailBuild: true
         draft: true
@@ -119,7 +119,7 @@ jobs:
       continue-on-error: true
       shell: cmd
       run: >
-        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-win32-default\bin\llama-cli"
+        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-windows-std\bin\llama-cli"
         --no-conversation
         --model "%LOCALAPPDATA%\llama.cpp\allenai_OLMo-2-0425-1B-Instruct-GGUF_OLMo-2-0425-1B-Instruct-Q4_K_M.gguf"
         --prompt "Describe the Java programming language in two sentences."
@@ -141,8 +141,8 @@ jobs:
 
     - name: Prepare A2 output
       run: |
-        mkdir -p ${{ github.workspace }}/a2/lib/aarch64-macos-default/jmods
-        cd ${{ github.workspace }}/a2/lib && ln -s aarch64-macos-default local
+        mkdir -p ${{ github.workspace }}/a2/lib/aarch64-macos-std/jmods
+        cd ${{ github.workspace }}/a2/lib && ln -s aarch64-macos-std local
 
     - name: Set reusable strings
       id: strings
@@ -207,7 +207,7 @@ jobs:
     - name: Create JDK
       run: |
         gmake -f tooling.mk jdk-jjml
-        cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macos-default jdk-jjml-21-openj9
+        cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macos-std jdk-jjml-21-openj9
 
         chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
         cd ${{ github.workspace }}/argeo-jjml/bin && ln -s ../lib/llama-cli 
@@ -219,6 +219,8 @@ jobs:
         
         # Make sure build artifacts won't be loaded during tests
         rm -rf ${{ github.workspace }}/a2
+        
+        ls -1 ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/jmods/
 
     - name: Create JDK .pkg
       run: |
@@ -238,7 +240,7 @@ jobs:
       uses: ncipollo/release-action@v1
       continue-on-error: true
       with:
-        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-aarch64-macos-default-*.pkg"
+        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.pkg,${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*.jmod"
         allowUpdates: true
         artifactErrorsFailBuild: true
         draft: true
