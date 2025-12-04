@@ -194,7 +194,8 @@ jmod-jjml-jni: a2-prepare-output
 	 $(JMODS_BASE)/$(JMOD_JJML_JNI)/lib
 
 	$(call a2_jmod_bare_module,$(JMOD_JJML_JNI))
-	$(call a2_jmod_create_native,$(JMOD_JJML_JNI))
+# TODO use distinct version for JNI?
+	$(call a2_jmod_create_native,$(JMOD_JJML_JNI),$(A2_LAYER_VERSION))
 
 jmod-ggml-libs: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_GGML))
@@ -222,7 +223,8 @@ else
 endif
 	
 	$(call a2_jmod_bare_module,$(JMOD_GGML))
-	$(call a2_jmod_create_native,$(JMOD_GGML))
+# TODO use the actual ggml version 
+	$(call a2_jmod_create_native,$(JMOD_GGML),$(A2_LAYER_VERSION))
 
 jmod-ggml-llm-libs: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_GGML_LLM))
@@ -244,7 +246,8 @@ else
 endif
 
 	$(call a2_jmod_bare_module,$(JMOD_GGML_LLM))
-	$(call a2_jmod_create_native,$(JMOD_GGML_LLM))
+# TODO use the actual llama.cpp version 
+	$(call a2_jmod_create_native,$(JMOD_GGML_LLM),$(A2_LAYER_VERSION))
 
 #
 # DISTRIBUTABLE PACKAGES
