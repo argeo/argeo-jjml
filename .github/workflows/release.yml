@@ -209,19 +209,9 @@ jobs:
       run: |
         gmake -f tooling.mk jdk-jjml
         cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macos-std jdk-jjml-21-openj9
-
-        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
-        cd ${{ github.workspace }}/argeo-jjml/bin && ln -s ../lib/llama-cli 
-        
-        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-bench
-        cd ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin && ln -s ../lib/llama-bench 
-        
-        ls -lash ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/bin
         
         # Make sure build artifacts won't be loaded during tests
         rm -rf ${{ github.workspace }}/a2
-        
-        ls -1ash ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*-macos-*.jmod
 
     - name: Create JDK .pkg
       run: |
