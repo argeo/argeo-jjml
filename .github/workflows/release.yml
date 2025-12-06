@@ -20,7 +20,7 @@ jobs:
 ##
   windows-x86_64:
     runs-on: windows-2025
-    if: true
+    if: false
 
     steps:
     - uses: actions/checkout@v4
@@ -110,7 +110,7 @@ jobs:
       continue-on-error: true
       with:
         # Windows x86_64 is reference for portable jmod
-        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.msi,${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*org.argeo.*.jmod"
+        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.msi,${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*-windows-*org.argeo.*.jmod"
         allowUpdates: true
         artifactErrorsFailBuild: true
         draft: true
@@ -234,7 +234,7 @@ jobs:
       uses: ncipollo/release-action@v1
       continue-on-error: true
       with:
-        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.pkg,${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*-macos-*org.argeo.*.jmod"
+        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.pkg,${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*org.argeo.*.jmod"
         allowUpdates: true
         artifactErrorsFailBuild: true
         draft: true
