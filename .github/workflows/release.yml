@@ -40,7 +40,7 @@ jobs:
     - uses: actions/setup-java@v5
       name: Setup Java
       with:
-        distribution: 'temurin'
+        distribution: 'semeru'
         java-version: 21
 
     - name: libCURL
