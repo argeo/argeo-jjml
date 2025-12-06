@@ -183,7 +183,7 @@ jmod-jjml: a2-prepare-output
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/man/examples
 	$(COPY) -v sdk/jbin/*.java $(JMODS_BASE)/$(JMOD_JJML)/man/examples
 
-	$(call a2_jmod_create,$(JMOD_JJML))
+	$(call a2_jmod_create_lib,$(JMOD_JJML))
 	# list content
 	#$(JLINK_HOME)/bin/jmod list $(JLINK_A2_JMODS)/$(JMOD_JJML).jmod
 
