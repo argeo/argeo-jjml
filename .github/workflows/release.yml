@@ -19,7 +19,6 @@ jobs:
 ##
   windows-x86_64:
     runs-on: windows-2025
-    if: true
 
     steps:
     - uses: actions/checkout@v4
