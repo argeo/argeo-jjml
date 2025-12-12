@@ -3,7 +3,6 @@ name: JJML Release
 on:
   workflow_dispatch: # allows manual triggering
   push:
-    branches: [ "unstable" ]
     tags:
     - '*'
   pull_request:
@@ -20,7 +19,7 @@ jobs:
 ##
   windows-x86_64:
     runs-on: windows-2025
-    if: false
+    if: true
 
     steps:
     - uses: actions/checkout@v4
