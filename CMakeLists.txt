@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 
 project("argeo-jjml"
-DESCRIPTION "Enterprise-grade Java bindings for the ggml ecosystem"
+DESCRIPTION "Enterprise-grade Java bindings for the ggml ecosystem of machine learning libraries"
 )
 set(A2_CATEGORY org.argeo.jjml)
 

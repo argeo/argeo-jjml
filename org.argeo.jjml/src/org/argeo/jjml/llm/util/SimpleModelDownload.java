@@ -3,7 +3,6 @@ package org.argeo.jjml.llm.util;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,12 +22,6 @@ import java.util.function.DoubleConsumer;
  * full-fledged models management solution.
  */
 public class SimpleModelDownload {
-
-	/** Default location for GGUF model files. */
-	private final static Path MODELS_BASE = File.separatorChar == '/'
-			? Paths.get(System.getProperty("user.home"), ".cache", "llama.cpp")
-			: Paths.get(System.getProperty("user.home"), "AppData", "Local", "llama.cpp");
-
 	private int bufferSize = 1024 * 4096;
 
 	private final Path modelsBase;
@@ -143,6 +136,15 @@ public class SimpleModelDownload {
 	 */
 	/** The default path where GGUF files are downloaded and searched for. */
 	public static Path getDefaultModelsBase() {
-		return MODELS_BASE;
+		Path defaultModelsBase;
+		String os = System.getProperty("os.name").toLowerCase();
+		if (os.contains("win")) {
+			defaultModelsBase = Paths.get(System.getProperty("user.home"), "AppData", "Local", "llama.cpp");
+		} else if (os.contains("mac") || os.contains("darwin")) {
+			defaultModelsBase = Paths.get(System.getProperty("user.home"), "Library", "Caches", "llama.cpp");
+		} else { // Linux / Unix
+			defaultModelsBase = Paths.get(System.getProperty("user.home"), ".cache", "llama.cpp");
+		}
+		return defaultModelsBase;
 	}
 }

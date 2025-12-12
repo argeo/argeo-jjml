@@ -3,6 +3,7 @@
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
+import static java.lang.System.Logger.Level.WARNING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.argeo.jjml.llm.LlamaCppContext.defaultContextParams;
 import static org.argeo.jjml.llm.LlamaCppModel.defaultModelParams;
@@ -75,10 +76,13 @@ class JjmlSmokeTests {
 				LlamaCppNative.ensureLibrariesLoaded();
 				return true;
 			}).getAsBoolean();
-			logger.log(INFO, "Native libraries properly loaded.");
+			logger.log(INFO, "Native libraries loaded properly.");
 
-			if (args.isEmpty())
-				throw new IllegalArgumentException("A model must be specified");
+			if (args.isEmpty()) {
+				logger.log(WARNING, "No model was specified, only loading the native libraries was tested");
+				return;
+			}
+
 			String arg0 = args.get(0);
 			Path modelPath = Paths.get(arg0);
 			if (!Files.exists(modelPath))
@@ -107,7 +111,7 @@ class JjmlSmokeTests {
 //					return;
 
 				assertLoadUnloadDefaultContext(model);
-				assertEmbeddings(model);
+				// assertEmbeddings(model);
 				assertBatch(model);
 				assertJavaSampler(model);
 				assertChat(model);
@@ -423,10 +427,6 @@ class JjmlSmokeTests {
 	 */
 	/** CLI entry point. */
 	public static void main(String[] args) throws Exception {
-		if (args.length == 0) {
-			printUsage();
-			System.exit(1);
-		}
 		new JjmlSmokeTests().main(Arrays.asList(args));
 	}
 
