@@ -78,7 +78,7 @@ jobs:
       run: >
         java -ea
         -Djava.library.path=${{ steps.strings.outputs.build-output-dir }}/../a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml:${{ steps.strings.outputs.build-output-dir }}/../a2/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml
-        --module-path ${{ steps.strings.outputs.build-output-dir }}/../a2/org.argeo.jjml
+        --module-path ${{ steps.strings.outputs.build-output-dir }}/../a2/lib/org.argeo.jjml
         --add-modules org.argeo.jjml
         sdk/jbin/JjmlSmokeTests.java
         allenai/OLMo-2-0425-1B-Instruct-GGUF
