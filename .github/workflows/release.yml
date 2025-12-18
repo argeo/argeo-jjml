@@ -28,6 +28,9 @@ jobs:
         fetch-depth: '0'
         fetch-tags: 'true'
 
+    - name: Use latest third-parties
+      run: make -f tooling.mk tp-clone tp-checkout-latest
+
     - name: Set reusable strings
       id: strings
       shell: bash
@@ -117,6 +120,13 @@ jobs:
         fetch-depth: '0'
         fetch-tags: 'true'
 
+    - name: GNU Make installation
+      run: |
+        brew install make
+
+    - name: Use latest third-parties
+      run: gmake -f tooling.mk tp-clone tp-checkout-latest
+
     - name: Prepare A2 output
       run: |
         mkdir -p ${{ github.workspace }}/a2/lib/aarch64-macos-std/jmods
@@ -169,10 +179,6 @@ jobs:
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release -j $(sysctl -n hw.logicalcpu)
 
-    - name: GNU Make installation
-      run: |
-        brew install make
-
     - name: Create JDK
       run: |
         gmake -f tooling.mk jdk-jjml
@@ -215,6 +221,13 @@ jobs:
         submodules: 'true'
         fetch-depth: '0'
         fetch-tags: 'true'
+
+    - name: GNU Make installation
+      run: |
+        brew install make
+
+    - name: Use latest third-parties
+      run: gmake -f tooling.mk tp-clone tp-checkout-latest
 
     - name: Prepare A2 output
       run: |
@@ -266,10 +279,6 @@ jobs:
 
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release -j $(sysctl -n hw.logicalcpu)
-
-    - name: GNU Make installation
-      run: |
-        brew install make
 
     - name: Create JDK
       run: |

@@ -28,6 +28,9 @@ jobs:
         fetch-depth: '0'
         fetch-tags: 'true'
 
+    - name: Use latest third-parties
+      run: make -f tooling.mk tp-clone tp-checkout-oldest
+
     - uses: actions/setup-java@v5
       name: Setup Java
       with:
