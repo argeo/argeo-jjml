@@ -16,7 +16,8 @@ org.argeo.jjml
 JLINK_NATIVE_JMODS=\
 org.argeo.jjml.jni \
 org.argeo.tp.ggml.libs \
-org.argeo.tp.ggml.llm.libs
+org.argeo.tp.ggml.llm.libs \
+org.argeo.tp.ggml.whisper.libs \
 
 JLINK_RT_MODULES=java.base,jdk.jshell
 
@@ -81,6 +82,7 @@ rebuild-force-tp:
 		-DLLAMA_CURL=$(LLAMA_CURL) \
 		-DLLAMA_BUILD_COMMON=$(LLAMA_BUILD_TOOLS) \
 		-DLLAMA_BUILD_TOOLS=$(LLAMA_BUILD_TOOLS) \
+		-DLLAMA_BUILD_SERVER=$(LLAMA_BUILD_TOOLS) \
 		-DLLAMA_BUILD_EXAMPLES=OFF \
 		-DLLAMA_BUILD_TESTS=OFF \
 		\
@@ -146,6 +148,7 @@ JMOD_JJML=org.argeo.jjml
 JMOD_JJML_JNI=org.argeo.jjml.jni
 JMOD_GGML=org.argeo.tp.ggml.libs
 JMOD_GGML_LLM=org.argeo.tp.ggml.llm.libs
+JMOD_GGML_WHISPER=org.argeo.tp.ggml.whisper.libs
 
 #JJML_JMODS ?= $(JMOD_JJML),$(JMOD_JJML_JNI),$(JMOD_GGML),$(JMOD_GGML_LLM)
 
@@ -254,10 +257,23 @@ endif
 # TODO use the actual llama.cpp version 
 	$(call a2_jmod_create_native,$(JMOD_GGML_LLM),$(LLAMA_VERSION))
 
+jmod-ggml-whisper-libs: a2-prepare-output
+	$(call a2_jmod_prepare_output,$(JMOD_GGML_WHISPER))
+
+	$(COPY) native/tp/whisper.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/include
+	$(COPY) native/tp/whisper.cpp/LICENSE native/tp/whisper.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/legal
+	
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
+	# MSVC linker libs
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper.lib $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
+
+	$(call a2_jmod_bare_module,$(JMOD_GGML_WHISPER))
+	$(call a2_jmod_create_native,$(JMOD_GGML_WHISPER),$(WHISPER_VERSION))
+
 #
 # DISTRIBUTABLE PACKAGES
 #
-package-jmods: jmod-jjml jmod-jjml-jni jmod-ggml-libs jmod-ggml-llm-libs
+package-jmods: jmod-jjml jmod-jjml-jni jmod-ggml-libs jmod-ggml-llm-libs jmod-ggml-whisper-libs
 
 rt-jjml: package-jmods
 	$(call a2_jlink_create_rt,rt-jjml)
