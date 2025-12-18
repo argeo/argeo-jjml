@@ -143,16 +143,6 @@ JMOD_JJML_JNI=org.argeo.jjml.jni
 JMOD_GGML=org.argeo.tp.ggml.libs
 JMOD_GGML_LLM=org.argeo.tp.ggml.llm.libs
 
-#JJML_JMODS ?= $(JMOD_JJML),$(JMOD_JJML_JNI),$(JMOD_GGML),$(JMOD_GGML_LLM)
-
-#RT_JJML ?= rt-jjml
-#RT_JJML_DIR = $(BUILD_BASE)/$(RT_JJML)-$(JLINK_JAVA_RELEASE)-$(JLINK_JVM_VARIANT)-$(TARGET_DEB_ARCH)
-#RT_JJML_JMODS ?= java.base,jdk.compiler,jdk.jlink,jdk.jartool,jdk.jshell
-
-#JDK_JJML ?= jdk-jjml-$(JLINK_JAVA_RELEASE)-$(JLINK_JVM_VARIANT)
-#JDK_JJML_ARTIFACT = $(JDK_JJML)-$(TARGET_NATIVE_CATEGORY_PREFIX)
-#JDK_JJML_DIR = $(BUILD_BASE)/$(JDK_JJML_ARTIFACT)
-
 msvc-release:
 	$(MSVC_CMAKE) \
 		-B "$(BUILD_BASE)" \
@@ -217,14 +207,12 @@ ifeq ($(TARGET_OS),macos)
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-blas.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
 else
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-cpu*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	#$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-vulkan$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 	# MSVC linker libs
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
 endif
 	
 	$(call a2_jmod_bare_module,$(JMOD_GGML))
-# TODO use the actual ggml version 
 	$(call a2_jmod_create_native,$(JMOD_GGML),$(GGML_VERSION))
 
 jmod-ggml-llm-libs: a2-prepare-output
@@ -234,20 +222,13 @@ jmod-ggml-llm-libs: a2-prepare-output
 	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal
 	
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+
+ifeq ($(TARGET_OS),windows)
 	# MSVC linker libs
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.lib $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
-	#$(COPY) $(BUILD_BASE)/bin/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
-
-ifeq ($(TARGET_OS),macos)
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-bench* $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
-else
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-cli* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/llama-bench* $(JMODS_BASE)/$(JMOD_GGML_LLM)/bin
 endif
 
 	$(call a2_jmod_bare_module,$(JMOD_GGML_LLM))
-# TODO use the actual llama.cpp version 
 	$(call a2_jmod_create_native,$(JMOD_GGML_LLM),$(LLAMA_VERSION))
 
 #
@@ -255,19 +236,9 @@ endif
 #
 package-jmods: jmod-jjml jmod-jjml-jni jmod-ggml-libs jmod-ggml-llm-libs
 
-rt-jjml: package-jmods
-	$(call a2_jlink_create_rt,rt-jjml)
-
 jdk-jjml: package-jmods
-	$(call a2_jlink_create_jdk,jdk-jjml)
-	
-zip-jdk-jjml: jdk-jjml
-	# create archive
-	cd $(BUILD_BASE) && zip -r -q \
-	 $(JDK_JJML_ARTIFACT)-$(A2_LAYER_VERSION).zip \
-	 $(shell basename $(JDK_JJML_DIR))
-	#rm -rf $(JDK_JJML_DIR)
-
+	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM))
+	$(call a2_jlink_copy_categories,jdk-jjml,$(A2_CATEGORY))
 
 JDK_JJML_WIN_UPGRADE_ID=d87918b9-88e7-51fb-92d5-7186ca73314b
 # FIXME make it portable on non-MSYS Windows
