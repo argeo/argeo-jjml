@@ -2,6 +2,9 @@ name: JJML Release
 
 on:
   workflow_dispatch: # allows manual triggering
+  push:
+    tags:
+    - '*'
   pull_request:
     branches: [ "testing", "unstable" ]
 
