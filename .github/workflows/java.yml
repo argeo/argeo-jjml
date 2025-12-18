@@ -36,7 +36,7 @@ jobs:
 
     - name: Configure CMake
       run: >
-        cmake -B output
+        cmake -B build/argeo-jjml
         -DJAVA_HOME=$JAVA_HOME
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
@@ -51,4 +51,4 @@ jobs:
         -S ${{ github.workspace }}
 
     - name: Build
-      run: cmake --build output --config ${{ matrix.build_type }} -j $(nproc)
+      run: cmake --build build/argeo-jjml --config ${{ matrix.build_type }} -j $(nproc)
