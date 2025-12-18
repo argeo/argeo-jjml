@@ -218,7 +218,11 @@ jmod-ggml-llm-libs: a2-prepare-output
 	$(COPY) native/tp/llama.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_LLM)/include
 	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal
 	
+ifeq ($(TARGET_OS),macos)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+else
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+endif
 
 ifeq ($(TARGET_OS),windows)
 	# MSVC linker libs
