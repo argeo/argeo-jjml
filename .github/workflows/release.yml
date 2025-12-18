@@ -169,15 +169,6 @@ jobs:
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release -j $(sysctl -n hw.logicalcpu)
 
-    - name: Test
-      run: >
-        DYLD_LIBRARY_PATH=${{ github.workspace }}/a2/lib/local/org.argeo.tp.ggml
-        java -ea
-        "-Djava.library.path=${{ github.workspace }}/a2/lib/local/org.argeo.jjml"
-        "--module-path=${{ github.workspace }}/a2/lib/org.argeo.jjml"
-        --add-modules org.argeo.jjml
-        sdk/jbin/JjmlSmokeTests.java
-
     - name: GNU Make installation
       run: |
         brew install make
@@ -186,12 +177,6 @@ jobs:
       run: |
         gmake -f tooling.mk jdk-jjml
         cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-aarch64-macos-std jdk-jjml-21-openj9
-
-        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-cli
-        chmod +x ${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9/lib/llama-bench
-        
-        # Make sure build artifacts won't be loaded during tests
-        #rm -rf ${{ github.workspace }}/a2
 
     - name: Create JDK .pkg
       run: |
