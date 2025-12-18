@@ -17,19 +17,24 @@ jobs:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
         build_type: [Release]
         c_compiler: [gcc, clang]
+        cpu_all_variants: [ON, OFF]
         include:
           - os: ubuntu-24.04
             c_compiler: gcc
             cpp_compiler: g++
+            cpu_all_variants: ON
           - os: ubuntu-24.04-arm
             c_compiler: gcc
             cpp_compiler: g++
+            cpu_all_variants: OFF
           - os: ubuntu-24.04
             c_compiler: clang
             cpp_compiler: clang++
+            cpu_all_variants: ON
           - os: ubuntu-24.04-arm
             c_compiler: clang
             cpp_compiler: clang++
+            cpu_all_variants: OFF
 
     steps:
     - uses: actions/checkout@v4
@@ -61,8 +66,8 @@ jobs:
         -DLLAMA_BUILD_TOOLS=OFF
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_TESTS=OFF
-        -DGGML_BACKEND_DL=OFF
-        -DGGML_CPU_ALL_VARIANTS=OFF
+        -DGGML_BACKEND_DL=${{ matrix.cpu_all_variants }}
+        -DGGML_CPU_ALL_VARIANTS=${{ matrix.cpu_all_variants }}
         -DGGML_VULKAN=OFF
         -S ${{ github.workspace }}
 
