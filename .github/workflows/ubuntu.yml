@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Java ${{ matrix.c_compiler }} (${{ matrix.os }})
+    name: ${{ matrix.os }} (${{ matrix.c_compiler }})
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -58,8 +58,8 @@ jobs:
         -DLLAMA_BUILD_TOOLS=OFF
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_TESTS=OFF
-        -DGGML_BACKEND_DL=ON
-        -DGGML_CPU_ALL_VARIANTS=ON
+        -DGGML_BACKEND_DL=OFF
+        -DGGML_CPU_ALL_VARIANTS=OFF
         -DGGML_VULKAN=OFF
         -S ${{ github.workspace }}
 
