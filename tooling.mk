@@ -133,8 +133,8 @@ else
 endif
 
 tp-clone:
-	git clone --single-branch --branch master https://github.com/ggml-org/ggml.git native/tp/ggml
-	git clone --single-branch --branch master https://github.com/ggml-org/llama.cpp.git native/tp/llama.cpp
+	if [ ! -d "native/tp/ggml" ]; then git clone --single-branch --branch master https://github.com/ggml-org/ggml.git native/tp/ggml; fi;
+	if [ ! -d "native/tp/llama.cpp" ]; then git clone --single-branch --branch master https://github.com/ggml-org/llama.cpp.git native/tp/llama.cpp; fi;
 
 tp-checkout-oldest:
 	-git -C native/tp/ggml fetch origin $(TP_GGML_OLDEST)
