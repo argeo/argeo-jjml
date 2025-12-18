@@ -137,17 +137,17 @@ tp-clone:
 	if [ ! -d "native/tp/llama.cpp" ]; then git clone --single-branch --branch master https://github.com/ggml-org/llama.cpp.git native/tp/llama.cpp; fi;
 
 tp-checkout-oldest:
-	-git -C native/tp/ggml fetch origin $(TP_GGML_OLDEST)
+	git -C native/tp/ggml fetch origin
 	git -C native/tp/ggml checkout $(TP_GGML_OLDEST)
 
-	-git -C native/tp/llama.cpp fetch origin $(TP_LLAMA_OLDEST)
+	git -C native/tp/llama.cpp fetch origin
 	git -C native/tp/llama.cpp checkout $(TP_LLAMA_OLDEST)
 
 tp-checkout-latest:
-	-git -C native/tp/ggml fetch origin $(TP_GGML_LATEST)
+	git -C native/tp/ggml fetch origin
 	git -C native/tp/ggml checkout $(TP_GGML_LATEST)
 
-	-git -C native/tp/llama.cpp fetch origin $(TP_LLAMA_LATEST)
+	git -C native/tp/llama.cpp fetch origin
 	git -C native/tp/llama.cpp checkout $(TP_LLAMA_LATEST)
 
 #
@@ -187,9 +187,10 @@ jmod-ggml-libs: a2-prepare-output
 	$(COPY) native/tp/ggml/include/*.h $(JMODS_BASE)/$(JMOD_GGML)/include
 	$(COPY) native/tp/ggml/LICENSE native/tp/ggml/AUTHORS $(JMODS_BASE)/$(JMOD_GGML)/legal
 	
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 ifeq ($(TARGET_OS),macos)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.0.$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.0.$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+
 	# When GGML_BACKEND_DL=ON, *.so are generated,
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-cpu*.so $(JMODS_BASE)/$(JMOD_GGML)/lib
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-metal.so $(JMODS_BASE)/$(JMOD_GGML)/lib
@@ -199,6 +200,9 @@ ifeq ($(TARGET_OS),macos)
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-metal.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-blas.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
 else
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-cpu*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 	# MSVC linker libs
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
