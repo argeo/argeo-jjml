@@ -188,8 +188,8 @@ jmod-ggml-libs: a2-prepare-output
 	$(COPY) native/tp/ggml/LICENSE native/tp/ggml/AUTHORS $(JMODS_BASE)/$(JMOD_GGML)/legal
 	
 ifeq ($(TARGET_OS),macos)
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.0.$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.0.$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 
 	# When GGML_BACKEND_DL=ON, *.so are generated,
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-cpu*.so $(JMODS_BASE)/$(JMOD_GGML)/lib
