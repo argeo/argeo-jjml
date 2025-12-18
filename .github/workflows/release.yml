@@ -41,12 +41,6 @@ jobs:
         distribution: 'semeru'
         java-version: 21
 
-    - name: libCURL
-      id: get_libcurl
-      uses: ./.github/actions/windows-setup-curl
-      with:
-        architecture: win64
-
     - name: ccache
       uses: ggml-org/ccache-action@v1.2.16
       with:
@@ -54,8 +48,6 @@ jobs:
         evict-old-files: 1d
 
     - name: Configure CMake
-      env:
-        CURL_PATH: ${{ steps.get_libcurl.outputs.curl_path }}
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DJAVA_HOME=%JAVA_HOME%
@@ -64,15 +56,12 @@ jobs:
         -DA2_INSTALL_MODE=a2
         -DGGML_CCACHE=ON
         -DLLAMA_CURL=OFF
-        -DCURL_LIBRARY="$env:CURL_PATH/lib/libcurl.dll.a" -DCURL_INCLUDE_DIR="$env:CURL_PATH/include"
-        -DLLAMA_BUILD_COMMON=ON
-        -DLLAMA_BUILD_TOOLS=ON
+        -DLLAMA_BUILD_COMMON=OFF
+        -DLLAMA_BUILD_TOOLS=OFF
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_TESTS=OFF
         -DGGML_BACKEND_DL=ON
         -DGGML_CPU_ALL_VARIANTS=ON
-        -DGGML_VULKAN=OFF
-        -DGGML_BLAS=OFF
         -S ${{ github.workspace }}
 
     - name: Build
@@ -113,16 +102,6 @@ jobs:
         artifactErrorsFailBuild: true
         draft: true
         omitBody: true
-
-    - name: Test llama-cli
-      continue-on-error: true
-      shell: cmd
-      run: >
-        "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-windows-std\bin\llama-cli"
-        --no-conversation
-        --model "%LOCALAPPDATA%\llama.cpp\allenai_OLMo-2-0425-1B-Instruct-GGUF_OLMo-2-0425-1B-Instruct-Q4_K_M.gguf"
-        --prompt "Describe the Java programming language in two sentences."
-
 
 ##
 ## MACOS
@@ -175,8 +154,8 @@ jobs:
         -DGGML_METAL_USE_BF16=ON
         -DGGML_METAL_EMBED_LIBRARY=ON
         -DLLAMA_CURL=OFF
-        -DLLAMA_BUILD_COMMON=ON
-        -DLLAMA_BUILD_TOOLS=ON
+        -DLLAMA_BUILD_COMMON=OFF
+        -DLLAMA_BUILD_TOOLS=OFF
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_TESTS=OFF
         -DBUILD_SHARED_LIBS=ON
@@ -237,13 +216,3 @@ jobs:
         artifactErrorsFailBuild: true
         draft: true
         omitBody: true
-
-    - name: Test llama-cli
-      run: >
-        DYLD_LIBRARY_PATH=/Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/lib
-        /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/lib/llama-cli
-        --no-conversation
-        --model /Users/runner/Library/Caches/llama.cpp/allenai_OLMo-2-0425-1B-Instruct-GGUF_OLMo-2-0425-1B-Instruct-Q4_K_M.gguf
-        --prompt "Describe the Java programming language in two sentences."
-
-
