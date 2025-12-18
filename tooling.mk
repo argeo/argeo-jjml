@@ -7,18 +7,12 @@ include sdk/argeo-build/jpms.mk
 -include native/tp/versions.mk
 
 A2_CATEGORY=org.argeo.jjml
-TARGET_NATIVE_OUTPUT_GGML=$(TARGET_NATIVE_OUTPUT)/org.argeo.tp.ggml
-TARGET_NATIVE_OUTPUT_JJML=$(TARGET_NATIVE_OUTPUT)/$(A2_CATEGORY)
 
-MODULES=\
-org.argeo.jjml
+TP_GGML_OLDEST=v0.9.4
+TP_LLAMA_OLDEST=b6641
 
-JLINK_NATIVE_JMODS=\
-org.argeo.jjml.jni \
-org.argeo.tp.ggml.libs \
-org.argeo.tp.ggml.llm.libs
-
-JLINK_RT_MODULES=java.base,jdk.jshell
+TP_GGML_LATEST=ac0c8be49c7458bcc6eae164244d7335ce9cc184
+TP_LLAMA_LATEST=b7446
 
 ##
 # Run make clean / all / install for the default CMake build.
@@ -32,6 +26,9 @@ JLINK_RT_MODULES=java.base,jdk.jshell
 # - to ensure the target binaries are built from the local sources submodules
 # - to build the tools and examples, so that they can be browsed, debugged,
 # and hacked in an IDE.
+
+TARGET_NATIVE_OUTPUT_GGML=$(TARGET_NATIVE_OUTPUT)/org.argeo.tp.ggml
+TARGET_NATIVE_OUTPUT_JJML=$(TARGET_NATIVE_OUTPUT)/$(A2_CATEGORY)
 
 # Activate various features via environment variables:
 GGML_BLAS ?= OFF
@@ -135,6 +132,24 @@ else
 	pacman -S --needed mingw-w64-ucrt-x86_64-vulkan-devel mingw-w64-ucrt-x86_64-shaderc
 endif
 
+tp-clone:
+	git clone --single-branch --branch master https://github.com/ggml-org/ggml.git native/tp/ggml
+	git clone --single-branch --branch master https://github.com/ggml-org/llama.cpp.git native/tp/llama.cpp
+
+tp-checkout-oldest:
+	-git -C native/tp/ggml fetch origin $(TP_GGML_OLDEST)
+	git -C native/tp/ggml checkout $(TP_GGML_OLDEST)
+
+	-git -C native/tp/llama.cpp fetch origin $(TP_LLAMA_OLDEST)
+	git -C native/tp/llama.cpp checkout $(TP_LLAMA_OLDEST)
+
+tp-checkout-latest:
+	-git -C native/tp/ggml fetch origin $(TP_GGML_LATEST)
+	git -C native/tp/ggml checkout $(TP_GGML_LATEST)
+
+	-git -C native/tp/llama.cpp fetch origin $(TP_LLAMA_LATEST)
+	git -C native/tp/llama.cpp checkout $(TP_LLAMA_LATEST)
+
 #
 # PACKAGING
 #
@@ -142,28 +157,6 @@ JMOD_JJML=org.argeo.jjml
 JMOD_JJML_JNI=org.argeo.jjml.jni
 JMOD_GGML=org.argeo.tp.ggml.libs
 JMOD_GGML_LLM=org.argeo.tp.ggml.llm.libs
-
-msvc-release:
-	$(MSVC_CMAKE) \
-		-B "$(BUILD_BASE)" \
-		-DJJML_FORCE_BUILD_TP=ON \
-		-DA2_INSTALL_MODE=a2 \
-		-DJAVA_HOME="$(JAVA_HOME)" \
-		\
-		-DCMAKE_LIBRARY_ARCHITECTURE=x86_64-win32-default \
-		-DLLAMA_BUILD_COMMON=ON \
-		-DLLAMA_BUILD_TOOLS=ON \
-		-DLLAMA_CURL=OFF \
-		-DGGML_NATIVE=OFF \
-		-DGGML_CPU_ALL_VARIANTS=ON \
-		-DGGML_OPENMP=ON \
-		-DGGML_BACKEND_DL=ON \
-		-DGGML_VULKAN=OFF \
-		"$(SDK_SRC_BASE)"
-
-	$(MSVC_CMAKE) --build $(BUILD_BASE) --config Release -j $(shell nproc)
-	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
-	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 
 jmod-jjml: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_JJML))
