@@ -97,7 +97,7 @@ jobs:
       continue-on-error: true
       with:
         # Windows x86_64 is reference for portable jmod
-        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.msi,${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*-windows-*org.argeo.*.jmod"
+        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.msi,${{ github.workspace }}/a2/lib/x86_64-windows-std/jmods/21/*.jmod,${{ github.workspace }}/a2/jmods/21/*.jmod"
         allowUpdates: true
         artifactErrorsFailBuild: true
         draft: true
@@ -196,8 +196,104 @@ jobs:
       uses: ncipollo/release-action@v1
       continue-on-error: true
       with:
-        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.pkg,${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*/jmods/*org.argeo.*.jmod"
+        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.pkg,${{ github.workspace }}/a2/lib/local/jmods/21/*.jmod"
         allowUpdates: true
         artifactErrorsFailBuild: true
         draft: true
         omitBody: true
+
+  macos-x86_64:
+    runs-on: macos-13
+
+    steps:
+    - uses: actions/checkout@v4
+      name: Clone recursively with tags
+      with:
+        submodules: 'true'
+        fetch-depth: '0'
+        fetch-tags: 'true'
+
+    - name: Prepare A2 output
+      run: |
+        mkdir -p ${{ github.workspace }}/a2/lib/x86_64-macos-std/jmods
+        cd ${{ github.workspace }}/a2/lib && ln -s x86_64-macos-std local
+
+    - name: Set reusable strings
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/argeo-jjml" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/setup-java@v5
+      name: Setup Java
+      with:
+        distribution: 'semeru'
+        java-version: 21
+
+    - name: ccache
+      uses: ggml-org/ccache-action@v1.2.16
+      with:
+        key: macos-arm64
+        evict-old-files: 1d
+
+    - name: Configure CMake
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DJAVA_HOME=$JAVA_HOME
+        -DJJML_FORCE_BUILD_TP=ON
+        -DA2_INSTALL_MODE=a2
+        -DCMAKE_SKIP_BUILD_RPATH=ON
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
+        -DGGML_NATIVE=OFF
+        -DGGML_CCACHE=ON
+        -DGGML_METAL_USE_BF16=ON
+        -DGGML_METAL_EMBED_LIBRARY=ON
+        -DLLAMA_CURL=OFF
+        -DLLAMA_BUILD_COMMON=OFF
+        -DLLAMA_BUILD_TOOLS=OFF
+        -DLLAMA_BUILD_EXAMPLES=OFF
+        -DLLAMA_BUILD_TESTS=OFF
+        -DBUILD_SHARED_LIBS=ON
+        -DGGML_BACKEND_DL=OFF
+        -DGGML_CPU_ALL_VARIANTS=OFF
+        -DGGML_VULKAN=OFF
+        -DGGML_BLAS=OFF
+        -DGGML_METAL=OFF
+        -S ${{ github.workspace }}
+
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release -j $(sysctl -n hw.logicalcpu)
+
+    - name: GNU Make installation
+      run: |
+        brew install make
+
+    - name: Create JDK
+      run: |
+        gmake -f tooling.mk jdk-jjml
+        cd ${{ github.workspace }}/argeo-jjml && ln -s jdk-jjml-21-openj9-x86_64-macos-std jdk-jjml-21-openj9
+
+    - name: Create JDK .pkg
+      run: |
+        gmake -f tooling.mk pkg-jdk-jjml
+
+    - name: Test JDK .pkg installation
+      run: |
+        gmake -f tooling.mk install-pkg-jdk-jjml
+
+    - name: Test JJML JDK
+      run: >
+        /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/bin/java -ea
+        /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/man/examples/JjmlSmokeTests.java
+        allenai/OLMo-2-0425-1B-Instruct-GGUF
+
+    - name: Release
+      uses: ncipollo/release-action@v1
+      continue-on-error: true
+      with:
+        artifacts: "${{ github.workspace }}/argeo-jjml/jdk-jjml-21-openj9-*.pkg,${{ github.workspace }}/a2/lib/local/jmods/21/*.jmod"
+        allowUpdates: true
+        artifactErrorsFailBuild: true
+        draft: true
+        omitBody: true
+        
