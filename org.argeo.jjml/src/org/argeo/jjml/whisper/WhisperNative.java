@@ -1,10 +1,10 @@
-package org.argeo.jjml.mtmd;
+package org.argeo.jjml.whisper;
 
 import org.argeo.jjml.llm.LlamaCppNative;
 
-/** Availability of the native bindings to libmtmd. */
-public class MtmdNative {
-	private final static String JJML_MTMD_LIBRARY_NAME = "Java_org_argeo_jjml_mtmd";
+/** Availability of the native bindings to whisper.cpp. */
+public class WhisperNative {
+	private final static String JJML_WHISPER_LIBRARY_NAME = "Java_org_argeo_jjml_whisper";
 
 	private static boolean librariesLoaded = false;
 
@@ -29,7 +29,7 @@ public class MtmdNative {
 
 	synchronized static void loadLibraries() {
 		checkLibrariesNotLoaded();
-		System.loadLibrary(JJML_MTMD_LIBRARY_NAME);
+		System.loadLibrary(JJML_WHISPER_LIBRARY_NAME);
 		librariesLoaded = true;
 	}
 
@@ -40,6 +40,6 @@ public class MtmdNative {
 	}
 
 	/** singleton */
-	private MtmdNative() {
+	private WhisperNative() {
 	}
 }

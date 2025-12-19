@@ -9,7 +9,7 @@ import org.argeo.jjml.llm.LlamaCppNative;
 public class WhisperCppContext implements LongSupplier, AutoCloseable {
 	static {
 		LlamaCppNative.ensureLibrariesLoaded();
-		System.loadLibrary("Java_org_argeo_jjml_whisper");
+		WhisperNative.ensureLibrariesLoaded();
 	}
 
 	private final long pointer;
