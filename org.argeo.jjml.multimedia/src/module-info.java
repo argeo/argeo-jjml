@@ -1,7 +1,4 @@
 module org.argeo.jjml.multimedia {
-	exports org.argeo.jjml.mtmd;
-	exports org.argeo.jjml.whisper;
-	
 	exports org.argeo.jjml.imageio.mtmd;
 	exports org.argeo.jjml.sound.whisper;
 
