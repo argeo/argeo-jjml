@@ -168,6 +168,7 @@ tp-checkout-latest:
 # PACKAGING
 #
 JMOD_JJML=org.argeo.jjml
+JMOD_JJML_MULTIMEDIA=org.argeo.jjml.multimedia
 JMOD_JJML_JNI=org.argeo.jjml.jni
 JMOD_GGML=org.argeo.tp.ggml.libs
 JMOD_GGML_LLM=org.argeo.tp.ggml.llm.libs
@@ -184,6 +185,16 @@ jmod-jjml: a2-prepare-output
 	$(call a2_jmod_create_lib,$(JMOD_JJML))
 	# list content
 	#$(JLINK_HOME)/bin/jmod list $(JLINK_A2_JMODS)/$(JMOD_JJML).jmod
+
+jmod-jjml-multimedia: a2-prepare-output
+	$(call a2_jmod_prepare_output,$(JMOD_JJML_MULTIMEDIA))
+	$(COPY) COPYING.LESSER NOTICE $(JMODS_BASE)/$(JMOD_JJML_MULTIMEDIA)/legal
+	
+	# examples
+	#mkdir -p $(JMODS_BASE)/$(JMOD_JJML_MULTIMEDIA)/man/examples
+	#$(COPY) -v sdk/jbin/*.java $(JMODS_BASE)/$(JMOD_JJML_MULTIMEDIA)/man/examples
+
+	$(call a2_jmod_create_lib,$(JMOD_JJML_MULTIMEDIA))
 
 jmod-jjml-jni: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_JJML_JNI))
@@ -270,10 +281,10 @@ endif
 #
 # DISTRIBUTABLE PACKAGES
 #
-package-jmods: jmod-jjml jmod-jjml-jni jmod-ggml-libs jmod-ggml-llm-libs jmod-ggml-whisper-libs
+package-jmods: jmod-jjml jmod-jjml-multimedia jmod-jjml-jni jmod-ggml-libs jmod-ggml-llm-libs jmod-ggml-whisper-libs
 
 jdk-jjml: package-jmods
-	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM))
+	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_MULTIMEDIA) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM))
 	$(call a2_jlink_copy_categories,jdk-jjml,$(A2_CATEGORY))
 
 JDK_JJML_WIN_UPGRADE_ID=d87918b9-88e7-51fb-92d5-7186ca73314b
