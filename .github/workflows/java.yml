@@ -1,0 +1,57 @@
+name: All Java versions
+
+on:
+  workflow_dispatch: # allows manual triggering
+  pull_request:
+    branches: [ "testing", "unstable" ]
+
+jobs:
+  build:
+    name: Java ${{ matrix.java }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os: [ubuntu-22.04]
+        build_type: [RelWithDebInfo]
+        c_compiler: [gcc]
+        cpp_compiler: [g++]
+        java: ['11', '17', '21', '25' ]
+
+    steps:
+    - uses: actions/checkout@v4
+      name: Clone recursively with tags
+      with:
+        submodules: 'true'
+        fetch-depth: '0'
+        fetch-tags: 'true'
+
+    - name: Use latest third-parties
+      run: make -f tooling.mk tp-clone tp-checkout-oldest
+
+    - uses: actions/setup-java@v5
+      name: Setup Java
+      with:
+        distribution: 'temurin'
+        java-version: ${{ matrix.java }}
+
+    - name: Configure CMake
+      run: >
+        cmake -B build/argeo-jjml
+        -DJAVA_HOME=$JAVA_HOME
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DJJML_FORCE_BUILD_TP=ON
+        -DLLAMA_CURL=OFF
+        -DLLAMA_BUILD_COMMON=OFF
+        -DLLAMA_BUILD_TOOLS=OFF
+        -DLLAMA_BUILD_EXAMPLES=OFF
+        -DLLAMA_BUILD_TESTS=OFF
+        -DGGML_NATIVE=ON
+        -S ${{ github.workspace }}
+
+    - name: Build
+      run: cmake --build build/argeo-jjml --config ${{ matrix.build_type }} -j $(nproc)
