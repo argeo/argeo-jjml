@@ -21,7 +21,7 @@ import org.argeo.jjml.llm.params.ModelParams;
 import org.argeo.jjml.llm.util.InstructRole;
 import org.argeo.jjml.llm.util.SimpleModelDownload;
 import org.argeo.jjml.mtmd.MtmdNative;
-import org.argeo.jjml.whisper.WhisperCppContext;
+import org.argeo.jjml.whisper.WhisperNative;
 
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -32,8 +32,8 @@ public class MainActivity extends AppCompatActivity {
 
     static {
         LlamaCppNative.ensureLibrariesLoaded();
-        MtmdNative.ensureLibrariesLoaded();
-        System.out.println(WhisperCppContext.class);
+        System.out.println("MTMD: " + MtmdNative.isAvailable());
+        System.out.println("Whisper: " + WhisperNative.isAvailable());
     }
 
     private ActivityMainBinding binding;

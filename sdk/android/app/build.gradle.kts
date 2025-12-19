@@ -19,7 +19,6 @@ android {
                 arguments.add("-DLLAMA_BUILD_COMMON=ON")
                 arguments.add("-DLLAMA_BUILD_TOOLS=ON")
                 arguments.add("-DLLAMA_CURL=OFF")
-//                arguments.add("-DJAVA_HOME=/usr/lib/jvm/java-17-openj9-amd64")
                 arguments.add("-DCMAKE_BUILD_TYPE=Release")
             }
         }
