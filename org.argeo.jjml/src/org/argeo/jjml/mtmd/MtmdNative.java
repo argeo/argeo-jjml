@@ -3,7 +3,7 @@ package org.argeo.jjml.mtmd;
 import org.argeo.jjml.llm.LlamaCppNative;
 
 public class MtmdNative {
-	private final static String JJML_MTMD_LIBRARY_NAME = "Java_" + MtmdNative.class.getPackageName().replace('.', '_');
+	private final static String JJML_MTMD_LIBRARY_NAME = "Java_org_argeo_jjml_mtmd";
 
 	private static boolean librariesLoaded = false;
 	/*

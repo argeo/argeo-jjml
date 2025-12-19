@@ -20,6 +20,8 @@ import org.argeo.jjml.llm.params.ModelParam;
 import org.argeo.jjml.llm.params.ModelParams;
 import org.argeo.jjml.llm.util.InstructRole;
 import org.argeo.jjml.llm.util.SimpleModelDownload;
+import org.argeo.jjml.mtmd.MtmdNative;
+import org.argeo.jjml.whisper.WhisperCppContext;
 
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -29,7 +31,9 @@ import java.nio.file.Paths;
 public class MainActivity extends AppCompatActivity {
 
     static {
-         LlamaCppNative.ensureLibrariesLoaded();
+        LlamaCppNative.ensureLibrariesLoaded();
+        MtmdNative.ensureLibrariesLoaded();
+        System.out.println(WhisperCppContext.class);
     }
 
     private ActivityMainBinding binding;
