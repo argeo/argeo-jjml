@@ -1,4 +1,4 @@
-package org.argeo.jjml.whisper.sound;
+package org.argeo.jjml.sound.whisper;
 
 import static org.argeo.jjml.whisper.WhisperCppProcessor.WHISPER_SAMPLE_RATE;
 

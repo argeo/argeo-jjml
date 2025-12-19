@@ -1,4 +1,4 @@
-package org.argeo.jjml.mtmd.awt;
+package org.argeo.jjml.imageio.mtmd;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;

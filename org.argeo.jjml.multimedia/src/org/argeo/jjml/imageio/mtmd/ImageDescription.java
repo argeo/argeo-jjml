@@ -1,4 +1,4 @@
-package org.argeo.jjml.mtmd.awt;
+package org.argeo.jjml.imageio.mtmd;
 
 import static org.argeo.jjml.llm.LlamaCppContext.defaultContextParams;
 

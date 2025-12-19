@@ -1,4 +1,4 @@
-package org.argeo.jjml.whisper.sound;
+package org.argeo.jjml.sound.whisper;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
