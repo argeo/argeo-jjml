@@ -114,6 +114,11 @@
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.79353764" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="GGML_BACKEND_DL"/>
+									<listOptionValue builtIn="false" value="LOG_WRN"/>
+									<listOptionValue builtIn="false" value="LOG_ERR"/>
+									<listOptionValue builtIn="false" value="LOG_INF"/>
+									<listOptionValue builtIn="false" value="LOG_DBG"/>
+									<listOptionValue builtIn="false" value="LOG"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.295163651" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
