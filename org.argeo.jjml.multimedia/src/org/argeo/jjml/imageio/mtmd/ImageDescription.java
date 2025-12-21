@@ -23,6 +23,13 @@ import org.argeo.jjml.mtmd.MtmdNative;
 import org.argeo.jjml.mtmd.MtmdProcessor;
 
 public class ImageDescription {
+	private final static String SYSTEM_PROMPT_MINISTRAL_THINK = """
+			# HOW YOU SHOULD THINK AND ANSWER
+
+			First draft your thinking process (inner monologue) until you arrive at a response. Format your response using Markdown, and use LaTeX for any mathematical equations. Write both your thoughts and the response in the same language as the input.
+
+			Your thinking process must follow the template below:[THINK]Your thoughts or/and draft, like working through an exercise on scratch paper. Be as casual and as long as you want until you are confident to generate the response to the user.[/THINK]Here, provide a self-contained response.
+					""";
 
 	public static void main(String[] args) throws Exception {
 		if (args.length < 4)
@@ -72,9 +79,12 @@ public class ImageDescription {
 				InputStream imageIn = Files.newInputStream(imagePath); //
 		) {
 			MtmdProcessor processor = new MtmdProcessor(context, chain, mtmdContext);
-//			String prompt = "Just describe this image, without explanations." + MtmdBackend.getDefaultMarker();
-			String formatted = model.formatChatMessages(new LlamaCppChatMessage(InstructRole.USER, //
-					prompt + MtmdBackend.getDefaultMarker()));
+//			LlamaCppChatMessage systemPrompt = new LlamaCppChatMessage(InstructRole.SYSTEM,
+//					SYSTEM_PROMPT_MINISTRAL_THINK);
+			LlamaCppChatMessage systemPrompt = null;
+			String formatted = model.formatChatMessages(systemPrompt,
+					new LlamaCppChatMessage(InstructRole.USER, //
+					MtmdBackend.getDefaultMarker() + prompt));
 			MtmdImageBitmap bitmap = ImageIoBitmap.load(imageIn);
 			MtmdBitmap[] bitmaps = new MtmdBitmap[] { bitmap };
 
