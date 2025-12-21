@@ -103,11 +103,11 @@ public class LlamaCppVocabulary {
 	}
 
 	final public String deTokenize(IntBuffer in) {
-		return deTokenize(in, true, true);
+		return deTokenize(in, true, false);
 	}
 
 	final public void deTokenize(IntBuffer in, ByteBuffer out) throws IndexOutOfBoundsException {
-		deTokenize(in, out, true, true);
+		deTokenize(in, out, true, false);
 	}
 
 	/*

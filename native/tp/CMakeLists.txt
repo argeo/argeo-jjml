@@ -55,7 +55,7 @@ if(NOT EXISTS "${llama_LIBRARY}")
 	else()
 		set_target_properties(llama PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
 		if(LLAMA_BUILD_TOOLS)
-			set_target_properties(mtmd PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
+			set_target_properties(mtmd PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
 		endif()
 	endif()
 	if(LLAMA_BUILD_TOOLS)
@@ -63,6 +63,25 @@ if(NOT EXISTS "${llama_LIBRARY}")
 		set_target_properties(llama-bench PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
 	endif()
 	message(STATUS "Build llama.cpp locally from submodule native/tp/llama.cpp") 
+endif()
+
+set(TARGET_NATIVE_OUTPUT_WHISPER ${TARGET_NATIVE_OUTPUT_GGML})
+if(NOT EXISTS "${whisper_LIBRARY}")
+	# workaround for disappearance of GGML_KQ_MASK_PAD
+	add_compile_definitions(GGML_KQ_MASK_PAD=64)
+	
+	add_subdirectory(whisper.cpp) # build locally
+	if(MINGW)
+		set_target_properties(whisper PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_WHISPER})
+	elseif(MSVC)
+		set_target_properties(whisper PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_WHISPER}>)
+	else()
+		set_target_properties(whisper PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_WHISPER})
+	endif()
+	if(WHISPER_BUILD_EXAMPLES)
+		set_target_properties(whisper-cli PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_WHISPER}>)
+	endif()
+	message(STATUS "Build whisper.cpp locally from submodule native/tp/whisper.cpp") 
 endif()
 
 # ggml and llama.cpp versions
@@ -82,6 +101,16 @@ file(STRINGS ggml/CMakeLists.txt VersionSetter
 string(REGEX REPLACE "(^[ ]*set\\(GGML_VERSION_PATCH[ ]*)([^\\)]*)\\)" "\\2"
        GGML_VERSION_PATCH ${VersionSetter})
 
+# hack to retrieve whisper.cpp base version
+file(STRINGS whisper.cpp/CMakeLists.txt VersionSetter
+     REGEX "[ \t]*project\\(\"whisper.cpp\" VERSION")
+string(REGEX MATCH "VERSION[ ]+([^ )]+)" version_param "${VersionSetter}")
+if(version_param)
+    set(WHISPER_CMAKE_VERSION "${CMAKE_MATCH_1}")
+endif()
+message(STATUS "WHISPER_CMAKE_VERSION=${WHISPER_CMAKE_VERSION}")
+
+
 if (Git_FOUND)
 execute_process(COMMAND "${GIT_EXECUTABLE}" describe --exact-match --tags
  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/ggml
@@ -94,6 +123,14 @@ endif()
 execute_process(COMMAND "${GIT_EXECUTABLE}" rev-list --count HEAD
  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp
  OUTPUT_VARIABLE JJML_LLAMA_COMMIT_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+execute_process(COMMAND "${GIT_EXECUTABLE}" describe --exact-match --tags
+ WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp
+ OUTPUT_VARIABLE JJML_WHISPER_TAG OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (NOT JJML_WHISPER_TAG)
+execute_process(COMMAND "${GIT_EXECUTABLE}" rev-list --count v${WHISPER_CMAKE_VERSION}..HEAD
+ WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/whisper.cpp
+ OUTPUT_VARIABLE JJML_WHISPER_COMMIT_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
 
 if(NOT GGML_BUILD_NUMBER)
@@ -114,5 +151,14 @@ if(NOT LLAMA_VERSION)
 set(LLAMA_VERSION 0.0.${JJML_LLAMA_COMMIT_COUNT} CACHE INTERNAL LLAMA_VERSION)
 endif()
 
+if(NOT WHISPER_VERSION)
+if (JJML_WHISPER_COMMIT_COUNT)
+set(WHISPER_VERSION ${WHISPER_CMAKE_VERSION}.${JJML_WHISPER_COMMIT_COUNT} CACHE INTERNAL WHISPER_VERSION)
+else()
+set(WHISPER_VERSION ${WHISPER_CMAKE_VERSION} CACHE INTERNAL WHISPER_VERSION)
+endif()
+endif()
+
 file(WRITE versions.mk "GGML_VERSION=${GGML_VERSION}\n")
 file(APPEND versions.mk "LLAMA_VERSION=${LLAMA_VERSION}\n")
+file(APPEND versions.mk "WHISPER_VERSION=${WHISPER_VERSION}\n")

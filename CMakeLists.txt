@@ -19,8 +19,10 @@ find_package(ArgeoBuild)
 # JAVA
 set(BUNDLES 
 org.argeo.jjml
+org.argeo.jjml.multimedia
 )
 
 a2_build_bundles(${BUNDLES})
+add_dependencies(org.argeo.jjml.multimedia org.argeo.jjml)
 
 add_subdirectory(native)

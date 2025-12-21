@@ -10,9 +10,11 @@ A2_CATEGORY=org.argeo.jjml
 
 TP_GGML_OLDEST=v0.9.4
 TP_LLAMA_OLDEST=b6641
+TP_WHISPER_OLDEST=v1.8.2
 
 TP_GGML_LATEST=ac0c8be49c7458bcc6eae164244d7335ce9cc184
 TP_LLAMA_LATEST=b7446
+TP_WHISPER_LATEST=v1.8.2
 
 ##
 # Run make clean / all / install for the default CMake build.
@@ -78,8 +80,11 @@ rebuild-force-tp:
 		-DLLAMA_CURL=$(LLAMA_CURL) \
 		-DLLAMA_BUILD_COMMON=$(LLAMA_BUILD_TOOLS) \
 		-DLLAMA_BUILD_TOOLS=$(LLAMA_BUILD_TOOLS) \
+		-DLLAMA_BUILD_SERVER=$(LLAMA_BUILD_TOOLS) \
 		-DLLAMA_BUILD_EXAMPLES=OFF \
 		-DLLAMA_BUILD_TESTS=OFF \
+		\
+		-DWHISPER_BUILD_EXAMPLES=OFF \
 		\
 		-DGGML_NATIVE=OFF \
 		-DGGML_CPU_ALL_VARIANTS=ON \
@@ -107,6 +112,8 @@ clean-local:
 	$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)mtmd*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)whisper*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix).*
 
@@ -135,6 +142,7 @@ endif
 tp-clone:
 	if [ ! -d "native/tp/ggml" ]; then git clone --single-branch --branch master https://github.com/ggml-org/ggml.git native/tp/ggml; fi;
 	if [ ! -d "native/tp/llama.cpp" ]; then git clone --single-branch --branch master https://github.com/ggml-org/llama.cpp.git native/tp/llama.cpp; fi;
+	if [ ! -d "native/tp/whisper.cpp" ]; then git clone --single-branch --branch master https://github.com/ggml-org/whisper.cpp.git native/tp/whisper.cpp; fi;
 
 tp-checkout-oldest:
 	git -C native/tp/ggml fetch origin
@@ -143,6 +151,9 @@ tp-checkout-oldest:
 	git -C native/tp/llama.cpp fetch origin
 	git -C native/tp/llama.cpp checkout $(TP_LLAMA_OLDEST)
 
+	git -C native/tp/whisper.cpp fetch origin
+	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_OLDEST)
+
 tp-checkout-latest:
 	git -C native/tp/ggml fetch origin
 	git -C native/tp/ggml checkout $(TP_GGML_LATEST)
@@ -150,13 +161,18 @@ tp-checkout-latest:
 	git -C native/tp/llama.cpp fetch origin
 	git -C native/tp/llama.cpp checkout $(TP_LLAMA_LATEST)
 
+	git -C native/tp/whisper.cpp fetch origin
+	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_LATEST)
+
 #
 # PACKAGING
 #
 JMOD_JJML=org.argeo.jjml
+JMOD_JJML_MULTIMEDIA=org.argeo.jjml.multimedia
 JMOD_JJML_JNI=org.argeo.jjml.jni
 JMOD_GGML=org.argeo.tp.ggml.libs
 JMOD_GGML_LLM=org.argeo.tp.ggml.llm.libs
+JMOD_GGML_WHISPER=org.argeo.tp.ggml.whisper.libs
 
 jmod-jjml: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_JJML))
@@ -169,6 +185,16 @@ jmod-jjml: a2-prepare-output
 	$(call a2_jmod_create_lib,$(JMOD_JJML))
 	# list content
 	#$(JLINK_HOME)/bin/jmod list $(JLINK_A2_JMODS)/$(JMOD_JJML).jmod
+
+jmod-jjml-multimedia: a2-prepare-output
+	$(call a2_jmod_prepare_output,$(JMOD_JJML_MULTIMEDIA))
+	$(COPY) COPYING.LESSER NOTICE $(JMODS_BASE)/$(JMOD_JJML_MULTIMEDIA)/legal
+	
+	# examples
+	#mkdir -p $(JMODS_BASE)/$(JMOD_JJML_MULTIMEDIA)/man/examples
+	#$(COPY) -v sdk/jbin/*.java $(JMODS_BASE)/$(JMOD_JJML_MULTIMEDIA)/man/examples
+
+	$(call a2_jmod_create_lib,$(JMOD_JJML_MULTIMEDIA))
 
 jmod-jjml-jni: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_JJML_JNI))
@@ -232,13 +258,33 @@ endif
 	$(call a2_jmod_bare_module,$(JMOD_GGML_LLM))
 	$(call a2_jmod_create_native,$(JMOD_GGML_LLM),$(LLAMA_VERSION))
 
+jmod-ggml-whisper-libs: a2-prepare-output
+	$(call a2_jmod_prepare_output,$(JMOD_GGML_WHISPER))
+
+	$(COPY) native/tp/whisper.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/include
+	$(COPY) native/tp/whisper.cpp/LICENSE native/tp/whisper.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/legal
+	
+ifeq ($(TARGET_OS),macos)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper.1$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+else
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+endif
+
+ifeq ($(TARGET_OS),windows)
+	# MSVC linker libs
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper.lib $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
+endif
+
+	$(call a2_jmod_bare_module,$(JMOD_GGML_WHISPER))
+	$(call a2_jmod_create_native,$(JMOD_GGML_WHISPER),$(WHISPER_VERSION))
+
 #
 # DISTRIBUTABLE PACKAGES
 #
-package-jmods: jmod-jjml jmod-jjml-jni jmod-ggml-libs jmod-ggml-llm-libs
+package-jmods: jmod-jjml jmod-jjml-multimedia jmod-jjml-jni jmod-ggml-libs jmod-ggml-llm-libs jmod-ggml-whisper-libs
 
 jdk-jjml: package-jmods
-	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM))
+	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_MULTIMEDIA) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM))
 	$(call a2_jlink_copy_categories,jdk-jjml,$(A2_CATEGORY))
 
 JDK_JJML_WIN_UPGRADE_ID=d87918b9-88e7-51fb-92d5-7186ca73314b
