@@ -23,14 +23,6 @@ import org.argeo.jjml.mtmd.MtmdNative;
 import org.argeo.jjml.mtmd.MtmdProcessor;
 
 public class ImageDescription {
-	private final static String SYSTEM_PROMPT_MINISTRAL_THINK = """
-			# HOW YOU SHOULD THINK AND ANSWER
-
-			First draft your thinking process (inner monologue) until you arrive at a response. Format your response using Markdown, and use LaTeX for any mathematical equations. Write both your thoughts and the response in the same language as the input.
-
-			Your thinking process must follow the template below:[THINK]Your thoughts or/and draft, like working through an exercise on scratch paper. Be as casual and as long as you want until you are confident to generate the response to the user.[/THINK]Here, provide a self-contained response.
-					""";
-
 	public static void main(String[] args) throws Exception {
 		if (args.length < 4)
 			throw new IllegalArgumentException("Usage: " + ImageDescription.class.getSimpleName()
@@ -54,22 +46,8 @@ public class ImageDescription {
 
 		Path imagePath = Paths.get(args[3]);
 		if (!Files.exists(imagePath))
-			throw new IllegalArgumentException("Cannot find iamge " + args[3]);
+			throw new IllegalArgumentException("Cannot find image " + args[3]);
 
-//		Path modelPath = SimpleModelDownload.getDefaultModelsBase()
-//				.resolve("ggml-org_Qwen2.5-VL-3B-Instruct-GGUF_Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf");
-//		Path mmprojPath = SimpleModelDownload.getDefaultModelsBase()
-//				.resolve("ggml-org_Qwen2.5-VL-3B-Instruct-GGUF_mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf");
-
-//		Path modelPath = SimpleModelDownload.getDefaultModelsBase()
-//				.resolve("ibm-granite_granite-vision-3.3-2b-GGUF_granite-vision-3.3-2b-Q8_0.gguf");
-//		Path mmprojPath = SimpleModelDownload.getDefaultModelsBase()
-//				.resolve("ibm-granite_granite-vision-3.3-2b-GGUF_mmproj-model-f16.gguf");
-
-//		Path imagePath = Paths.get(System.getProperty("user.home"), //
-////				"Pictures/test3.jpg" //
-//				"Pictures/test2.png" //
-//		);
 		try (LlamaCppModel model = LlamaCppModel.load(modelPath);
 				LlamaCppContext context = new LlamaCppContext(model,
 						defaultContextParams().with(ContextParam.n_ctx, 4096)); //
@@ -79,19 +57,17 @@ public class ImageDescription {
 				InputStream imageIn = Files.newInputStream(imagePath); //
 		) {
 			MtmdProcessor processor = new MtmdProcessor(context, chain, mtmdContext);
-//			LlamaCppChatMessage systemPrompt = new LlamaCppChatMessage(InstructRole.SYSTEM,
-//					SYSTEM_PROMPT_MINISTRAL_THINK);
 			LlamaCppChatMessage systemPrompt = null;
-			String formatted = model.formatChatMessages(systemPrompt,
-					new LlamaCppChatMessage(InstructRole.USER, //
-					MtmdBackend.getDefaultMarker() + prompt));
+			LlamaCppChatMessage userPrompt = new LlamaCppChatMessage(InstructRole.USER, //
+					MtmdBackend.getDefaultMarker() + prompt);
+			String formatted = model.formatChatMessages(systemPrompt, userPrompt);
 			MtmdImageBitmap bitmap = ImageIoBitmap.load(imageIn);
 			MtmdBitmap[] bitmaps = new MtmdBitmap[] { bitmap };
 
 			long begin = System.currentTimeMillis();
 			String response = processor.transcribe(formatted, bitmaps);
 			System.out.println(response);
-			System.out.println("Processing took " + (System.currentTimeMillis() - begin) + " ms");
+			System.out.println("\nProcessing took " + (System.currentTimeMillis() - begin) + " ms");
 		}
 	}
 
