@@ -16,6 +16,11 @@ public class ImageIoBitmap extends MtmdImageBitmap {
 		super(rgb, width, height);
 	}
 
+	ImageIoBitmap(byte[] rgb, int width, int height) {
+		// TODO check consistency between rgb.length and width / height
+		super(rgb, 0, width, height);
+	}
+
 	public static MtmdImageBitmap load(InputStream in) throws IOException {
 		BufferedImage img = ImageIO.read(in);
 		int width = img.getWidth();
@@ -26,9 +31,13 @@ public class ImageIoBitmap extends MtmdImageBitmap {
 		// FIXME make sure the native buffer is properly freed
 		ByteBuffer buf = ByteBuffer.allocateDirect(width * height * 3);
 		buf.order(ByteOrder.nativeOrder());
+
+//		ByteBuffer buf = ByteBuffer.allocate(width * height * 3);
+//		buf.order(ByteOrder.nativeOrder());
+
 		// TODO optimize with direct access to the image buffers?
-		for (int x = 0; x < width; x++) {
-			for (int y = 0; y < height; y++) {
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
 				int argb = img.getRGB(x, y);
 				int red = (argb >> 16) & 0x000000FF;
 				int green = (argb >> 8) & 0x000000FF;
@@ -36,6 +45,9 @@ public class ImageIoBitmap extends MtmdImageBitmap {
 				buf.put((byte) red);
 				buf.put((byte) green);
 				buf.put((byte) blue);
+
+//				if (y == 0)
+//					System.out.println(red + ", " + green + ", " + blue);
 
 //				int rgb = red;
 //				rgb = (rgb << 8) + green;
@@ -46,6 +58,7 @@ public class ImageIoBitmap extends MtmdImageBitmap {
 
 //		ImageIO.write(testImg, "bmp", new File("test.bmp"));
 
+//		return new ImageIoBitmap(buf.array(), width, height);
 		return new ImageIoBitmap(buf, width, height);
 	}
 
