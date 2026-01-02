@@ -57,35 +57,42 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doInit(
 		JNIEnv *env, jclass, jstring localPath, jobject modelParams,
 		jobject progressCallback) {
 	const char *path_model = env->GetStringUTFChars(localPath, nullptr);
+	try {
+		llama_model_params mparams = llama_model_default_params();
+		get_model_params(env, modelParams, &mparams);
 
-	llama_model_params mparams = llama_model_default_params();
-	get_model_params(env, modelParams, &mparams);
+		// progress callback
+		argeo::jni::java_callback progress_data;
+		if (progressCallback != nullptr) {
+			progress_data.callback = env->NewGlobalRef(progressCallback);
+			progress_data.method = DoublePredicate__test;
+			env->GetJavaVM(&progress_data.jvm);
+			mparams.progress_callback_user_data = &progress_data;
 
-	// progress callback
-	argeo::jni::java_callback progress_data;
-	if (progressCallback != nullptr) {
-		progress_data.callback = env->NewGlobalRef(progressCallback);
-		progress_data.method = DoublePredicate__test;
-		env->GetJavaVM(&progress_data.jvm);
-		mparams.progress_callback_user_data = &progress_data;
+			mparams.progress_callback = [](float progress,
+					void *user_data) -> bool {
+				return argeo::jni::exec_boolean_callback(
+						static_cast<argeo::jni::java_callback*>(user_data),
+						static_cast<jdouble>(progress));
+			};
+		}
 
-		mparams.progress_callback = [](float progress,
-				void *user_data) -> bool {
-			return argeo::jni::exec_boolean_callback(
-					static_cast<argeo::jni::java_callback*>(user_data),
-					static_cast<jdouble>(progress));
-		};
+		ggml_backend_load_all();
+		llama_model *model = llama_model_load_from_file(path_model, mparams);
+		if (!model)
+			throw std::runtime_error("Cannot load model");
+
+		// free callback global reference
+		if (progress_data.callback != nullptr)
+			env->DeleteGlobalRef(progress_data.callback);
+
+		env->ReleaseStringUTFChars(localPath, path_model);
+		return (jlong) model;
+	} catch (const std::exception &ex) {
+		argeo::jni::throw_to_java(env, ex);
+		// TODO better free JNI resources in case of error
+		return 0;
 	}
-
-	ggml_backend_load_all();
-	llama_model *model = llama_model_load_from_file(path_model, mparams);
-
-	// free callback global reference
-	if (progress_data.callback != nullptr)
-		env->DeleteGlobalRef(progress_data.callback);
-
-	env->ReleaseStringUTFChars(localPath, path_model);
-	return (jlong) model;
 }
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doDestroy(
