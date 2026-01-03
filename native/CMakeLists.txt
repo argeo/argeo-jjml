@@ -124,9 +124,7 @@ endif()
 add_subdirectory(org_argeo_jjml_ggml)
 add_subdirectory(org_argeo_jjml_llm)
 
-if(LLAMA_BUILD_TOOLS)
 add_subdirectory(org_argeo_jjml_mtmd)
-endif()
 
 add_subdirectory(org_argeo_jjml_whisper)
 
