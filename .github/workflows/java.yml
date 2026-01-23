@@ -28,7 +28,7 @@ jobs:
         fetch-depth: '0'
         fetch-tags: 'true'
 
-    - name: Use latest third-parties
+    - name: Use oldest third-parties
       run: make -f tooling.mk tp-clone tp-checkout-oldest
 
     - uses: actions/setup-java@v5
@@ -46,8 +46,8 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DJJML_FORCE_BUILD_TP=ON
         -DLLAMA_CURL=OFF
-        -DLLAMA_BUILD_COMMON=OFF
-        -DLLAMA_BUILD_TOOLS=OFF
+        -DLLAMA_BUILD_COMMON=ON
+        -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_TESTS=OFF
         -DGGML_NATIVE=ON
