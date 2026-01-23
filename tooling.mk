@@ -12,9 +12,13 @@ TP_GGML_OLDEST=v0.9.4
 TP_LLAMA_OLDEST=b6641
 TP_WHISPER_OLDEST=v1.8.2
 
+TP_GGML_DEBIAN=v0.9.5
+TP_LLAMA_DEBIAN=b7593
+TP_WHISPER_DEBIAN=v1.8.2
+
 TP_GGML_LATEST=v0.9.5
-TP_LLAMA_LATEST=b7599 
-TP_WHISPER_LATEST=v1.8.2
+TP_LLAMA_LATEST=b7721  
+TP_WHISPER_LATEST=v1.8.3
 
 ##
 # Run make clean / all / install for the default CMake build.
@@ -153,6 +157,16 @@ tp-checkout-oldest:
 
 	git -C native/tp/whisper.cpp fetch origin
 	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_OLDEST)
+
+tp-checkout-debian:
+	git -C native/tp/ggml fetch origin
+	git -C native/tp/ggml checkout $(TP_GGML_DEBIAN)
+
+	git -C native/tp/llama.cpp fetch origin
+	git -C native/tp/llama.cpp checkout $(TP_LLAMA_DEBIAN)
+
+	git -C native/tp/whisper.cpp fetch origin
+	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_DEBIAN)
 
 tp-checkout-latest:
 	git -C native/tp/ggml fetch origin
