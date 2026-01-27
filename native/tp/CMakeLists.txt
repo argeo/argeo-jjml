@@ -63,9 +63,6 @@ endif()
 
 set(TARGET_NATIVE_OUTPUT_WHISPER ${TARGET_NATIVE_OUTPUT_GGML})
 if(NOT EXISTS "${whisper_LIBRARY}")
-	# workaround for disappearance of GGML_KQ_MASK_PAD
-	add_compile_definitions(GGML_KQ_MASK_PAD=64)
-	
 	add_subdirectory(whisper.cpp) # build locally
 	if(MINGW)
 		set_target_properties(whisper PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_WHISPER})
