@@ -105,6 +105,8 @@ rebuild-force-tp:
 	
 	$(JJML_CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix).0 $(TARGET_NATIVE_OUTPUT)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix).1 $(TARGET_NATIVE_OUTPUT)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
 
@@ -115,9 +117,11 @@ clean-local:
 	$(RM) -r $(TARGET_NATIVE_OUTPUT_JJML)
 	$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix).0
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)mtmd*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)whisper*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)whisper*$(shlib_suffix).1
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix).*
 
