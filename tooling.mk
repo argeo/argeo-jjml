@@ -44,6 +44,11 @@ GGML_RPC ?= OFF
 GGML_OPENMP ?= OFF
 GGML_CCACHE ?= ON
 
+# Nvidia drivers
+# see https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/
+#JJML_CUDA_TOOLKIT ?= -DCUDAToolkit_ROOT=/usr/local/cuda-13/ -DCMAKE_CUDA_COMPILER=/usr/local/cuda-13/bin/nvcc
+
+
 LLAMA_BUILD_TOOLS ?= ON
 JJML_FORCE_BUILD_LLAMA_GGML ?= OFF
 
@@ -97,11 +102,12 @@ rebuild-force-tp:
 		-DGGML_OPENMP=$(GGML_OPENMP) \
 		-DGGML_BLAS=$(GGML_BLAS) \
 		-DGGML_BLAS_VENDOR=OpenBLAS \
+		-DGGML_RPC=$(GGML_RPC) \
 		-DGGML_VULKAN=$(GGML_VULKAN) \
 		-DGGML_CUDA=$(GGML_CUDA) \
-		-DGGML_CUDA_FORCE_MMQ=ON \
+		-DGGML_CUDA_FORCE_MMQ=OFF \
 		-DGGML_CUDA_FA_ALL_QUANTS=OFF \
-		-DGGML_RPC=$(GGML_RPC) \
+		$(JJML_CUDA_TOOLKIT)
 	
 	$(JJML_CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
