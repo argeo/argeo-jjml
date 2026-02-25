@@ -1,6 +1,7 @@
 package org.argeo.jjml.llm;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.argeo.jjml.llm.params.ModelParam.n_gpu_layers;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import org.argeo.jjml.llm.util.InstructRole;
  */
 public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
+	/** The raw default model parameters as provided by libllama. */
 	private final static ModelParams DEFAULT_MODEL_PARAMS_NATIVE;
 
 	static {
@@ -198,11 +200,16 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	 */
 
 	public static LlamaCppModel load(Path localPath) throws IOException {
-		return load(localPath, DEFAULT_MODEL_PARAMS_NATIVE);
+		return load(localPath, defaultModelParams());
 	}
 
 	public static ModelParams defaultModelParams() {
 		ModelParams res = DEFAULT_MODEL_PARAMS_NATIVE;
+
+		// we disable GPU offload by default as it is too sensitive to context
+		// and setting context parameters right
+		res = res.with(n_gpu_layers, 0);
+
 		for (ModelParam param : ModelParam.values()) {
 			String sysProp = System.getProperty(param.asSystemProperty());
 			if (sysProp != null)

@@ -8,13 +8,17 @@ include sdk/argeo-build/jpms.mk
 
 A2_CATEGORY=org.argeo.jjml
 
-TP_GGML_OLDEST=v0.9.4
-TP_LLAMA_OLDEST=b6641
-TP_WHISPER_OLDEST=v1.8.2
+TP_GGML_OLDEST=v0.9.7
+TP_LLAMA_OLDEST=b8064
+TP_WHISPER_OLDEST=v1.8.3
 
-TP_GGML_LATEST=ac0c8be49c7458bcc6eae164244d7335ce9cc184
-TP_LLAMA_LATEST=b7446
-TP_WHISPER_LATEST=v1.8.2
+TP_GGML_DEBIAN=v0.9.7
+TP_LLAMA_DEBIAN=b8064
+TP_WHISPER_DEBIAN=v1.8.3
+
+TP_GGML_LATEST=v0.9.7
+TP_LLAMA_LATEST=b8067  
+TP_WHISPER_LATEST=364c77f
 
 ##
 # Run make clean / all / install for the default CMake build.
@@ -39,6 +43,11 @@ GGML_CUDA ?= OFF
 GGML_RPC ?= OFF
 GGML_OPENMP ?= OFF
 GGML_CCACHE ?= ON
+
+# Nvidia drivers
+# see https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/
+#JJML_CUDA_TOOLKIT ?= -DCUDAToolkit_ROOT=/usr/local/cuda-13/ -DCMAKE_CUDA_COMPILER=/usr/local/cuda-13/bin/nvcc
+
 
 LLAMA_BUILD_TOOLS ?= ON
 JJML_FORCE_BUILD_LLAMA_GGML ?= OFF
@@ -93,14 +102,19 @@ rebuild-force-tp:
 		-DGGML_OPENMP=$(GGML_OPENMP) \
 		-DGGML_BLAS=$(GGML_BLAS) \
 		-DGGML_BLAS_VENDOR=OpenBLAS \
+		-DGGML_RPC=$(GGML_RPC) \
 		-DGGML_VULKAN=$(GGML_VULKAN) \
 		-DGGML_CUDA=$(GGML_CUDA) \
-		-DGGML_CUDA_FORCE_MMQ=ON \
+		-DGGML_CUDA_FORCE_MMQ=OFF \
 		-DGGML_CUDA_FA_ALL_QUANTS=OFF \
-		-DGGML_RPC=$(GGML_RPC) \
+		$(JJML_CUDA_TOOLKIT)
 	
 	$(JJML_CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
+ifneq ($(TARGET_OS),windows)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix).0 $(TARGET_NATIVE_OUTPUT)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix).1 $(TARGET_NATIVE_OUTPUT)
+endif
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
 
@@ -111,9 +125,11 @@ clean-local:
 	$(RM) -r $(TARGET_NATIVE_OUTPUT_JJML)
 	$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix).0
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)mtmd*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)whisper*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)whisper*$(shlib_suffix).1
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix).*
 
@@ -153,6 +169,16 @@ tp-checkout-oldest:
 
 	git -C native/tp/whisper.cpp fetch origin
 	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_OLDEST)
+
+tp-checkout-debian:
+	git -C native/tp/ggml fetch origin
+	git -C native/tp/ggml checkout $(TP_GGML_DEBIAN)
+
+	git -C native/tp/llama.cpp fetch origin
+	git -C native/tp/llama.cpp checkout $(TP_LLAMA_DEBIAN)
+
+	git -C native/tp/whisper.cpp fetch origin
+	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_DEBIAN)
 
 tp-checkout-latest:
 	git -C native/tp/ggml fetch origin
@@ -246,13 +272,16 @@ jmod-ggml-llm-libs: a2-prepare-output
 	
 ifeq ($(TARGET_OS),macos)
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 else
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 endif
 
 ifeq ($(TARGET_OS),windows)
 	# MSVC linker libs
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.lib $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd.lib $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 endif
 
 	$(call a2_jmod_bare_module,$(JMOD_GGML_LLM))

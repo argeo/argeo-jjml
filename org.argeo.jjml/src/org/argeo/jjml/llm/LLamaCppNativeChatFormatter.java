@@ -3,11 +3,13 @@ package org.argeo.jjml.llm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
- * Format chat messages using llama.cpp basic capabilities (Jinja templates are <b>not</b>
- * supported). 
+ * Format chat messages using llama.cpp basic capabilities (Jinja templates are
+ * <b>not</b> supported).
  */
 public class LLamaCppNativeChatFormatter {
 
@@ -32,12 +34,16 @@ public class LLamaCppNativeChatFormatter {
 	 */
 	static String formatChatMessages(List<LlamaCppChatMessage> messages,
 			Predicate<LlamaCppChatMessage> addAssistantTokens, String chatTemplate) {
-		byte[][] roles = new byte[messages.size()][];
-		byte[][] contents = new byte[messages.size()][];
+		// filter out null values
+		List<LlamaCppChatMessage> msgs = messages.stream().filter(Objects::nonNull).collect(Collectors.toList());
+		byte[][] roles = new byte[msgs.size()][];
+		byte[][] contents = new byte[msgs.size()][];
 
 		boolean currIsUserRole = false;
-		for (int i = 0; i < messages.size(); i++) {
-			LlamaCppChatMessage message = messages.get(i);
+		messages: for (int i = 0; i < msgs.size(); i++) {
+			LlamaCppChatMessage message = msgs.get(i);
+			if (message == null)
+				continue messages; // ignore
 			roles[i] = message.getRole().getBytes(UTF_8);
 			currIsUserRole = addAssistantTokens.test(message);
 			contents[i] = message.getContent().getBytes(UTF_8);

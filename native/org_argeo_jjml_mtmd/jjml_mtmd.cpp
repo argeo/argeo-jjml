@@ -32,7 +32,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_mtmd_MtmdProcessor_doSingleTurn(
 
 	mtmd_input_text text;
 	text.text = prompt.c_str();
-	text.add_special = false;
+	text.add_special = true;
 	text.parse_special = true;
 
 //	std::cout << text.text << std::endl;
@@ -48,7 +48,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_mtmd_MtmdProcessor_doSingleTurn(
 
 	// Tokenize
 
-	std::cout << "# MTMD - Tokenize" << std::endl;
+	//std::cout << "# MTMD - Tokenize" << std::endl;
 	mtmd_input_chunks *input_chunks = mtmd_input_chunks_init();
 	const mtmd_bitmap **bitmaps_data = bitmaps.data();
 	int tokenize_res = mtmd_tokenize(mtmd_ctx, input_chunks, &text,
@@ -58,7 +58,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_mtmd_MtmdProcessor_doSingleTurn(
 
 	// Evaluate
 
-	std::cout << "# MTMD - Evaluate" << std::endl;
+	//std::cout << "# MTMD - Evaluate" << std::endl;
 	// FIXME deal with position properly
 	llama_pos n_past = 0;
 	// FIXME get n_batch from parameters
@@ -78,7 +78,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_mtmd_MtmdProcessor_doSingleTurn(
 	n_past = new_n_past;
 
 	// Generate response
-	std::cout << "# MTMD - Generate Response" << std::endl;
+	//std::cout << "# MTMD - Generate Response" << std::endl;
 	llama_batch batch = llama_batch_init(1, 0, 1);
 	int n_predict = 1000; // FIXME
 	std::vector<llama_token> generated_tokens;
@@ -156,6 +156,19 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_mtmd_MtmdImageBitmap_doInit(
 			static_cast<const unsigned char*>(env->GetDirectBufferAddress(
 					inputBuf));
 	mtmd_bitmap *bitmap = mtmd_bitmap_init(width, height, data);
+	return (jlong) bitmap;
+}
+
+JNIEXPORT jlong JNICALL Java_org_argeo_jjml_mtmd_MtmdImageBitmap_doInitFromBytes(
+		JNIEnv *env, jclass, jbyteArray bytes, jint offset, jint width,
+		jint height) {
+	void *arr = env->GetPrimitiveArrayCritical(bytes, 0);
+	const unsigned char *data = static_cast<const unsigned char*>(arr) + offset;
+	mtmd_bitmap *bitmap = mtmd_bitmap_init(width, height, data);
+
+	// clean up
+	env->ReleasePrimitiveArrayCritical(bytes, arr, 0);
+
 	return (jlong) bitmap;
 }
 

@@ -15,7 +15,6 @@ if(NOT JJML_FORCE_BUILD_TP)
 if(NOT MSVC)
 # Debian official until libraries are stable
 set(CMAKE_PREFIX_PATH
-/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/ggml/cmake-private
 /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/llama/cmake-private
 )
 endif()
@@ -28,11 +27,17 @@ endif()
 # look for llama.cpp via CMake configs (preferred)
 find_package(llama QUIET)
 find_package(whisper QUIET)
+
 if(whisper_FOUND)
 	message(STATUS "Found whisper: ${whisper_LIBRARY} ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
 endif()
+
 if(llama_FOUND)
-	message(STATUS "Found llama.cpp and ggml packages: ${llama_LIBRARY} ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
+	# Workaround for mtmd not being properly configured in CMake
+	find_library(mtmd_LIBRARY mtmd HINTS /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/llama)
+
+	message(STATUS "Found llama.cpp and ggml packages: ${llama_LIBRARY} ${mtmd_LIBRARY} ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
+	
 	if(NOT whisper_FOUND)
 		find_library(whisper_LIBRARY whisper)
 	endif()
@@ -98,6 +103,17 @@ if(EXISTS "${llama_LIBRARY}") # llama.cpp as external library
 	endif()
 endif()
 
+# Workaround for mtmd not being properly configured in CMake
+if(EXISTS "${mtmd_LIBRARY}") # mtmd as external library
+	add_library(mtmd SHARED IMPORTED GLOBAL)
+	if(MSVC)
+	set_target_properties(mtmd PROPERTIES IMPORTED_IMPLIB ${mtmd_LIBRARY})
+	else()
+	set_target_properties(mtmd PROPERTIES IMPORTED_LOCATION ${mtmd_LIBRARY})
+	endif()
+	message(STATUS "Found mtmd library: ${mtmd_LIBRARY}") 
+endif()
+
 if(NOT JJML_DO_NOT_BUILD_TP)
 	# Build reference third-party submodules if needed
 	add_subdirectory(tp)
@@ -124,9 +140,7 @@ endif()
 add_subdirectory(org_argeo_jjml_ggml)
 add_subdirectory(org_argeo_jjml_llm)
 
-if(LLAMA_BUILD_TOOLS)
 add_subdirectory(org_argeo_jjml_mtmd)
-endif()
 
 add_subdirectory(org_argeo_jjml_whisper)
 

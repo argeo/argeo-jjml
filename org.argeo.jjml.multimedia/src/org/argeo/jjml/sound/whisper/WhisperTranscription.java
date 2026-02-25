@@ -80,7 +80,8 @@ public class WhisperTranscription {
 		WhisperCppProcessor processor = new WhisperCppProcessor(context);
 
 		String wavRelPath = "dev/git/unstable/argeo-jjml/native/tp/whisper.cpp/samples/jfk.wav";
-		wavRelPath = "Music/18juin/cdg.wav";
+//		wavRelPath = "Music/18juin/cdg.wav";
+//		wavRelPath = "Music/whisper.cpp/samples/test-Wikipedia_Ignore_All_Rules.wav";
 //		wavRelPath = "Music/18juin/cdg-remastered.wav";
 //		wavRelPath = "Music/18juin/cdg-48kHz.wav";
 		Path wavPath = Paths.get(System.getProperty("user.home"), wavRelPath);

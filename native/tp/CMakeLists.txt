@@ -58,18 +58,11 @@ if(NOT EXISTS "${llama_LIBRARY}")
 			set_target_properties(mtmd PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
 		endif()
 	endif()
-	if(LLAMA_BUILD_TOOLS)
-		set_target_properties(llama-cli PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
-		set_target_properties(llama-bench PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
-	endif()
 	message(STATUS "Build llama.cpp locally from submodule native/tp/llama.cpp") 
 endif()
 
 set(TARGET_NATIVE_OUTPUT_WHISPER ${TARGET_NATIVE_OUTPUT_GGML})
 if(NOT EXISTS "${whisper_LIBRARY}")
-	# workaround for disappearance of GGML_KQ_MASK_PAD
-	add_compile_definitions(GGML_KQ_MASK_PAD=64)
-	
 	add_subdirectory(whisper.cpp) # build locally
 	if(MINGW)
 		set_target_properties(whisper PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_WHISPER})
