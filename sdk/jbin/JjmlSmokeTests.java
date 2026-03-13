@@ -299,7 +299,7 @@ class JjmlSmokeTests {
 	void assertChat(LlamaCppModel model) throws IOException {
 		try (//
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
-						.with(n_ctx, 20480) //
+						.with(n_ctx, 2048) //
 						.with(n_batch, 1024) //
 						.with(n_threads, parallelism) //
 				); //
@@ -331,7 +331,7 @@ class JjmlSmokeTests {
 
 	void assertSavedContextState(LlamaCppModel model) throws IOException {
 		ContextParams contextParams = LlamaCppContext.defaultContextParams() //
-				.with(n_ctx, 20480) //
+				.with(n_ctx, 2048) //
 				.with(n_batch, 1024) //
 				.with(n_threads, parallelism) //
 		; //
