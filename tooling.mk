@@ -277,9 +277,9 @@ ifeq ($(TARGET_OS),macos)
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-blas.so $(JMODS_BASE)/$(JMOD_GGML)/lib
 	
 	# otherwise *.dylib
-	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-cpu.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
-	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-metal.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
-	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-blas.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-cpu.0.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-metal.0.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-blas.0.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
 else
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-cpu*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 endif
