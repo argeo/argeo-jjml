@@ -233,7 +233,11 @@ jmod-jjml-jni: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_JJML_JNI))
 	$(COPY) COPYING.LESSER NOTICE $(JMODS_BASE)/$(JMOD_JJML_JNI)/legal
 
-	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml*$(shlib_suffix) \
+	$(COPY) \
+	 $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml_ggml$(shlib_suffix) \
+	 $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml_llm$(shlib_suffix) \
+	 $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml_mtmd$(shlib_suffix) \
+	 $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml_whisper$(shlib_suffix) \
 	 $(JMODS_BASE)/$(JMOD_JJML_JNI)/lib
 
 	$(call a2_jmod_bare_module,$(JMOD_JJML_JNI))
@@ -249,14 +253,23 @@ jmod-ggml-libs: a2-prepare-output
 	$(COPY) native/tp/ggml/include/*.h $(JMODS_BASE)/$(JMOD_GGML)/include
 	$(COPY) native/tp/ggml/LICENSE native/tp/ggml/AUTHORS $(JMODS_BASE)/$(JMOD_GGML)/legal
 	
-ifneq ($(TARGET_OS),windows)
+ifeq ($(TARGET_OS),linux)
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML)/lib
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML)/lib
-else
+endif
+ifeq ($(TARGET_OS),macos)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+endif
+ifeq ($(TARGET_OS),windows)
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	# MSVC linker libs
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
 endif
 
+# backends
 ifeq ($(TARGET_OS),macos)
 	# When GGML_BACKEND_DL=ON, *.so are generated,
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-cpu*.so $(JMODS_BASE)/$(JMOD_GGML)/lib
@@ -268,9 +281,6 @@ ifeq ($(TARGET_OS),macos)
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-blas.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
 else
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-cpu*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	# MSVC linker libs
-	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
-	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
 endif
 	
 	$(call a2_jmod_bare_module,$(JMOD_GGML))
@@ -285,15 +295,17 @@ jmod-ggml-llm-libs: a2-prepare-output
 	$(COPY) native/tp/llama.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_LLM)/include
 	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal
 	
-ifneq ($(TARGET_OS),windows)
+ifeq ($(TARGET_OS),linux)
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
-else
+endif
+ifeq ($(TARGET_OS),macos)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+endif
+ifeq ($(TARGET_OS),windows)
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
-endif
-
-ifeq ($(TARGET_OS),windows)
 	# MSVC linker libs
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.lib $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd.lib $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
@@ -311,13 +323,14 @@ jmod-ggml-whisper-libs: a2-prepare-output
 	$(COPY) native/tp/whisper.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/include
 	$(COPY) native/tp/whisper.cpp/LICENSE native/tp/whisper.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/legal
 	
-ifneq ($(TARGET_OS),windows)
+ifeq ($(TARGET_OS),linux)
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper$(shlib_suffix).1 $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
-else
+endif
+ifeq ($(TARGET_OS),macos)
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
 endif
-
 ifeq ($(TARGET_OS),windows)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper.1$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
 	# MSVC linker libs
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper.lib $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
 endif
