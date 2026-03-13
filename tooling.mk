@@ -73,6 +73,9 @@ LLAMA_CURL ?= OFF
 # (and add runtime to path)
 endif
 
+all: cmake-all
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
+
 rebuild-force-tp:
 	echo CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 	
@@ -118,20 +121,24 @@ endif
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
 
+clean: cmake-clean
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix).*
+	$(RM) -r $(TARGET_NATIVE_OUTPUT_JJML)	
+
 # Remove locally built libraries
-clean-local:
+clean-local: clean
 	$(RM) -r $(A2_OUTPUT)/org.argeo.jjml
 	$(RM) -r $(BUILD_BASE)
-	$(RM) -r $(TARGET_NATIVE_OUTPUT_JJML)
 	$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix).0
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix).0
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)mtmd*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)mtmd*$(shlib_suffix).0
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)whisper*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)whisper*$(shlib_suffix).1
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix).*
 
 #
 # DOC
@@ -233,16 +240,24 @@ jmod-jjml-jni: a2-prepare-output
 # TODO use distinct version for JNI?
 	$(call a2_jmod_create_native,$(JMOD_JJML_JNI),$(A2_LAYER_VERSION))
 
+#
+# ggml
+#
 jmod-ggml-libs: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_GGML))
 
 	$(COPY) native/tp/ggml/include/*.h $(JMODS_BASE)/$(JMOD_GGML)/include
 	$(COPY) native/tp/ggml/LICENSE native/tp/ggml/AUTHORS $(JMODS_BASE)/$(JMOD_GGML)/legal
 	
-ifeq ($(TARGET_OS),macos)
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+ifneq ($(TARGET_OS),windows)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML)/lib
+else
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+endif
 
+ifeq ($(TARGET_OS),macos)
 	# When GGML_BACKEND_DL=ON, *.so are generated,
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-cpu*.so $(JMODS_BASE)/$(JMOD_GGML)/lib
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-metal.so $(JMODS_BASE)/$(JMOD_GGML)/lib
@@ -252,9 +267,6 @@ ifeq ($(TARGET_OS),macos)
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-metal.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-blas.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
 else
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
-
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-cpu*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 	# MSVC linker libs
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
@@ -264,15 +276,18 @@ endif
 	$(call a2_jmod_bare_module,$(JMOD_GGML))
 	$(call a2_jmod_create_native,$(JMOD_GGML),$(GGML_VERSION))
 
+#
+# llama.cpp
+#
 jmod-ggml-llm-libs: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_GGML_LLM))
 
 	$(COPY) native/tp/llama.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_LLM)/include
 	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal
 	
-ifeq ($(TARGET_OS),macos)
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+ifneq ($(TARGET_OS),windows)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 else
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
@@ -287,16 +302,19 @@ endif
 	$(call a2_jmod_bare_module,$(JMOD_GGML_LLM))
 	$(call a2_jmod_create_native,$(JMOD_GGML_LLM),$(LLAMA_VERSION))
 
+#
+# whisper.cpp
+#
 jmod-ggml-whisper-libs: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_GGML_WHISPER))
 
 	$(COPY) native/tp/whisper.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/include
 	$(COPY) native/tp/whisper.cpp/LICENSE native/tp/whisper.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/legal
 	
-ifeq ($(TARGET_OS),macos)
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper.1$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+ifneq ($(TARGET_OS),windows)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper$(shlib_suffix).1 $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
 else
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
 endif
 
 ifeq ($(TARGET_OS),windows)
@@ -313,7 +331,7 @@ endif
 package-jmods: jmod-jjml jmod-jjml-multimedia jmod-jjml-jni jmod-ggml-libs jmod-ggml-llm-libs jmod-ggml-whisper-libs
 
 jdk-jjml: package-jmods
-	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_MULTIMEDIA) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM))
+	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_MULTIMEDIA) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM) $(JMOD_GGML_WHISPER))
 	$(call a2_jlink_copy_categories,jdk-jjml,$(A2_CATEGORY))
 
 JDK_JJML_WIN_UPGRADE_ID=d87918b9-88e7-51fb-92d5-7186ca73314b
