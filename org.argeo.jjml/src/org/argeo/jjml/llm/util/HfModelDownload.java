@@ -17,24 +17,20 @@ import java.nio.file.Paths;
 import java.util.function.DoubleConsumer;
 
 /**
- * Downloads a GGUF model (by defaults from HuggingFace) with the same legacy
- * naming conventions as llama-cli. This is meant to be used for prototyping,
- * not as a full-fledged models management solution.
- * 
- * @deprecated Still uses the legacy llama.cpp download format.
- * @see HfModelDownload
+ * Downloads a GGUF model (by defaults from HuggingFace) with the same naming
+ * conventions as llama-cli. This is meant to be used for prototyping, not as a
+ * full-fledged models management solution.
  */
-@Deprecated
-public class SimpleModelDownload {
+public class HfModelDownload {
 	private int bufferSize = 1024 * 4096;
 
 	private final Path modelsBase;
 
-	public SimpleModelDownload(Path modelsBase) {
+	public HfModelDownload(Path modelsBase) {
 		this.modelsBase = modelsBase;
 	}
 
-	public SimpleModelDownload() {
+	public HfModelDownload() {
 		this(getDefaultModelsBase());
 	}
 
@@ -61,12 +57,23 @@ public class SimpleModelDownload {
 
 	public String getLocalFileName(String hfRepo, String quantization) {
 		String fileName = hfRepo.split("/")[1].replace("-GGUF", "-" + quantization + ".gguf");
-		String localFileName = hfRepo.replace("/", "_") + "_" + fileName;
+//		String localFileName = hfRepo.replace("/", "_") + "_" + fileName;
+		String localFileName = fileName;
 		return localFileName;
 	}
 
-	public Path getLocalFile(String hfRepo, String quantization) {
-		return modelsBase.resolve(getLocalFileName(hfRepo, quantization));
+	public Path getLocalHfRepoBaseDir(String hfRepo) {
+		return modelsBase.resolve("models--" + hfRepo.replace("/", "--"));
+	}
+
+	public Path getLocalFile(String hfRepo, String quantization) throws IOException {
+		Path baseDir = getLocalHfRepoBaseDir(hfRepo);
+		Path refsFile = baseDir.resolve("refs").resolve("main");
+		if (!Files.exists(refsFile))
+			return null;
+		String ref = Files.readString(refsFile).strip();
+		Path modelsDir = baseDir.resolve("snapshots").resolve(ref);
+		return modelsDir.resolve(getLocalFileName(hfRepo, quantization));
 	}
 
 	public Path getOrDownloadModel(String hfRepoArg, DoubleConsumer progressCallback) throws IOException {
@@ -82,7 +89,7 @@ public class SimpleModelDownload {
 		Path localFile = getLocalFile(hfRepo, quantization);
 
 		String currentEtag = null;
-		if (Files.exists(localFile)) {
+		if (localFile != null && Files.exists(localFile)) {
 			try {
 				byte[] buf = null; // (byte[]) Files.readAttributes(localFile, "user:etag").getOrDefault("etag",
 									// null);
@@ -95,8 +102,11 @@ public class SimpleModelDownload {
 				return localFile;
 //				throw new IllegalStateException("File " + localFile + " already exist, remove it first");
 			}
+		} else {
+			throw new UnsupportedOperationException("Downloading files is currently not supported.");
 		}
-		Files.createDirectories(localFile.getParent());
+
+		Files.createDirectories(getLocalHfRepoBaseDir(hfRepo));
 
 		URL url = getRemoteUrl(hfRepo, quantization);
 		HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
@@ -147,7 +157,7 @@ public class SimpleModelDownload {
 		} else if (os.contains("mac") || os.contains("darwin")) {
 			defaultModelsBase = Paths.get(System.getProperty("user.home"), "Library", "Caches", "llama.cpp");
 		} else { // Linux / Unix
-			defaultModelsBase = Paths.get(System.getProperty("user.home"), ".cache", "llama.cpp");
+			defaultModelsBase = Paths.get(System.getProperty("user.home"), ".cache", "huggingface", "hub");
 		}
 		return defaultModelsBase;
 	}
