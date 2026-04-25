@@ -41,7 +41,13 @@ endif()
 
 if(NOT EXISTS "${llama_LIBRARY}")
 	set(LLAMA_STANDALONE ON)
+	if(NOT LLAMA_BUILD_TOOLS)
+		set(LLAMA_BUILD_COMMON ON)
+		set(LLAMA_BUILD_TOOLS ON)
+	endif()
+	
 	add_subdirectory(llama.cpp) # build locally
+	
 	if(MINGW)
 		set_target_properties(llama PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
 		if(LLAMA_BUILD_TOOLS)
@@ -58,12 +64,22 @@ if(NOT EXISTS "${llama_LIBRARY}")
 			set_target_properties(mtmd PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_LLAMA})
 		endif()
 	endif()
+	if(LLAMA_BUILD_TOOLS)
+		if(TARGET llama-common)
+		set_target_properties(llama-common PROPERTIES LIBRARY_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
+		endif()
+		set_target_properties(llama-completion PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
+		set_target_properties(llama-bench PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
+		set_target_properties(llama-mtmd-cli PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${TARGET_NATIVE_OUTPUT_LLAMA}>)
+	endif()
 	message(STATUS "Build llama.cpp locally from submodule native/tp/llama.cpp") 
 endif()
 
 set(TARGET_NATIVE_OUTPUT_WHISPER ${TARGET_NATIVE_OUTPUT_GGML})
 if(NOT EXISTS "${whisper_LIBRARY}")
+
 	add_subdirectory(whisper.cpp) # build locally
+	
 	if(MINGW)
 		set_target_properties(whisper PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TARGET_NATIVE_OUTPUT_WHISPER})
 	elseif(MSVC)

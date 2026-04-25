@@ -51,6 +51,12 @@ else()
 	# look for ggml via CMake configs (preferred)
 	find_package(ggml QUIET)
 	if(ggml_FOUND)
+		set(LLAMA_USE_SYSTEM_GGML ON)
+		
+		# override default
+		set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+		set(WHISPER_USE_SYSTEM_GGML ON)
+		
 		message(STATUS "Found ggml package: ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
 	else()
 		# look for ggml via simple library search
