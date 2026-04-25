@@ -50,6 +50,7 @@ import org.argeo.jjml.llm.LlamaCppTextProcessor;
 import org.argeo.jjml.llm.LlamaCppVocabulary;
 import org.argeo.jjml.llm.params.ContextParams;
 import org.argeo.jjml.llm.params.ModelParams;
+import org.argeo.jjml.llm.util.HfModelDownload;
 import org.argeo.jjml.llm.util.SimpleModelDownload;
 import org.argeo.jjml.llm.util.SimpleProgressCallback;
 
@@ -87,7 +88,13 @@ class JjmlSmokeTests {
 			String arg0 = args.get(0);
 			Path modelPath = Paths.get(arg0);
 			if (!Files.exists(modelPath))
-				modelPath = new SimpleModelDownload().getOrDownloadModel(arg0, new SimpleProgressCallback());
+				try {
+					modelPath = new HfModelDownload().getOrDownloadModel(arg0, new SimpleProgressCallback());
+				} catch (Exception e) {
+					logger.log(WARNING, "Using legacy model download\n(reason: " + e + ")");
+					// Legacy downloads for unattended tests
+					modelPath = new SimpleModelDownload().getOrDownloadModel(arg0, new SimpleProgressCallback());
+				}
 			if (!Files.exists(modelPath))
 				throw new IllegalArgumentException("Could not find GGUF model " + modelPath);
 

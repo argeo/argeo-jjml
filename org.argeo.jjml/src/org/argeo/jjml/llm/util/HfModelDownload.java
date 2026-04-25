@@ -103,7 +103,8 @@ public class HfModelDownload {
 //				throw new IllegalStateException("File " + localFile + " already exist, remove it first");
 			}
 		} else {
-			throw new UnsupportedOperationException("Downloading files is currently not supported.");
+			throw new UnsupportedOperationException(
+					"Downloading files is currently not supported. Use llama.cpp tools to download models first.");
 		}
 
 		Files.createDirectories(getLocalHfRepoBaseDir(hfRepo));
