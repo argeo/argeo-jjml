@@ -50,7 +50,7 @@ jobs:
       id: depends
       run: |
        sudo apt-get update
-       sudo apt-get install -y default-jdk glslc libvulkan-dev
+       sudo apt-get install -y default-jdk glslc libvulkan-dev spirv-headers
 
     - name: Configure CMake
       run: >
@@ -60,7 +60,6 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DJJML_FORCE_BUILD_TP=ON
-        -DLLAMA_CURL=OFF
         -DLLAMA_BUILD_COMMON=ON
         -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF
