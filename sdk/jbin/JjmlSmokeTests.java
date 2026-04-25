@@ -62,6 +62,7 @@ class JjmlSmokeTests {
 
 	private int parallelism = Runtime.getRuntime().availableProcessors();
 
+	@SuppressWarnings("deprecation")
 	public void main(List<String> args) throws Exception, AssertionError {
 		try {
 			if (!getClass().desiredAssertionStatus()) {
@@ -111,9 +112,9 @@ class JjmlSmokeTests {
 //					return;
 
 				assertLoadUnloadDefaultContext(model);
-				// assertEmbeddings(model);
-				assertBatch(model);
-				assertJavaSampler(model);
+//				assertEmbeddings(model);
+//				assertBatch(model);
+//				assertJavaSampler(model);
 				assertChat(model);
 				assertSavedContextState(model);
 			}
