@@ -41,7 +41,6 @@ GGML_BLAS ?= OFF
 GGML_VULKAN ?= OFF
 GGML_CUDA ?= OFF
 GGML_RPC ?= OFF
-GGML_OPENMP ?= OFF
 GGML_CCACHE ?= ON
 
 GGML_NATIVE ?= OFF
@@ -49,6 +48,14 @@ ifeq ($(GGML_NATIVE),ON)
 JJML_CPU ?=-DGGML_NATIVE=ON
 else
 JJML_CPU ?=-DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON
+endif
+
+ifeq ($(MSYSTEM),UCRT64)
+# OpenMP strongly degrades decoding on MSYS2 UCRT64
+GGML_OPENMP ?= OFF
+else
+# otherwise it improves both encoding and decoding
+GGML_OPENMP ?= ON
 endif
 
 # Nvidia drivers
@@ -90,6 +97,12 @@ all: cmake-all
 
 rebuild-force-tp:
 	echo CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
+
+ifeq ($(MSYSTEM),CLANG64)
+	# MSYS2 clang hangs on AMX
+	# see https://github.com/NixOS/nixpkgs/pull/497818
+	sed -i '/sapphirerapids/d' native/tp/ggml/src/CMakeLists.txt
+endif
 	
 	$(JJML_CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
@@ -132,6 +145,11 @@ ifneq ($(TARGET_OS),windows)
 endif
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
+
+ifeq ($(MSYSTEM),CLANG64)
+	# revert workaround for MSYS2 clang hangs on AMX
+	git -C native/tp/ggml restore src/CMakeLists.txt
+endif
 
 clean: cmake-clean
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
