@@ -50,14 +50,6 @@ else
 JJML_CPU ?=-DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON
 endif
 
-ifeq ($(MSYSTEM),UCRT64)
-# OpenMP strongly degrades decoding on MSYS2 UCRT64
-GGML_OPENMP ?= OFF
-else
-# otherwise it improves both encoding and decoding
-GGML_OPENMP ?= ON
-endif
-
 # Nvidia drivers
 # see https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/
 #JJML_CUDA_TOOLKIT ?= -DCUDAToolkit_ROOT=/usr/local/cuda-13/ -DCMAKE_CUDA_COMPILER=/usr/local/cuda-13/bin/nvcc
@@ -92,6 +84,19 @@ endif
 # (and add runtime to path)
 endif
 
+# OpenMP
+ifeq ($(MSYSTEM),CLANG64)
+GGML_OPENMP ?= ON
+endif
+ifeq ($(JJML_CMAKE),$(MSVC_CMAKE))
+GGML_OPENMP ?= ON
+endif
+ifeq ($(CMAKE_C_COMPILER),clang)
+GGML_OPENMP ?= ON
+JJML_COMPILER ?= -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-stdlib=libc++
+endif
+GGML_OPENMP ?= OFF
+
 all: cmake-all
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 
@@ -103,6 +108,7 @@ ifeq ($(MSYSTEM),CLANG64)
 	# see https://github.com/NixOS/nixpkgs/pull/497818
 	sed -i '/sapphirerapids/d' native/tp/ggml/src/CMakeLists.txt
 endif
+
 	
 	$(JJML_CMAKE) -B $(BUILD_BASE) . \
 		-DJJML_FORCE_BUILD_TP=ON \
@@ -114,6 +120,7 @@ endif
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
 		-DGGML_CCACHE=$(GGML_CCACHE) \
 		\
+		$(JJML_COMPILER) \
 		$(JJML_SSL) \
 		-DLLAMA_BUILD_COMMON=$(LLAMA_BUILD_TOOLS) \
 		-DLLAMA_BUILD_TOOLS=$(LLAMA_BUILD_TOOLS) \
