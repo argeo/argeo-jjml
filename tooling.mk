@@ -44,6 +44,13 @@ GGML_RPC ?= OFF
 GGML_OPENMP ?= OFF
 GGML_CCACHE ?= ON
 
+GGML_NATIVE ?= OFF
+ifeq ($(GGML_NATIVE),ON)
+JJML_CPU ?=-DGGML_NATIVE=ON
+else
+JJML_CPU ?=-DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON
+endif
+
 # Nvidia drivers
 # see https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/
 #JJML_CUDA_TOOLKIT ?= -DCUDAToolkit_ROOT=/usr/local/cuda-13/ -DCMAKE_CUDA_COMPILER=/usr/local/cuda-13/bin/nvcc
@@ -67,7 +74,11 @@ JJML_CMAKE ?= $(CMAKE)
 JJML_SSL ?= -DLLAMA_OPENSSL=ON
 else
 JJML_CMAKE ?= $(MSVC_CMAKE)
+ifeq ($(JJML_CMAKE),$(MSVC_CMAKE))
 JJML_SSL ?= -DLLAMA_BUILD_LIBRESSL=ON
+else
+JJML_SSL ?= -DLLAMA_OPENSSL=ON
+endif
 
 # To build with MinGW compiler
 # JJML_CMAKE=cmake LLAMA_CURL=ON make -f tooling.mk clean-local rebuild-force-tp
@@ -99,9 +110,7 @@ rebuild-force-tp:
 		\
 		-DWHISPER_BUILD_EXAMPLES=OFF \
 		\
-		-DGGML_NATIVE=OFF \
-		-DGGML_CPU_ALL_VARIANTS=ON \
-		-DGGML_BACKEND_DL=ON \
+		$(JJML_CPU) \
 		\
 		-DGGML_OPENMP=$(GGML_OPENMP) \
 		-DGGML_BLAS=$(GGML_BLAS) \
@@ -114,7 +123,9 @@ rebuild-force-tp:
 		$(JJML_CUDA_TOOLKIT)
 	
 	$(JJML_CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
+ifneq ($(GGML_NATIVE),ON)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
+endif
 ifneq ($(TARGET_OS),windows)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix).0 $(TARGET_NATIVE_OUTPUT)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix).1 $(TARGET_NATIVE_OUTPUT)
