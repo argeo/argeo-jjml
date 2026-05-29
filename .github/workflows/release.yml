@@ -28,8 +28,8 @@ jobs:
         fetch-depth: '0'
         fetch-tags: 'true'
 
-    - name: Use latest third-parties
-      run: make -f tooling.mk tp-clone tp-checkout-latest
+    - name: Use same third-parties versions as Debian
+      run: make -f tooling.mk tp-clone tp-checkout-debian
 
     - name: Set reusable strings
       id: strings
@@ -124,8 +124,8 @@ jobs:
       run: |
         brew install make
 
-    - name: Use latest third-parties
-      run: gmake -f tooling.mk tp-clone tp-checkout-latest
+    - name: Use same third-parties versions as Debian
+      run: gmake -f tooling.mk tp-clone tp-checkout-debian
 
     - name: Prepare A2 output
       run: |
@@ -226,8 +226,8 @@ jobs:
       run: |
         brew install make
 
-    - name: Use latest third-parties
-      run: gmake -f tooling.mk tp-clone tp-checkout-latest
+    - name: Use same third-parties versions as Debian
+      run: gmake -f tooling.mk tp-clone tp-checkout-debian
 
     - name: Prepare A2 output
       run: |
