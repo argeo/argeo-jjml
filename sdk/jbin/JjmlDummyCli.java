@@ -30,7 +30,6 @@ import org.argeo.jjml.llm.params.ContextParam;
 import org.argeo.jjml.llm.params.ModelParam;
 import org.argeo.jjml.llm.params.ModelParams;
 import org.argeo.jjml.llm.util.InstructRole;
-import org.argeo.jjml.llm.util.SimpleModelDownload;
 import org.argeo.jjml.llm.util.SimpleProgressCallback;
 
 /** A minimal command line interface for batch processing and simple chat. */
@@ -57,8 +56,6 @@ public class JjmlDummyCli {
 		 */
 		String arg0 = args[0];
 		Path modelPath = Paths.get(arg0);
-		if (!Files.exists(modelPath))
-			modelPath = new SimpleModelDownload().getOrDownloadModel(arg0, new SimpleProgressCallback());
 		if (!Files.exists(modelPath))
 			throw new IllegalArgumentException("Could not find GGUF model " + modelPath);
 

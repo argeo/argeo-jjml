@@ -14,7 +14,6 @@ import org.argeo.jjml.llm.LlamaCppSamplerChain;
 import org.argeo.jjml.llm.LlamaCppSamplers;
 import org.argeo.jjml.llm.params.ContextParam;
 import org.argeo.jjml.llm.util.InstructRole;
-import org.argeo.jjml.llm.util.SimpleModelDownload;
 import org.argeo.jjml.mtmd.MtmdBackend;
 import org.argeo.jjml.mtmd.MtmdBitmap;
 import org.argeo.jjml.mtmd.MtmdContext;
@@ -32,13 +31,9 @@ public class ImageDescription {
 
 		Path modelPath = Paths.get(args[0]);
 		if (!Files.exists(modelPath))
-			modelPath = SimpleModelDownload.getDefaultModelsBase().resolve(modelPath);
-		if (!Files.exists(modelPath))
 			throw new IllegalArgumentException("Cannot find model " + args[0]);
 
 		Path mmprojPath = Paths.get(args[1]);
-		if (!Files.exists(mmprojPath))
-			mmprojPath = SimpleModelDownload.getDefaultModelsBase().resolve(mmprojPath);
 		if (!Files.exists(mmprojPath))
 			throw new IllegalArgumentException("Cannot find mmproj " + args[1]);
 
