@@ -250,7 +250,7 @@ jmod-jjml: a2-prepare-output
 	
 	# examples
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/man/examples
-	$(COPY) -v sdk/jbin/*.java $(JMODS_BASE)/$(JMOD_JJML)/man/examples
+	$(COPY) -v sdk/java/examples/*.java $(JMODS_BASE)/$(JMOD_JJML)/man/examples
 
 	$(call a2_jmod_create_lib,$(JMOD_JJML))
 	# list content

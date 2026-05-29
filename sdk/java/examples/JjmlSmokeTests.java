@@ -1,5 +1,7 @@
-
 //!/usr/bin/env -S java -ea -cp /usr/share/java/org.argeo.jjml.jar
+package examples;
+
+
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
