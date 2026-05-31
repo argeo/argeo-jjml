@@ -53,9 +53,9 @@ static llama_token jjml_check_grammar(llama_context *ctx, int idx,
 	llama_sampler_apply(grmr, &cur_p);
 	llama_sampler_apply(chain, &cur_p);
 
-	GGML_ASSERT(
-			cur_p.selected != -1
-					&& "no selected token during re-sampling - check your sampling configuration");
+	if (cur_p.selected == -1)
+		throw std::runtime_error(
+				"No selected token during re-sampling - check your sampling configuration");
 
 	llama_token res = cur_p.data[cur_p.selected].id;
 	return res;
@@ -229,35 +229,41 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doRead(
 		jlong grammarSamplerPtr, jint contextPosition,
 		jobjectArray outputBuffers, jintArray offsets, jintArray lengths,
 		jintArray sequenceIds, jintArray outputIds, jobject completionHandler) {
-	auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
-
-	auto *smpl = argeo::jni::as_pointer<llama_sampler*>(samplerPtr);
-	auto *grmr =
-			grammarSamplerPtr != 0 ?
-					argeo::jni::as_pointer<llama_sampler*>(grammarSamplerPtr) :
-					nullptr;
-	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
-
-	int outputs_count = env->GetArrayLength(outputBuffers);
-	std::vector<void*> outputs(outputs_count);
-	for (int i = 0; i < outputs_count; i++) {
-		jobject buf = env->GetObjectArrayElement(outputBuffers, i);
-		if (buf != nullptr) {
-			outputs[i] = env->GetDirectBufferAddress(buf);
-		} else {
-			outputs[i] = nullptr;
-		}
-	}
-
-	jint newPosition;
 	try {
-		newPosition = jjml_llm_batch_processor_read(ctx, smpl, grmr, cur_pos,
-				outputs, outputs_count, env, offsets, lengths, sequenceIds,
-				outputIds, completionHandler);
-	} catch (std::exception &ex) {
+		auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
+
+		auto *smpl = argeo::jni::as_pointer<llama_sampler*>(samplerPtr);
+		auto *grmr =
+				grammarSamplerPtr != 0 ?
+						argeo::jni::as_pointer<llama_sampler*>(
+								grammarSamplerPtr) :
+						nullptr;
+		llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
+
+		int outputs_count = env->GetArrayLength(outputBuffers);
+		std::vector<void*> outputs(outputs_count);
+		for (int i = 0; i < outputs_count; i++) {
+			jobject buf = env->GetObjectArrayElement(outputBuffers, i);
+			if (buf != nullptr) {
+				outputs[i] = env->GetDirectBufferAddress(buf);
+			} else {
+				outputs[i] = nullptr;
+			}
+		}
+
+		jint newPosition;
+		try {
+			newPosition = jjml_llm_batch_processor_read(ctx, smpl, grmr,
+					cur_pos, outputs, outputs_count, env, offsets, lengths,
+					sequenceIds, outputIds, completionHandler);
+		} catch (std::exception &ex) {
+			argeo::jni::throw_to_java(env, ex);
+		}
+		return newPosition;
+	} catch (const std::exception &ex) {
 		argeo::jni::throw_to_java(env, ex);
+		return 0;
 	}
-	return newPosition;
 }
 
 JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doReadToArrays(
@@ -265,43 +271,51 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doReadToAr
 		jlong grammarSamplerPtr, jint contextPosition,
 		jobjectArray outputArrays, jintArray offsets, jintArray lengths,
 		jintArray sequenceIds, jintArray outputIds, jobject completionHandler) {
-	auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
-
-	auto *smpl = argeo::jni::as_pointer<llama_sampler*>(samplerPtr);
-	auto *grmr =
-			grammarSamplerPtr != 0 ?
-					argeo::jni::as_pointer<llama_sampler*>(grammarSamplerPtr) :
-					nullptr;
-	llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
-
-	int outputs_count = env->GetArrayLength(outputArrays);
-	std::vector<void*> outputs(outputs_count);
-	for (int i = 0; i < outputs_count; i++) {
-		jintArray arr = (jintArray) env->GetObjectArrayElement(outputArrays, i);
-		if (arr != nullptr) {
-			outputs[i] = env->GetPrimitiveArrayCritical(arr, nullptr);
-		} else {
-			outputs[i] = nullptr;
-		}
-	}
-
-	jint newPosition;
 	try {
-		newPosition = jjml_llm_batch_processor_read(ctx, smpl, grmr, cur_pos,
-				outputs, outputs_count, env, offsets, lengths, sequenceIds,
-				outputIds, completionHandler);
-	} catch (std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
-	}
+		auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
 
-	// clean up
-	for (int i = 0; i < outputs_count; i++) {
-		jintArray arr = (jintArray) env->GetObjectArrayElement(outputArrays, i);
-		if (arr != nullptr) {
-			env->ReleasePrimitiveArrayCritical(arr, outputs[i], 0);
+		auto *smpl = argeo::jni::as_pointer<llama_sampler*>(samplerPtr);
+		auto *grmr =
+				grammarSamplerPtr != 0 ?
+						argeo::jni::as_pointer<llama_sampler*>(
+								grammarSamplerPtr) :
+						nullptr;
+		llama_pos cur_pos = static_cast<llama_pos>(contextPosition);
+
+		int outputs_count = env->GetArrayLength(outputArrays);
+		std::vector<void*> outputs(outputs_count);
+		for (int i = 0; i < outputs_count; i++) {
+			jintArray arr = (jintArray) env->GetObjectArrayElement(outputArrays,
+					i);
+			if (arr != nullptr) {
+				outputs[i] = env->GetPrimitiveArrayCritical(arr, nullptr);
+			} else {
+				outputs[i] = nullptr;
+			}
 		}
-	}
 
-	return newPosition;
+		jint newPosition;
+		try {
+			newPosition = jjml_llm_batch_processor_read(ctx, smpl, grmr,
+					cur_pos, outputs, outputs_count, env, offsets, lengths,
+					sequenceIds, outputIds, completionHandler);
+		} catch (std::exception &ex) {
+			argeo::jni::throw_to_java(env, ex);
+		}
+
+		// clean up
+		for (int i = 0; i < outputs_count; i++) {
+			jintArray arr = (jintArray) env->GetObjectArrayElement(outputArrays,
+					i);
+			if (arr != nullptr) {
+				env->ReleasePrimitiveArrayCritical(arr, outputs[i], 0);
+			}
+		}
+
+		return newPosition;
+	} catch (const std::exception &ex) {
+		argeo::jni::throw_to_java(env, ex);
+		return 0;
+	}
 }
 
