@@ -55,3 +55,11 @@ jobs:
 
     - name: Build
       run: cmake --build build/argeo-jjml --config ${{ matrix.build_type }} -j $(nproc)
+
+    - name: Test
+      run: >
+        java -ea
+        -Djava.library.path=${{ github.workspace }}/build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml:${{ github.workspace }}/build/a2/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml
+        --module-path ${{ github.workspace }}/build/a2/lib/org.argeo.jjml
+        --add-modules org.argeo.jjml
+        sdk/java/examples/JjmlSmokeTests.java

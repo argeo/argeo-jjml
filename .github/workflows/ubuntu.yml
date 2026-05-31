@@ -79,4 +79,3 @@ jobs:
         --module-path ${{ github.workspace }}/build/a2/lib/org.argeo.jjml
         --add-modules org.argeo.jjml
         sdk/java/examples/JjmlSmokeTests.java
-        allenai/OLMo-2-0425-1B-Instruct-GGUF

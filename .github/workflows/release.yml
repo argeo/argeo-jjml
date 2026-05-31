@@ -93,7 +93,6 @@ jobs:
       run: >
         "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-windows-std\bin\java" -ea
         "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-windows-std\man\examples\JjmlSmokeTests.java"
-        allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Release
       uses: ncipollo/release-action@v1
@@ -196,7 +195,6 @@ jobs:
       run: >
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/bin/java -ea
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/man/examples/JjmlSmokeTests.java
-        allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Release
       uses: ncipollo/release-action@v1
@@ -297,7 +295,6 @@ jobs:
       run: >
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/bin/java -ea
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/man/examples/JjmlSmokeTests.java
-        allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Release
       uses: ncipollo/release-action@v1

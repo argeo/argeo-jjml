@@ -149,14 +149,14 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 				buf.position(buf.position() + output.limit());
 			}
 
-			long begin = System.nanoTime();
+//			long begin = System.nanoTime();
 
 			CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
 			CompletableFuture<Boolean> allCompleted = readBatchAsync(outputs, generationCompleted);
 			allCompleted.join();
 
-			long end = System.nanoTime();
-			System.out.println("Read  batch in " + (end - begin) / 1000000 + " ms.");
+//			long end = System.nanoTime();
+//			System.out.println("Read  batch in " + (end - begin) / 1000000 + " ms.");
 
 			int sequencesLeft = 0;
 			for (int i = 0; i < outputs.length; i++) {
