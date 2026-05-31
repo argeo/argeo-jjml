@@ -24,3 +24,10 @@ add_dependencies(org.argeo.jjml.multimedia org.argeo.jjml)
 if(NOT A2_BUILD_INDEP_ONLY)
 add_subdirectory(native)
 endif()
+
+# TESTING
+a2_build_sdk_java(${BUNDLES})
+add_dependencies(sdk_java org.argeo.jjml)
+
+include(CTest)
+a2_add_test_java(argeo.jjml.sdk/tests.llm.AllLlmTests)

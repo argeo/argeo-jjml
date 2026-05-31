@@ -53,8 +53,9 @@ class LoadModelTests extends AbstractLlmTests {
 		Path modelPath = Paths.get(hint);
 		if (!Files.exists(modelPath))
 			modelPath = new HfModelCache().getLocalFile(hint);
-		if (!Files.exists(modelPath))
-			throw new IllegalArgumentException("Could not find GGUF model " + modelPath);
+		if (modelPath == null || !Files.exists(modelPath))
+			throw new IllegalArgumentException(
+					"Could not find GGUF model " + hint + ". Make sure that llama.cpp tools can find it.");
 		return loadModel(modelParams, modelPath);
 	}
 
@@ -64,8 +65,7 @@ class LoadModelTests extends AbstractLlmTests {
 				: null;
 		Future<LlamaCppModel> loaded = LlamaCppModel.loadAsync(modelPath, modelParams, progressCallback, null);
 		try {
-			LlamaCppModel model = loaded.get();
-			return model;
+			return loaded.get();
 		} catch (InterruptedException | ExecutionException e) {
 			throw new IllegalStateException("Could not load model " + modelPath, e);
 		}

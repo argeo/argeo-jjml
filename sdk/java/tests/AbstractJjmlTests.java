@@ -11,7 +11,7 @@ import java.io.UncheckedIOException;
 import java.lang.System.Logger;
 
 public abstract class AbstractJjmlTests implements Runnable {
-	public static boolean allPassed = true;
+	private static boolean allPassed = true;
 
 	protected final Logger logger = System.getLogger(getClass().getName());
 	protected final PrintStream out = logger.isLoggable(DEBUG) ? System.out
@@ -25,14 +25,22 @@ public abstract class AbstractJjmlTests implements Runnable {
 			all();
 			logger.log(INFO, "PASSED - " + getClass().getSimpleName());
 		} catch (IOException e) {
-			allPassed = false;
+			markFailed();
 			throw new UncheckedIOException(" ERROR  - " + getClass().getSimpleName() + " - " + e.getMessage(), e);
 		} catch (Exception | AssertionError e) {
-			allPassed = false;
+			markFailed();
 			logger.log(WARNING, "FAILED - " + getClass().getSimpleName() + " - " + e.getMessage());
 			if (logger.isLoggable(INFO))
 				e.printStackTrace();
 		}
+	}
+
+	public static void markFailed() {
+		allPassed = false;
+	}
+
+	public static boolean allPassed() {
+		return allPassed;
 	}
 
 }
