@@ -1,7 +1,6 @@
 package org.argeo.jjml.llm;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.argeo.jjml.llm.params.ModelParam.n_gpu_layers;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -208,7 +207,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 		// we disable GPU offload by default as it is too sensitive to context
 		// and setting context parameters right
-		res = res.with(n_gpu_layers, 0);
+		//res = res.with(n_gpu_layers, 0);
 
 		for (ModelParam param : ModelParam.values()) {
 			String sysProp = System.getProperty(param.asSystemProperty());
