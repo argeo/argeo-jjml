@@ -28,7 +28,7 @@ public class WhisperCppContext implements LongSupplier, AutoCloseable {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() throws RuntimeException {
 		doDestroy();
 	}
 

@@ -27,7 +27,8 @@ endif()
 
 # TESTING
 a2_build_sdk_java(${BUNDLES})
-add_dependencies(sdk_java org.argeo.jjml)
+add_dependencies(sdk_java org.argeo.jjml.multimedia)
 
 include(CTest)
 a2_add_test_java(argeo.jjml.sdk/tests.llm.AllLlmTests)
+a2_add_test_java(argeo.jjml.sdk/tests.whisper.AllWhisperTests)
