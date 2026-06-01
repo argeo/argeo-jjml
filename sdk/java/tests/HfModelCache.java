@@ -1,4 +1,4 @@
-package tests.llm;
+package tests;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,28 +10,24 @@ import java.nio.file.Paths;
  * conventions as llama-cli. This is meant to be used for prototyping, not as a
  * full-fledged models management solution.
  */
-class HfModelCache {
+public class HfModelCache {
 	private final Path modelsBase;
 
 	HfModelCache(Path modelsBase) {
 		this.modelsBase = modelsBase;
 	}
 
-	HfModelCache() {
+	public HfModelCache() {
 		this(getDefaultModelsBase());
-	}
-
-	private String getLocalFileName(String hfRepo, String quantization) {
-		String fileName = hfRepo.split("/")[1].replace("-GGUF", "-" + quantization + ".gguf");
-//		String localFileName = hfRepo.replace("/", "_") + "_" + fileName;
-		String localFileName = fileName;
-		return localFileName;
 	}
 
 	private Path getLocalHfRepoBaseDir(String hfRepo) {
 		return modelsBase.resolve("models--" + hfRepo.replace("/", "--"));
 	}
 
+	/*
+	 * LLM
+	 */
 	public Path getLocalFile(String hfRepoArg) throws IOException {
 		if (hfRepoArg.contains(":")) {
 			return getLocalFile(hfRepoArg.split(":")[0], hfRepoArg.split(":")[1]);
@@ -48,6 +44,40 @@ class HfModelCache {
 		String ref = Files.readString(refsFile).strip();
 		Path modelsDir = baseDir.resolve("snapshots").resolve(ref);
 		return modelsDir.resolve(getLocalFileName(hfRepo, quantization));
+	}
+
+	private String getLocalFileName(String hfRepo, String quantization) {
+		String fileName = hfRepo.split("/")[1].replace("-GGUF", "-" + quantization + ".gguf");
+		String localFileName = fileName;
+		return localFileName;
+	}
+
+	/*
+	 * MMPROJ
+	 */
+	public Path getLocalMmprojFile(String hfRepoArg) throws IOException {
+		if (hfRepoArg.contains(":")) {
+			return getLocalMmprojFile(hfRepoArg.split(":")[0], hfRepoArg.split(":")[1]);
+		} else {
+			return getLocalMmprojFile(hfRepoArg, "BF16");
+		}
+	}
+
+	public Path getLocalMmprojFile(String hfRepo, String quantization) throws IOException {
+		// TODO factorize
+		Path baseDir = getLocalHfRepoBaseDir(hfRepo);
+		Path refsFile = baseDir.resolve("refs").resolve("main");
+		if (!Files.exists(refsFile))
+			return null;
+		String ref = Files.readString(refsFile).strip();
+		Path modelsDir = baseDir.resolve("snapshots").resolve(ref);
+		return modelsDir.resolve(getLocalMmprojFileName(hfRepo, quantization));
+	}
+
+	private String getLocalMmprojFileName(String hfRepo, String quantization) {
+		String fileName = hfRepo.split("/")[1].replace("-GGUF", "-" + quantization + "-mmproj.gguf");
+		String localFileName = fileName;
+		return localFileName;
 	}
 
 	/*

@@ -23,7 +23,7 @@ public class MtmdContext implements LongSupplier, AutoCloseable {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() throws RuntimeException {
 		doDestroy();
 	}
 

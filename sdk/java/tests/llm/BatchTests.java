@@ -64,6 +64,6 @@ class BatchTests extends AbstractLlmTests {
 
 	public static void main(String[] args) throws Exception {
 		String hint = args.length == 0 ? "allenai/OLMo-2-0425-1B-Instruct-GGUF" : args[0];
-		new BatchTests(LoadModelTests.createModel(hint)).all();
+		new BatchTests(AbstractLlmTests.createModel(hint)).all();
 	}
 }

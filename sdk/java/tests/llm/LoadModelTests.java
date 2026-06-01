@@ -3,16 +3,9 @@ package tests.llm;
 import static java.lang.System.Logger.Level.DEBUG;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import org.argeo.jjml.llm.LlamaCppContext;
 import org.argeo.jjml.llm.LlamaCppModel;
-import org.argeo.jjml.llm.params.ModelParams;
-import org.argeo.jjml.llm.util.SimpleProgressCallback;
 
 class LoadModelTests extends AbstractLlmTests {
 
@@ -43,33 +36,6 @@ class LoadModelTests extends AbstractLlmTests {
 		try (LlamaCppContext context = new LlamaCppContext(getModel());) {
 			assert context.getContextSize() > 0;
 		}
-	}
-
-	static LlamaCppModel createModel(String hint) throws IOException {
-		return createModel(LlamaCppModel.defaultModelParams(), hint);
-	}
-
-	static LlamaCppModel createModel(ModelParams modelParams, String hint) throws IOException {
-		Path modelPath = Paths.get(hint);
-		if (!Files.exists(modelPath))
-			modelPath = new HfModelCache().getLocalFile(hint);
-		if (modelPath == null || !Files.exists(modelPath))
-			throw new IllegalArgumentException(
-					"Could not find GGUF model " + hint + ". Make sure that llama.cpp tools can find it.");
-		return loadModel(modelParams, modelPath);
-	}
-
-	static LlamaCppModel loadModel(ModelParams modelParams, Path modelPath) throws IOException {
-		SimpleProgressCallback progressCallback = System.getLogger(LoadModelTests.class.getName()).isLoggable(DEBUG)
-				? new SimpleProgressCallback()
-				: null;
-		Future<LlamaCppModel> loaded = LlamaCppModel.loadAsync(modelPath, modelParams, progressCallback, null);
-		try {
-			return loaded.get();
-		} catch (InterruptedException | ExecutionException e) {
-			throw new IllegalStateException("Could not load model " + modelPath, e);
-		}
-
 	}
 
 }
