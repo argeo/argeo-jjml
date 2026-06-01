@@ -4,6 +4,7 @@
 option(JJML_FORCE_BUILD_TP "Force build of reference third-party submodules even if they are available on the system")
 option(JJML_DO_NOT_BUILD_TP "Fail if third-party libraries are not found, instead of building them from the reference submodules")
 option(JJML_JDK_TP "Use third-party environment provided by a ggml-instrumented JDK (useful for Windows)")
+option(JJML_FORCE_LLAMA_BUILD_NUMBER "Force LLAMA_BUILD_NUMBER, in environments where it is not autoamtically set.")
 
 #
 # THIRD PARTY DETECTION
@@ -70,14 +71,14 @@ endif() # JJML_FORCE_BUILD_TP
 if(EXISTS ${GGML_LIBRARY}) # ggml as external libraries
 	if(NOT ggml_FOUND) # not CMake configured
 		add_library(ggml SHARED IMPORTED GLOBAL)
-		if(MSVC)
+		if(WIN32)
 		set_target_properties(ggml PROPERTIES IMPORTED_IMPLIB ${GGML_LIBRARY})
 		else()
 		set_target_properties(ggml PROPERTIES IMPORTED_LOCATION ${GGML_LIBRARY})
 		endif()
 		
 		add_library(ggml-base SHARED IMPORTED GLOBAL)
-		if(MSVC)
+		if(WIN32)
 		set_target_properties(ggml-base PROPERTIES IMPORTED_IMPLIB ${GGML_BASE_LIBRARY})
 		else()
 		set_target_properties(ggml-base PROPERTIES IMPORTED_LOCATION ${GGML_BASE_LIBRARY})
@@ -96,33 +97,47 @@ if(EXISTS ${GGML_LIBRARY}) # ggml as external libraries
 	endif()
 endif()
 
-if(EXISTS "${llama_LIBRARY}") # llama.cpp as external library
+if(EXISTS "${llama_LIBRARY}") # libllama as external library
 	if(NOT llama_FOUND) # not CMake configured
 		add_library(llama SHARED IMPORTED GLOBAL)
-		if(MSVC)
+		if(WIN32)
 		set_target_properties(llama PROPERTIES IMPORTED_IMPLIB ${llama_LIBRARY})
 		else()
 		set_target_properties(llama PROPERTIES IMPORTED_LOCATION ${llama_LIBRARY})
 		endif()
 		target_link_libraries(llama INTERFACE ${GGML_LIBRARY})
-		message(STATUS "Found LLAMA library: ${llama_LIBRARY}") 
+		message(STATUS "Found llama.cpp library: ${llama_LIBRARY}") 
 	endif()
 endif()
 
 # Workaround for mtmd not being properly configured in CMake
 if(EXISTS "${mtmd_LIBRARY}") # mtmd as external library
-	add_library(mtmd SHARED IMPORTED GLOBAL)
-	if(MSVC)
-	set_target_properties(mtmd PROPERTIES IMPORTED_IMPLIB ${mtmd_LIBRARY})
-	else()
-	set_target_properties(mtmd PROPERTIES IMPORTED_LOCATION ${mtmd_LIBRARY})
+	if(NOT mtmd_FOUND) # not CMake configured
+		add_library(mtmd SHARED IMPORTED GLOBAL)
+		if(WIN32)
+		set_target_properties(mtmd PROPERTIES IMPORTED_IMPLIB ${mtmd_LIBRARY})
+		else()
+		set_target_properties(mtmd PROPERTIES IMPORTED_LOCATION ${mtmd_LIBRARY})
+		endif()
+		target_link_libraries(mtmd INTERFACE ${llama_LIBRARY} ${GGML_LIBRARY})
+		message(STATUS "Found mtmd library: ${mtmd_LIBRARY}") 
 	endif()
-	message(STATUS "Found mtmd library: ${mtmd_LIBRARY}") 
 endif()
 
 if(NOT JJML_DO_NOT_BUILD_TP)
 	# Build reference third-party submodules if needed
 	add_subdirectory(tp)
+endif()
+
+# FIXME - LLAMA_BUILD_NUMBER is set to 1 in the MSYS-provided libraries
+# It should be reported to these packagers.
+if(JJML_FORCE_LLAMA_BUILD_NUMBER)
+set(LLAMA_BUILD_NUMBER ${JJML_FORCE_LLAMA_BUILD_NUMBER})
+set(LLAMA_VERSION 0.0.${LLAMA_BUILD_NUMBER})
+else()
+	if(LLAMA_BUILD_NUMBER EQUAL 1)
+	message(WARNING "LLAMA_BUILD_NUMBER=${LLAMA_BUILD_NUMBER} is wrong, force it with JJML_FORCE_LLAMA_BUILD_NUMBER")
+	endif()
 endif()
 
 message(STATUS "GGML_BUILD_NUMBER=${GGML_BUILD_NUMBER} LLAMA_BUILD_NUMBER=${LLAMA_BUILD_NUMBER}")
