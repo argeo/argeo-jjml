@@ -1,6 +1,7 @@
 package org.argeo.jjml.whisper;
 
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.LongSupplier;
 
@@ -15,6 +16,8 @@ public class WhisperCppContext implements LongSupplier, AutoCloseable {
 	private final long pointer;
 
 	public WhisperCppContext(Path modelPath) {
+		if (!Files.exists(modelPath))
+			throw new IllegalArgumentException("Whisper model " + modelPath + " does not exist");
 		this.pointer = doInit(filePathToNative(modelPath), true, true);
 	}
 

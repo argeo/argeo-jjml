@@ -59,36 +59,21 @@ LLAMA_BUILD_TOOLS ?= ON
 LLAMA_BUILD_SERVER ?= OFF
 JJML_FORCE_BUILD_LLAMA_GGML ?= OFF
 
-ifneq (,$(VCIDEInstallDir))
-MSVC_IDE_BASE=$(shell cygpath -m '$(VCIDEInstallDir)\\..')
-else
-MSVC_IDE_BASE=$(shell cygpath -m 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/IDE/')
-endif
-#MSVC_CMAKE_BASE="$(MSVC_BUILD_TOOLS)/Common7/IDE/CommonExtensions/Microsoft/CMake"
-MSVC_CMAKE_BASE=$(MSVC_IDE_BASE)CommonExtensions/Microsoft/CMake
-MSVC_CMAKE="$(MSVC_CMAKE_BASE)/CMake/bin/cmake.exe"
-
-ifeq ($(MSYS_VERSION),0)
-JJML_CMAKE ?= $(CMAKE)
+ifeq ($(MSYS_VERSION),0) # Linux
 JJML_SSL ?= -DLLAMA_OPENSSL=ON
-else
-JJML_CMAKE ?= $(MSVC_CMAKE)
-ifeq ($(JJML_CMAKE),$(MSVC_CMAKE))
+else # MSYS2
+ifeq ($(CMAKE),$(MSVC_CMAKE))
 JJML_SSL ?= -DLLAMA_BUILD_LIBRESSL=ON
-else
+else # CLANG64 or UCRT64
 JJML_SSL ?= -DLLAMA_OPENSSL=ON
 endif
-
-# To build with MinGW compiler
-# JJML_CMAKE=cmake LLAMA_CURL=ON make -f tooling.mk clean-local rebuild-force-tp
-# (and add runtime to path)
 endif
 
 # OpenMP
 ifeq ($(MSYSTEM),CLANG64)
 GGML_OPENMP ?= ON
 endif
-ifeq ($(JJML_CMAKE),$(MSVC_CMAKE))
+ifeq ($(CMAKE),$(MSVC_CMAKE))
 GGML_OPENMP ?= ON
 endif
 ifeq ($(CMAKE_C_COMPILER),clang)
@@ -109,8 +94,7 @@ ifeq ($(MSYSTEM),CLANG64)
 	sed -i '/sapphirerapids/d' native/tp/ggml/src/CMakeLists.txt
 endif
 
-	
-	$(JJML_CMAKE) -B $(BUILD_BASE) . \
+	$(CMAKE) -B $(BUILD_BASE) . \
 		-DA2_BUILD_INDEP_ONLY=$(A2_BUILD_INDEP_ONLY) \
 		-DJJML_FORCE_BUILD_TP=ON \
 		-DJJML_FORCE_BUILD_LLAMA_GGML=$(JJML_FORCE_BUILD_LLAMA_GGML) \
@@ -143,7 +127,7 @@ endif
 		-DGGML_CUDA_FA_ALL_QUANTS=OFF \
 		$(JJML_CUDA_TOOLKIT)
 	
-	$(JJML_CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
+	$(CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
 ifneq ($(GGML_NATIVE),ON)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 endif
@@ -177,6 +161,11 @@ clean-local: clean
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)mtmd*$(shlib_suffix).0
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)whisper*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)whisper*$(shlib_suffix).1
+
+#
+# TEST
+#
+check: cmake-check
 
 #
 # DOC

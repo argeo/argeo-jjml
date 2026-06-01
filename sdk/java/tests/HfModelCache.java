@@ -43,7 +43,7 @@ public class HfModelCache {
 			return null;
 		String ref = Files.readString(refsFile).strip();
 		Path modelsDir = baseDir.resolve("snapshots").resolve(ref);
-		return modelsDir.resolve(getLocalFileName(hfRepo, quantization));
+		return modelsDir.resolve(getLocalFileName(hfRepo, quantization)).toRealPath();
 	}
 
 	private String getLocalFileName(String hfRepo, String quantization) {
@@ -71,7 +71,7 @@ public class HfModelCache {
 			return null;
 		String ref = Files.readString(refsFile).strip();
 		Path modelsDir = baseDir.resolve("snapshots").resolve(ref);
-		return modelsDir.resolve(getLocalMmprojFileName(hfRepo, quantization));
+		return modelsDir.resolve(getLocalMmprojFileName(hfRepo, quantization)).toRealPath();
 	}
 
 	private String getLocalMmprojFileName(String hfRepo, String quantization) {
@@ -88,9 +88,9 @@ public class HfModelCache {
 		Path defaultModelsBase;
 		String os = System.getProperty("os.name").toLowerCase();
 		if (os.contains("win")) {
-			defaultModelsBase = Paths.get(System.getProperty("user.home"), "AppData", "Local", "llama.cpp");
+			defaultModelsBase = Paths.get(System.getProperty("user.home"), ".cache", "huggingface", "hub");
 		} else if (os.contains("mac") || os.contains("darwin")) {
-			defaultModelsBase = Paths.get(System.getProperty("user.home"), "Library", "Caches", "llama.cpp");
+			defaultModelsBase = Paths.get(System.getProperty("user.home"), ".cache", "huggingface", "hub");
 		} else { // Linux / Unix
 			defaultModelsBase = Paths.get(System.getProperty("user.home"), ".cache", "huggingface", "hub");
 		}
