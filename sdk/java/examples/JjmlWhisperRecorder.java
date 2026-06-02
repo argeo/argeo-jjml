@@ -67,7 +67,7 @@ public class JjmlWhisperRecorder {
 			// modelId = "ggml-medium-q8_0.bin";
 			// modelId = "ggml-large-v3.bin";
 			// modelId = "ggml-large-v3-q5_0.bin";
-			
+
 			Path modelPath = Paths.get(System.getProperty("user.home"), "dev/foss/AI/openai/converted", modelId);
 			try (WhisperCppContext context = new WhisperCppContext(modelPath)) {
 				WhisperCppProcessor processor = new WhisperCppProcessor(context);
@@ -79,8 +79,14 @@ public class JjmlWhisperRecorder {
 				System.out.println("----------------------------------------------");
 			}
 		} finally {
-			Files.delete(tempWav);
-			System.out.println("Deleted " + tempWav);
+			try {
+				Thread.sleep(1000);// wait before deleting (Windows)
+				Files.delete(tempWav);
+				System.out.println("Deleted " + tempWav);
+			} catch (IOException e) {
+				System.err.println(e.getMessage());
+				tempWav.toFile().deleteOnExit();
+			}
 		}
 	}
 
