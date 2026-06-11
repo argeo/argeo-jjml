@@ -6,10 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -22,7 +20,6 @@ import java.util.function.LongSupplier;
 
 import org.argeo.jjml.llm.params.ModelParam;
 import org.argeo.jjml.llm.params.ModelParams;
-import org.argeo.jjml.llm.util.InstructRole;
 
 /**
  * Access to a llama.cpp model. (see <code>llama_model</code>, in llama.h)
@@ -56,7 +53,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private final long modelSize;
 	private final int endOfGenerationToken;
 
-	private String chatTemplate = null;
+//	private String chatTemplate = null;
 
 	LlamaCppModel(long pointer, Path localPath, ModelParams initParams) {
 		this.pointer = pointer;
@@ -78,9 +75,9 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 			map.put(new String(keys[i], UTF_8), new String(values[i], UTF_8));
 		}
 		metadata = Collections.unmodifiableMap(map);
-		if (metadata.containsKey("tokenizer.chat_template")) {
-			chatTemplate = metadata.get("tokenizer.chat_template");
-		}
+//		if (metadata.containsKey("tokenizer.chat_template")) {
+//			chatTemplate = metadata.get("tokenizer.chat_template");
+//		}
 
 		description = new String(doGetDescription(), UTF_8);
 		modelSize = doGetModelSize();
@@ -117,14 +114,14 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	/*
 	 * USABLE METHODS
 	 */
-	public String formatChatMessages(LlamaCppChatMessage... messages) {
-		return formatChatMessages(Arrays.asList(messages));
-	}
-
-	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
-		return LLamaCppNativeChatFormatter.formatChatMessages(messages, //
-				(message) -> message.getRole().equals(InstructRole.USER.get()), chatTemplate);
-	}
+//	public String formatChatMessages(LlamaCppChatMessage... messages) {
+//		return formatChatMessages(Arrays.asList(messages));
+//	}
+//
+//	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
+//		return LLamaCppNativeChatFormatter.formatChatMessages(messages, //
+//				(message) -> message.getRole().equals(InstructRole.USER.get()), chatTemplate);
+//	}
 
 	/*
 	 * LIFECYCLE
@@ -182,6 +179,13 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		return metadata;
 	}
 
+	public String getMetadataChatTemplate() {
+		if (metadata.containsKey("tokenizer.chat_template"))
+			return metadata.get("tokenizer.chat_template");
+		else
+			return null;
+	}
+
 	public String getDescription() {
 		return description;
 	}
@@ -207,7 +211,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 		// we disable GPU offload by default as it is too sensitive to context
 		// and setting context parameters right
-		//res = res.with(n_gpu_layers, 0);
+		// res = res.with(n_gpu_layers, 0);
 
 		for (ModelParam param : ModelParam.values()) {
 			String sysProp = System.getProperty(param.asSystemProperty());

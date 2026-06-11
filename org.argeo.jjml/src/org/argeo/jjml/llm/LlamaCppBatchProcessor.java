@@ -39,7 +39,7 @@ public class LlamaCppBatchProcessor {
 
 	/**
 	 * Direct buffers keeping track of the tokens, typically useful when saving
-	 * session file. THes are not used by the computations as such.
+	 * session file. <b>They are not used by the computations as such.</b>
 	 */
 	private final IntBuffer[] tokens;
 
@@ -413,6 +413,13 @@ public class LlamaCppBatchProcessor {
 	@SuppressWarnings("unchecked") // required by type erasing
 	private <T> T[] createArr(Class<T> clz) {
 		return (T[]) Array.newInstance(clz, getParallelCount());
+	}
+
+	/*
+	 * ACCESSORS
+	 */
+	protected int getRemainingContextSize() {
+		return getContext().getContextSize() - contextPosition;
 	}
 
 	/*

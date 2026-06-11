@@ -8,7 +8,12 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 
-/** A processor based on text rather than tokens. */
+/**
+ * A processor based on text rather than tokens.
+ * 
+ * @deprecated Use {@link LlamaCppInstructProcessor} instead.
+ */
+@Deprecated
 public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 	private final LlamaCppVocabulary vocabulary;
 

@@ -34,10 +34,7 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	private final PoolingType poolingType;
 	private final int contextSize;
 	private final int batchSize;
-//	private final int physicalBatchSize;
 	private final int maxSequenceCount;
-
-//	private LlamaCppBatchProcessor batchProcessor;
 
 	public LlamaCppContext(LlamaCppModel model) {
 		this(model, DEFAULT_CONTEXT_PARAMS_NATIVE);
@@ -48,8 +45,6 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 		Objects.requireNonNull(initParams);
 		if (initParams.embeddings() && initParams.n_ubatch() != initParams.n_batch()) {
 			initParams = initParams.with(ContextParam.n_batch, initParams.n_ubatch());
-//			logger.log(WARNING, "Embeddings requires same logical and physical batch size, forcing n_batch to "
-//					+ initParams.n_ubatch());
 		}
 		this.pointer = doInit(model, initParams);
 		this.model = model;
@@ -61,7 +56,6 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 		contextSize = doGetContextSize();
 
 		batchSize = doGetBatchSize();
-//		physicalBatchSize = doGetPhysicalBatchSize();
 		maxSequenceCount = doGetMaxSequenceCount();
 	}
 
@@ -151,15 +145,6 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	}
 
 	/*
-	 * PACKAGE COORDINATION
-	 */
-//	void setBatchProcessor(LlamaCppBatchProcessor batchProcessor) {
-//		if (batchProcessor != null)
-//			throw new IllegalArgumentException("A batch processor is already active for this context");
-//		this.batchProcessor = batchProcessor;
-//	}
-
-	/*
 	 * ACCESSORS
 	 */
 	@Override
@@ -186,14 +171,6 @@ public class LlamaCppContext implements LongSupplier, AutoCloseable {
 	public int getBatchSize() {
 		return batchSize;
 	}
-
-//	public LlamaCppBatchProcessor getBatchProcessor() {
-//		return batchProcessor;
-//	}
-
-//	public int getPhysicalBatchSize() {
-//		return physicalBatchSize;
-//	}
 
 	public int getMaxSequenceCount() {
 		return maxSequenceCount;

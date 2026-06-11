@@ -1,7 +1,6 @@
 package tests.llm;
 
 import static java.lang.System.Logger.Level.DEBUG;
-import static org.argeo.jjml.llm.params.ContextParam.n_batch;
 import static org.argeo.jjml.llm.params.ContextParam.n_ctx;
 import static org.argeo.jjml.llm.params.ContextParam.n_threads;
 import static org.argeo.jjml.llm.util.InstructRole.ASSISTANT;
@@ -34,6 +33,8 @@ class TravelAgentTests extends AbstractLlmTests {
 			+ "Also please consider that I speak French and German in addition to English.\n"
 			+ "And I definitely don't like holiday on the beach...";
 
+	private int contextSize = 10240;
+
 	TravelAgentTests(LlamaCppModel model) {
 		super(model);
 	}
@@ -47,8 +48,7 @@ class TravelAgentTests extends AbstractLlmTests {
 		LlamaCppModel model = getModel();
 
 		ContextParams contextParams = LlamaCppContext.defaultContextParams() //
-				.with(n_ctx, 2048) //
-				.with(n_batch, 1024) //
+				.with(n_ctx, contextSize) //
 				.with(n_threads, getParallelism()) //
 		; //
 
@@ -75,8 +75,7 @@ class TravelAgentTests extends AbstractLlmTests {
 		LlamaCppModel model = getModel();
 
 		ContextParams contextParams = LlamaCppContext.defaultContextParams() //
-				.with(n_ctx, 2048) //
-				.with(n_batch, 1024) //
+				.with(n_ctx, contextSize) //
 				.with(n_threads, getParallelism()) //
 		; //
 

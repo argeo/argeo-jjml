@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.argeo.jjml.llm.LLamaCppNativeChatFormatter;
 import org.argeo.jjml.llm.LlamaCppChatMessage;
 import org.argeo.jjml.llm.LlamaCppContext;
 import org.argeo.jjml.llm.LlamaCppModel;
@@ -55,7 +56,8 @@ public class ImageDescription {
 			LlamaCppChatMessage systemPrompt = null;
 			LlamaCppChatMessage userPrompt = new LlamaCppChatMessage(InstructRole.USER, //
 					MtmdBackend.getDefaultMarker() + prompt);
-			String formatted = model.formatChatMessages(systemPrompt, userPrompt);
+			String formatted = new LLamaCppNativeChatFormatter(model.getMetadataChatTemplate())
+					.formatChatMessages(systemPrompt, userPrompt);
 			MtmdImageBitmap bitmap = ImageIoBitmap.load(imageIn);
 			MtmdBitmap[] bitmaps = new MtmdBitmap[] { bitmap };
 

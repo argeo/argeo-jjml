@@ -30,7 +30,7 @@ class InstructTests extends AbstractLlmTests {
 	void testJavaIntroChat() throws IOException {
 		try (//
 				LlamaCppContext context = new LlamaCppContext(getModel(), defaultContextParams() //
-						.with(n_ctx, 2048) //
+						.with(n_ctx, 4096) //
 						.with(n_batch, 1024) //
 						.with(n_threads, getParallelism()) //
 				); //
