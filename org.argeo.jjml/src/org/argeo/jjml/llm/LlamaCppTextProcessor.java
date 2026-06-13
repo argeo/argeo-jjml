@@ -17,6 +17,8 @@ import java.util.concurrent.CompletableFuture;
 public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 	private final LlamaCppVocabulary vocabulary;
 
+	private final LlamaCppInstructFormatter instructFormatter;
+
 	public LlamaCppTextProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
 		this(context, samplerChain, null, Collections.singleton(0));
 	}
@@ -25,6 +27,7 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 			LlamaCppNativeSampler validatingSampler, Set<Integer> sequenceIds) {
 		super(context, samplerChain, validatingSampler, sequenceIds);
 		this.vocabulary = context.getModel().getVocabulary();
+		this.instructFormatter = new LLamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate());
 	}
 
 	/*
@@ -198,4 +201,9 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 			res.add(outputStrings[i]);
 		return res.toString();
 	}
+
+	public LlamaCppInstructFormatter getInstructFormatter() {
+		return instructFormatter;
+	}
+
 }
