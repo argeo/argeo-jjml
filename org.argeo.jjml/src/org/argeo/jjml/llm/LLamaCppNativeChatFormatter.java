@@ -67,6 +67,8 @@ public class LLamaCppNativeChatFormatter implements LlamaCppInstructFormatter {
 			contents[i] = message.getContent().getBytes(UTF_8);
 		}
 
+		if (chatTemplate == null)
+			chatTemplate = "chatml";
 		byte[] res = doFormatChatMessages(roles, contents, currIsUserRole, chatTemplate.getBytes(UTF_8));
 		return new String(res, UTF_8);
 	}
