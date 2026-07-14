@@ -124,7 +124,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	@Deprecated
 	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
-		return LLamaCppNativeChatFormatter.formatChatMessages(messages, //
+		return LlamaCppNativeChatFormatter.formatChatMessages(messages, //
 				(message) -> message.getRole().equals(InstructRole.USER.get()), chatTemplate);
 	}
 

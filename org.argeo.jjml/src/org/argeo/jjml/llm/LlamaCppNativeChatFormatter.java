@@ -13,11 +13,11 @@ import org.argeo.jjml.llm.util.InstructRole;
  * Format chat messages using llama.cpp basic capabilities (Jinja templates are
  * <b>not</b> supported).
  */
-public class LLamaCppNativeChatFormatter implements LlamaCppInstructFormatter {
+public class LlamaCppNativeChatFormatter implements LlamaCppInstructFormatter {
 
 	private String chatTemplate;
 
-	public LLamaCppNativeChatFormatter(String chatTemplate) {
+	public LlamaCppNativeChatFormatter(String chatTemplate) {
 		this.chatTemplate = chatTemplate;
 	}
 
@@ -32,7 +32,7 @@ public class LLamaCppNativeChatFormatter implements LlamaCppInstructFormatter {
 	 */
 	@Override
 	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
-		String formatted = LLamaCppNativeChatFormatter.formatChatMessages(messages, //
+		String formatted = LlamaCppNativeChatFormatter.formatChatMessages(messages, //
 				(message) -> message.getRole().equals(InstructRole.USER.get()), chatTemplate);
 		return formatted;
 	}

@@ -30,7 +30,7 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
 		// FIXME implement cleaner defaults
 		this(context, samplerChain, System.getenv(JinjaOsCallFormatter.ENV_JJML_JINJA_PYTHON_SCRIPT) == null ? //
-				new LLamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate()) //
+				new LlamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate()) //
 				: new JinjaOsCallFormatter(context.getModel().getMetadataChatTemplate()));
 	}
 

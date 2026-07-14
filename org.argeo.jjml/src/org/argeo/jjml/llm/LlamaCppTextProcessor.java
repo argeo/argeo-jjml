@@ -27,7 +27,7 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 			LlamaCppNativeSampler validatingSampler, Set<Integer> sequenceIds) {
 		super(context, samplerChain, validatingSampler, sequenceIds);
 		this.vocabulary = context.getModel().getVocabulary();
-		this.instructFormatter = new LLamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate());
+		this.instructFormatter = new LlamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate());
 	}
 
 	/*
