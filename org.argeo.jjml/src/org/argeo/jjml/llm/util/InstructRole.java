@@ -7,6 +7,7 @@ public enum InstructRole implements Supplier<String> {
 	SYSTEM("system"), //
 	USER("user"), //
 	ASSISTANT("assistant"), //
+	TOOL("tool"), //
 	;
 
 	private final String role;

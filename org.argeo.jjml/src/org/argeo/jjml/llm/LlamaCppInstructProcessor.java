@@ -28,10 +28,18 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 	}
 
 	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
+		this(context, samplerChain, getDefaultInstructFormatter(context));
+	}
+
+	private static LlamaCppInstructFormatter getDefaultInstructFormatter(LlamaCppContext context) {
 		// FIXME implement cleaner defaults
-		this(context, samplerChain, System.getenv(JinjaOsCallFormatter.ENV_JJML_JINJA_PYTHON_SCRIPT) == null ? //
-				new LlamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate()) //
-				: new JinjaOsCallFormatter(context.getModel().getMetadataChatTemplate()));
+		LlamaCppInstructFormatter instructFormatter = System
+				.getenv(JinjaOsCallFormatter.ENV_JJML_JINJA_PYTHON_SCRIPT) == null ? //
+						new LlamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate()) //
+						: new JinjaOsCallFormatter(context.getModel().getMetadataChatTemplate());
+
+		// instructFormatter = new Ministral3InstructFormatter();
+		return instructFormatter;
 	}
 
 	public void write(Supplier<String> role, String message) {
