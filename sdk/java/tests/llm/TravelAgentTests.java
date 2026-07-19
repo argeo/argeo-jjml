@@ -3,7 +3,6 @@ package tests.llm;
 import static java.lang.System.Logger.Level.DEBUG;
 import static org.argeo.jjml.llm.params.ContextParam.n_ctx;
 import static org.argeo.jjml.llm.params.ContextParam.n_threads;
-import static org.argeo.jjml.llm.util.InstructRole.ASSISTANT;
 import static org.argeo.jjml.llm.util.InstructRole.SYSTEM;
 import static org.argeo.jjml.llm.util.InstructRole.USER;
 
@@ -57,12 +56,13 @@ class TravelAgentTests extends AbstractLlmTests {
 				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(false); //
 		) {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
+			processor.setDebugPrompts(System.err);
 
 			long begin = System.currentTimeMillis();
-			logger.log(DEBUG, SYSTEM.name() + " :\n" + systemMsg);
+//			logger.log(DEBUG, SYSTEM.name() + " :\n" + systemMsg);
 			processor.write(SYSTEM, systemMsg);
 
-			logger.log(DEBUG, USER.name() + " :\n" + userMsg01);
+//			logger.log(DEBUG, USER.name() + " :\n" + userMsg01);
 			processor.write(USER, userMsg01);
 
 			processor.readMessage(out);
@@ -94,12 +94,13 @@ class TravelAgentTests extends AbstractLlmTests {
 				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(false); //
 		) {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
+			processor.setDebugPrompts(System.err);
 
 			long begin = System.currentTimeMillis();
-			logger.log(DEBUG, SYSTEM.name() + " :\n" + systemMsg);
+//			logger.log(DEBUG, SYSTEM.name() + " :\n" + systemMsg);
 			processor.write(SYSTEM, systemMsg);
 
-			logger.log(DEBUG, USER.name() + " :\n" + userMsg01);
+//			logger.log(DEBUG, USER.name() + " :\n" + userMsg01);
 			processor.write(USER, userMsg01);
 
 			savedState = new LlamaCppContextState.ByteBufferSavedState();
@@ -116,10 +117,10 @@ class TravelAgentTests extends AbstractLlmTests {
 		String userMsg02 = "Current Date: March 13th 2020.";
 
 		Consumer<LlamaCppInstructProcessor> process = (processor) -> {
-			logger.log(DEBUG, USER.name() + " :\n" + userMsg02);
+//			logger.log(DEBUG, USER.name() + " :\n" + userMsg02);
 			processor.write(USER, userMsg02);
 
-			logger.log(DEBUG, ASSISTANT.name() + " :\n");
+//			logger.log(DEBUG, ASSISTANT.name() + " :\n");
 			long begin = System.currentTimeMillis();
 			try {
 				processor.readMessage(out);
@@ -146,6 +147,8 @@ class TravelAgentTests extends AbstractLlmTests {
 				LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(true); //
 		) {
 			LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
+			processor.setDebugPrompts(System.err);
+
 			long beginLoad = System.currentTimeMillis();
 			processor.loadStateFile(sessionFile);
 			logger.log(DEBUG, "Loaded context from file in " + (System.currentTimeMillis() - beginLoad) + " ms");

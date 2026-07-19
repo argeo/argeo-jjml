@@ -86,7 +86,7 @@ class VocabularyTests extends AbstractLlmTests {
 			in.flip();
 			str = UTF_8.decode(in).toString();
 		}
-		assert str.equals(msg);
+		assert str.equals(msg) : "Detokenized |" + str + "|" + " does not match input |" + msg + "|";
 		return true;
 	}
 

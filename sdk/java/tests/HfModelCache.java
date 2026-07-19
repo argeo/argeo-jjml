@@ -43,11 +43,19 @@ public class HfModelCache {
 			return null;
 		String ref = Files.readString(refsFile).strip();
 		Path modelsDir = baseDir.resolve("snapshots").resolve(ref);
-		return modelsDir.resolve(getLocalFileName(hfRepo, quantization)).toRealPath();
+		if (!Files.exists(modelsDir))
+			throw new IllegalArgumentException(
+					modelsDir + " does not exist, make sure the model has been downloaded already");
+		Path path = modelsDir.resolve(getLocalFileName(hfRepo, quantization, "-"));
+		if (!Files.exists(path))
+			path = modelsDir.resolve(getLocalFileName(hfRepo, quantization, "."));
+		if (!Files.exists(path))
+			throw new IllegalArgumentException("Cannot find quantization " + quantization + " in " + modelsDir);
+		return path.toRealPath();
 	}
 
-	private String getLocalFileName(String hfRepo, String quantization) {
-		String fileName = hfRepo.split("/")[1].replace("-GGUF", "-" + quantization + ".gguf");
+	private String getLocalFileName(String hfRepo, String quantization, String quantSep) {
+		String fileName = hfRepo.split("/")[1].replace("-GGUF", quantSep + quantization + ".gguf");
 		String localFileName = fileName;
 		return localFileName;
 	}

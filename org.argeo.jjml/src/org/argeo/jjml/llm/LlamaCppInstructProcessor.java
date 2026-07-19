@@ -13,6 +13,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import org.argeo.jjml.llm.util.JinjaOsCallFormatter;
+import org.argeo.jjml.llm.util.models.ChatMlFormatter;
+import org.argeo.jjml.llm.util.models.Granite4Formatter;
+import org.argeo.jjml.llm.util.models.Ministral3Formatter;
+import org.argeo.jjml.llm.util.models.Olmo2Formatter;
+import org.argeo.jjml.llm.util.models.Qwen3Formatter;
 
 /** A processor based on chat messages. */
 public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
@@ -20,11 +25,13 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 
 	private final LlamaCppInstructFormatter instructFormatter;
 
+	private PrintStream debugPrompts = null;
+
 	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain,
 			LlamaCppInstructFormatter instructFormatter) {
 		super(context, samplerChain);
 		this.vocabulary = context.getModel().getVocabulary();
-		this.instructFormatter = instructFormatter;
+		this.instructFormatter = instructFormatter != null ? instructFormatter : getDefaultInstructFormatter(context);
 	}
 
 	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
@@ -32,13 +39,33 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 	}
 
 	private static LlamaCppInstructFormatter getDefaultInstructFormatter(LlamaCppContext context) {
-		// FIXME implement cleaner defaults
-		LlamaCppInstructFormatter instructFormatter = System
-				.getenv(JinjaOsCallFormatter.ENV_JJML_JINJA_PYTHON_SCRIPT) == null ? //
-						new LlamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate()) //
-						: new JinjaOsCallFormatter(context.getModel().getMetadataChatTemplate());
+		LlamaCppInstructFormatter instructFormatter = null;
+		if (System.getenv(JinjaOsCallFormatter.ENV_JJML_JINJA_PYTHON_SCRIPT) != null)
+			return new JinjaOsCallFormatter(context.getModel().getMetadataChatTemplate());
 
-		// instructFormatter = new Ministral3InstructFormatter();
+		// TODO introduce extension mechanisms
+		String modelArchitecture = context.getModel().getArchitecture();
+		switch (modelArchitecture) {
+		case "llama":
+			instructFormatter = new ChatMlFormatter();
+			break;
+		case "qwen35":
+			instructFormatter = new Qwen3Formatter();
+			break;
+		case "mistral3":
+			instructFormatter = new Ministral3Formatter();
+			break;
+		case "granitehybrid":
+		case "granite":
+			instructFormatter = new Granite4Formatter();
+			break;
+		case "olmo2":
+			instructFormatter = new Olmo2Formatter();
+			break;
+		}
+
+		if (instructFormatter == null)
+			instructFormatter = new LlamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate());
 		return instructFormatter;
 	}
 
@@ -59,6 +86,9 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 	}
 
 	protected void writeFormatted(String prompt) {
+		if (debugPrompts != null)
+			debugPrompts.print(prompt);
+
 		IntBuffer promptTokens = vocabulary.tokenize(prompt);
 		assert promptTokens.position() == 0;
 		int tokenCount = promptTokens.limit();
@@ -122,6 +152,23 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		return outputStr;
 	}
 
+	public String nextAnswer() {
+		if (isGenerationCompleted(0))
+			return null;
+		ByteBuffer nativeBuf = ByteBuffer.allocateDirect(4 * Integer.BYTES);
+		nativeBuf.order(ByteOrder.nativeOrder());
+		IntBuffer output = nativeBuf.asIntBuffer();
+		// IntBuffer output = IntBuffer.allocate(1);
+
+		CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
+		CompletableFuture<Boolean> allCompleted = readBatchAsync(new IntBuffer[] { output }, generationCompleted);
+		allCompleted.join();
+
+		output.flip();
+		String outputStr = vocabulary.deTokenize(output);
+		return outputStr;
+	}
+
 	public void readMessage(PrintStream out) throws IOException {
 		out.flush();
 		// FIXME deal properly with charset, esp. on Windows
@@ -130,14 +177,25 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 	}
 
 	public void readMessage(Writer writer) throws IOException {
+		// in case a generation prompt is needed
+		StringBuilder generationPrompt = new StringBuilder();
+		instructFormatter.appendGenerationPrompt(generationPrompt);
+		if (generationPrompt.length() > 0)
+			writeFormatted(generationPrompt.toString());
 
 		boolean reading = true;
 		reads: while (reading) {
-			String outputStr = nextToken();
+//			String outputStr = nextToken();
+			String outputStr = nextAnswer();
 			if (outputStr == null)
 				break reads;
 			writer.write(outputStr);
 			writer.flush();
 		}
 	}
+
+	public void setDebugPrompts(PrintStream debugPrompts) {
+		this.debugPrompts = debugPrompts;
+	}
+
 }

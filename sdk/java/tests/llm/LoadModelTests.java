@@ -3,6 +3,7 @@ package tests.llm;
 import static java.lang.System.Logger.Level.DEBUG;
 
 import java.io.IOException;
+import java.util.TreeSet;
 
 import org.argeo.jjml.llm.LlamaCppContext;
 import org.argeo.jjml.llm.LlamaCppModel;
@@ -27,7 +28,7 @@ class LoadModelTests extends AbstractLlmTests {
 		logger.log(DEBUG, model.getVocabularySize() + " vocabulary size");
 		logger.log(DEBUG, model.getContextTrainingSize() + " context training size");
 		StringBuilder sb = new StringBuilder();
-		for (String key : model.getMetadata().keySet())
+		for (String key : new TreeSet<>(model.getMetadata().keySet()))
 			sb.append(key + "=" + model.getMetadata().get(key) + "\n");
 		logger.log(DEBUG, "Metadata:\n" + sb);
 	}

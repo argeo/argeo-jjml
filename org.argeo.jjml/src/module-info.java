@@ -4,6 +4,7 @@ module org.argeo.jjml {
 	exports org.argeo.jjml.llm;
 	exports org.argeo.jjml.llm.params;
 	exports org.argeo.jjml.llm.util;
+	exports org.argeo.jjml.llm.util.models;
 	exports org.argeo.jjml.mtmd;
 	exports org.argeo.jjml.whisper;
 }

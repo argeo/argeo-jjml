@@ -18,21 +18,57 @@
 
 // UTILITIES
 static std::string jjml_tokens_to_cpp_string(const llama_vocab *vocab,
-		llama_token *tokens, int32_t n_tokens, bool remove_special,
+		const llama_token *tokens, int32_t n_tokens, bool remove_special,
 		bool unparse_special) {
+	assert(n_tokens > 0 && "No token");
+	assert(tokens != nullptr && "No token");
+
 	std::string text;
-	text.resize(std::max((int32_t) text.capacity(), n_tokens));
-	int32_t n_chars = llama_detokenize(vocab, tokens, n_tokens, &text[0],
-			(int32_t) text.size(), remove_special, unparse_special);
-	if (n_chars < 0) {
-		text.resize(-n_chars);
-		n_chars = llama_detokenize(vocab, tokens, n_tokens, &text[0],
-				(int32_t) text.size(), remove_special, unparse_special);
-		assert(
-				n_chars <= (int32_t ) text.size()
-						&& "Too many dekotinzed characters"); // whitespace trimming is performed after per-token detokenization
+	text.reserve(n_tokens * 4);
+
+	// stay on the stack for most cases
+	char stack_buffer[16];
+
+	for (int32_t i = 0; i < n_tokens; ++i) {
+		llama_token token = tokens[i];
+
+		if (llama_vocab_is_control(vocab, token)) {
+			if (remove_special) {
+				continue;
+			}
+			if (unparse_special) {
+				int32_t n_chars = llama_token_to_piece(vocab, token,
+						stack_buffer, sizeof(stack_buffer), 0, true);
+
+				if (n_chars < 0) { // the token is expecially big
+					std::vector<char> heap_buffer(-n_chars);
+					n_chars = llama_token_to_piece(vocab, token,
+							heap_buffer.data(), (int32_t) heap_buffer.size(), 0,
+							true);
+					if (n_chars > 0)
+						text.append(heap_buffer.data(), n_chars);
+				} else if (n_chars > 0) {
+					text.append(stack_buffer, n_chars);
+				}
+				continue;
+			}
+		}
+
+		// usual case
+		int32_t n_chars = llama_token_to_piece(vocab, token, stack_buffer,
+				sizeof(stack_buffer), 0, false);
+
+		if (n_chars < 0) { // the token is especially big
+			std::vector<char> heap_buffer(-n_chars);
+			n_chars = llama_token_to_piece(vocab, token, heap_buffer.data(),
+					(int32_t) heap_buffer.size(), 0, false);
+			if (n_chars > 0)
+				text.append(heap_buffer.data(), n_chars);
+		} else if (n_chars > 0) {
+			text.append(stack_buffer, n_chars);
+		}
 	}
-	text.resize(n_chars);
+
 	return text;
 }
 

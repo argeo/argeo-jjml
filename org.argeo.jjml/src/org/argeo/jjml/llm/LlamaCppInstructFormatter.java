@@ -10,4 +10,7 @@ public interface LlamaCppInstructFormatter {
 		return formatChatMessages(Arrays.asList(messages));
 	}
 
+	default void appendGenerationPrompt(StringBuilder sb) {
+	}
+
 }

@@ -6,7 +6,6 @@ import static org.argeo.jjml.llm.LlamaCppModel.defaultModelParams;
 import static org.argeo.jjml.llm.params.ContextParam.n_batch;
 import static org.argeo.jjml.llm.params.ContextParam.n_ctx;
 import static org.argeo.jjml.llm.params.ContextParam.n_threads;
-import static org.argeo.jjml.llm.util.InstructRole.ASSISTANT;
 import static org.argeo.jjml.llm.util.InstructRole.SYSTEM;
 import static org.argeo.jjml.llm.util.InstructRole.USER;
 
@@ -72,16 +71,17 @@ class JjmlSmokeTests {
 					LlamaCppSamplerChain chain = LlamaCppSamplers.newDefaultSampler(false); //
 			) {
 				LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
+				processor.setDebugPrompts(System.out);
 
 				String systemMsg = "You are a helpful assistant.";
-				System.out.println(SYSTEM.name() + " :\n" + systemMsg);
+//				System.out.println(SYSTEM.name() + " :\n" + systemMsg);
 				processor.write(SYSTEM, systemMsg);
 
 				String userMsg01 = "In one word, the capital of France is ";
-				System.out.println(USER.name() + " :\n" + userMsg01);
+//				System.out.println(USER.name() + " :\n" + userMsg01);
 				processor.write(USER, userMsg01);
 
-				System.out.println(ASSISTANT.name() + " :\n");
+//				System.out.println(ASSISTANT.name() + " :\n");
 				StringWriter answerSW = new StringWriter();
 				processor.readMessage(answerSW);
 

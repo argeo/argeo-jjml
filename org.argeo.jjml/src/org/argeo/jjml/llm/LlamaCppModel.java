@@ -56,7 +56,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private final long modelSize;
 	private final int endOfGenerationToken;
 
-	private String chatTemplate = null;
+	private final String architecture;
 
 	LlamaCppModel(long pointer, Path localPath, ModelParams initParams) {
 		this.pointer = pointer;
@@ -69,6 +69,8 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		contextTrainingSize = doGetContextTrainingSize();
 		embeddingSize = doGetEmbeddingSize();
 		layerCount = doGetLayerCount();
+
+		// metadata
 		byte[][] keys = doGetMetadataKeys();
 		byte[][] values = doGetMetadataValues();
 		if (keys.length != values.length)
@@ -78,9 +80,11 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 			map.put(new String(keys[i], UTF_8), new String(values[i], UTF_8));
 		}
 		metadata = Collections.unmodifiableMap(map);
-		if (metadata.containsKey("tokenizer.chat_template")) {
-			chatTemplate = metadata.get("tokenizer.chat_template");
-		}
+
+		// general metadata
+		architecture = metadata.get("general.architecture");
+		if (architecture == null)
+			throw new IllegalStateException("Cannot determine model architetcure");
 
 		description = new String(doGetDescription(), UTF_8);
 		modelSize = doGetModelSize();
@@ -125,7 +129,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	@Deprecated
 	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
 		return LlamaCppNativeChatFormatter.formatChatMessages(messages, //
-				(message) -> message.getRole().equals(InstructRole.USER.get()), chatTemplate);
+				(message) -> message.getRole().equals(InstructRole.USER.get()), getMetadataChatTemplate());
 	}
 
 	/*
@@ -182,6 +186,10 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 	public Map<String, String> getMetadata() {
 		return metadata;
+	}
+
+	public String getArchitecture() {
+		return architecture;
 	}
 
 	public String getMetadataChatTemplate() {
