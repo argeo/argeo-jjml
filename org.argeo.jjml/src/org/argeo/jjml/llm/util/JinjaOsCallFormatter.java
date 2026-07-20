@@ -12,7 +12,8 @@ import java.util.List;
 import java.util.StringJoiner;
 
 import org.argeo.jjml.llm.LlamaCppChatMessage;
-import org.argeo.jjml.llm.LlamaCppInstructFormatter;
+import org.argeo.jjml.llm.instruct.LlamaCppInstructFormatter;
+import org.argeo.jjml.llm.instruct.LlamaCppInstructPart;
 
 /**
  * Calls a Python script with the Jinja template as stdin, and the inputs as
@@ -50,7 +51,7 @@ public class JinjaOsCallFormatter implements LlamaCppInstructFormatter {
 	}
 
 	@Override
-	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
+	public String formatMessages(Iterable<? extends LlamaCppInstructPart> messages) {
 		String messagesStr = formatAsJson(messages);
 
 		List<String> command = new ArrayList<>();
@@ -94,12 +95,15 @@ public class JinjaOsCallFormatter implements LlamaCppInstructFormatter {
 		return Paths.get(jjmlJinjaPythonScriptStr);
 	}
 
-	private static String formatAsJson(List<LlamaCppChatMessage> messages) {
+	private static String formatAsJson(Iterable<? extends LlamaCppInstructPart> messages) {
 		StringJoiner sjArr = new StringJoiner(",", "[", "]");
-		for (LlamaCppChatMessage msg : messages) {
+		messages: for (LlamaCppInstructPart msg : messages) {
+			String content = msg.toString();
+			if (content == null)
+				continue messages;
 			StringJoiner sjObj = new StringJoiner(",", "{", "}");
 			sjObj.add("\"role\":\"" + msg.getRole() + "\"");
-			sjObj.add("\"content\":\"" + msg.getContent().replace("\n", "\\n") + "\"");
+			sjObj.add("\"content\":\"" + content.replace("\n", "\\n") + "\"");
 			sjArr.add(sjObj.toString());
 		}
 		return sjArr.toString();

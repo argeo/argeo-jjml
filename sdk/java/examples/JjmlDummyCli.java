@@ -1,4 +1,5 @@
 package examples;
+
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.System.Logger.Level.INFO;
@@ -134,7 +135,7 @@ public class JjmlDummyCli {
 						String input = handleHereDocument(line, reader);
 						processor.write(InstructRole.USER, input);
 						String nextToken;
-						while ((nextToken = processor.nextToken()) != null) {
+						while ((nextToken = processor.nextAnswer()) != null) {
 							out.print(nextToken);
 							out.flush();
 						}
@@ -156,7 +157,7 @@ public class JjmlDummyCli {
 
 				// output
 				String nextToken;
-				while ((nextToken = processor.nextToken()) != null) {
+				while ((nextToken = processor.nextAnswer()) != null) {
 					System.out.print(nextToken);
 				}
 				System.out.flush();

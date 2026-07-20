@@ -20,4 +20,13 @@ public class Ministral3Formatter extends AbstractInstructFormatter {
 		sb.append(content);
 		sb.append("</s>");
 	}
+
+	@Override
+	protected void appendToolPart(StringBuilder sb, String content) {
+		sb.append("[TOOL_RESULTS]");
+		sb.append(content);
+		sb.append("[/TOOL_RESULTS]");
+	}
+	
+	
 }

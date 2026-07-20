@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 
+import org.argeo.jjml.llm.instruct.LlamaCppInstructFormatter;
+
 /**
  * A processor based on text rather than tokens.
  * 

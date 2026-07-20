@@ -12,6 +12,8 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import org.argeo.jjml.llm.instruct.LlamaCppInstructFormatter;
+import org.argeo.jjml.llm.instruct.LlamaCppInstructPart;
 import org.argeo.jjml.llm.util.JinjaOsCallFormatter;
 import org.argeo.jjml.llm.util.models.ChatMlFormatter;
 import org.argeo.jjml.llm.util.models.Granite4Formatter;
@@ -25,20 +27,26 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 
 	private final LlamaCppInstructFormatter instructFormatter;
 
-	private PrintStream debugPrompts = null;
+	protected PrintStream debugPrompts = null;
+
+	// TODO use tokens[] from LlamaCppBatchProcessor ?
+	private final ByteBuffer tokenBuffer;
 
 	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain,
 			LlamaCppInstructFormatter instructFormatter) {
 		super(context, samplerChain);
 		this.vocabulary = context.getModel().getVocabulary();
 		this.instructFormatter = instructFormatter != null ? instructFormatter : getDefaultInstructFormatter(context);
+
+		tokenBuffer = ByteBuffer.allocateDirect(4 * Integer.BYTES);
+		tokenBuffer.order(ByteOrder.nativeOrder());
 	}
 
 	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
-		this(context, samplerChain, getDefaultInstructFormatter(context));
+		this(context, samplerChain, null);
 	}
 
-	private static LlamaCppInstructFormatter getDefaultInstructFormatter(LlamaCppContext context) {
+	protected LlamaCppInstructFormatter getDefaultInstructFormatter(LlamaCppContext context) {
 		LlamaCppInstructFormatter instructFormatter = null;
 		if (System.getenv(JinjaOsCallFormatter.ENV_JJML_JINJA_PYTHON_SCRIPT) != null)
 			return new JinjaOsCallFormatter(context.getModel().getMetadataChatTemplate());
@@ -79,9 +87,9 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		write(new LlamaCppChatMessage(role, message));
 	}
 
-	public void write(LlamaCppChatMessage message) {
+	public void write(LlamaCppInstructPart message) {
 		Objects.requireNonNull(message);
-		String prompt = instructFormatter.formatChatMessages(message);
+		String prompt = instructFormatter.formatMessage(message);
 		writeFormatted(prompt);
 	}
 
@@ -135,13 +143,27 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		}
 	}
 
-	public String nextToken() {
+//	public String nextToken() {
+//		if (isGenerationCompleted(0))
+//			return null;
+//		ByteBuffer nativeBuf = ByteBuffer.allocateDirect(1 * Integer.BYTES);
+//		nativeBuf.order(ByteOrder.nativeOrder());
+//		IntBuffer output = nativeBuf.asIntBuffer();
+//		// IntBuffer output = IntBuffer.allocate(1);
+//
+//		CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
+//		CompletableFuture<Boolean> allCompleted = readBatchAsync(new IntBuffer[] { output }, generationCompleted);
+//		allCompleted.join();
+//
+//		output.flip();
+//		String outputStr = vocabulary.deTokenize(output);
+//		return outputStr;
+//	}
+
+	public String nextAnswer() {
 		if (isGenerationCompleted(0))
 			return null;
-		ByteBuffer nativeBuf = ByteBuffer.allocateDirect(1 * Integer.BYTES);
-		nativeBuf.order(ByteOrder.nativeOrder());
-		IntBuffer output = nativeBuf.asIntBuffer();
-		// IntBuffer output = IntBuffer.allocate(1);
+		IntBuffer output = getNextAnswerTokenBuffer();
 
 		CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
 		CompletableFuture<Boolean> allCompleted = readBatchAsync(new IntBuffer[] { output }, generationCompleted);
@@ -152,21 +174,10 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		return outputStr;
 	}
 
-	public String nextAnswer() {
-		if (isGenerationCompleted(0))
-			return null;
-		ByteBuffer nativeBuf = ByteBuffer.allocateDirect(4 * Integer.BYTES);
-		nativeBuf.order(ByteOrder.nativeOrder());
-		IntBuffer output = nativeBuf.asIntBuffer();
-		// IntBuffer output = IntBuffer.allocate(1);
-
-		CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
-		CompletableFuture<Boolean> allCompleted = readBatchAsync(new IntBuffer[] { output }, generationCompleted);
-		allCompleted.join();
-
-		output.flip();
-		String outputStr = vocabulary.deTokenize(output);
-		return outputStr;
+	protected IntBuffer getNextAnswerTokenBuffer() {
+		tokenBuffer.clear();
+		IntBuffer output = tokenBuffer.asIntBuffer();
+		return output;
 	}
 
 	public void readMessage(PrintStream out) throws IOException {
@@ -196,6 +207,10 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 
 	public void setDebugPrompts(PrintStream debugPrompts) {
 		this.debugPrompts = debugPrompts;
+	}
+
+	public LlamaCppVocabulary getVocabulary() {
+		return vocabulary;
 	}
 
 }

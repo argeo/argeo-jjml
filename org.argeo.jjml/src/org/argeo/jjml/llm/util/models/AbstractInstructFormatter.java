@@ -1,9 +1,7 @@
 package org.argeo.jjml.llm.util.models;
 
-import java.util.List;
-
-import org.argeo.jjml.llm.LlamaCppChatMessage;
-import org.argeo.jjml.llm.LlamaCppInstructFormatter;
+import org.argeo.jjml.llm.instruct.LlamaCppInstructFormatter;
+import org.argeo.jjml.llm.instruct.LlamaCppInstructPart;
 import org.argeo.jjml.llm.util.InstructRole;
 
 public abstract class AbstractInstructFormatter implements LlamaCppInstructFormatter {
@@ -14,29 +12,37 @@ public abstract class AbstractInstructFormatter implements LlamaCppInstructForma
 
 	protected abstract void appendAssistantPart(StringBuilder sb, String content);
 
+	protected void appendToolPart(StringBuilder sb, String content) {
+		throw new UnsupportedOperationException("Tool messages are not supported.");
+	}
+
 	@Override
-	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
+	public String formatMessages(Iterable<? extends LlamaCppInstructPart> messages) {
 		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < messages.size(); i++) {
-			LlamaCppChatMessage msg = messages.get(i);
+		int index = 0;
+		for (LlamaCppInstructPart msg : messages) {
 			String roleStr = msg.getRole();
 			InstructRole role = InstructRole.valueOf(roleStr.toUpperCase());
 			switch (role) {
 			case SYSTEM:
-				if (i != 0)
+				if (index != 0)
 					throw new IllegalStateException("System prompt must be first");
-				appendSystemPart(sb, msg.getContent());
+				appendSystemPart(sb, msg.toString());
 				break;
 			case USER:
-				appendUserPart(sb, msg.getContent());
+				appendUserPart(sb, msg.toString());
 				break;
 			case ASSISTANT:
-				appendAssistantPart(sb, msg.getContent());
+				appendAssistantPart(sb, msg.toString());
+				break;
+			case TOOL:
+				appendToolPart(sb, msg.toString());
 				break;
 
 			default:
 				break;
 			}
+			index++;
 		}
 		return sb.toString();
 	}

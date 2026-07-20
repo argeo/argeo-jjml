@@ -6,7 +6,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
+import org.argeo.jjml.llm.instruct.LlamaCppInstructFormatter;
+import org.argeo.jjml.llm.instruct.LlamaCppInstructPart;
 import org.argeo.jjml.llm.util.InstructRole;
 
 /**
@@ -31,7 +35,7 @@ public class LlamaCppNativeChatFormatter implements LlamaCppInstructFormatter {
 	 * LlamaCppInstructFormatter IMPLEMENTATION
 	 */
 	@Override
-	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
+	public String formatMessages(Iterable<? extends LlamaCppInstructPart> messages) {
 		String formatted = LlamaCppNativeChatFormatter.formatChatMessages(messages, //
 				(message) -> message.getRole().equals(InstructRole.USER.get()), chatTemplate);
 		return formatted;
@@ -50,21 +54,25 @@ public class LlamaCppNativeChatFormatter implements LlamaCppInstructFormatter {
 	 *                           'granite'), not a full template
 	 * @return the formatted messages as single string
 	 */
-	static String formatChatMessages(List<LlamaCppChatMessage> messages,
-			Predicate<LlamaCppChatMessage> addAssistantTokens, String chatTemplate) {
+	static String formatChatMessages(Iterable<? extends LlamaCppInstructPart> messages,
+			Predicate<LlamaCppInstructPart> addAssistantTokens, String chatTemplate) {
 		// filter out null values
-		List<LlamaCppChatMessage> msgs = messages.stream().filter(Objects::nonNull).collect(Collectors.toList());
+		Stream<? extends LlamaCppInstructPart> stream = StreamSupport.stream(messages.spliterator(), false);
+		List<? extends LlamaCppInstructPart> msgs = stream.filter(Objects::nonNull).collect(Collectors.toList());
 		byte[][] roles = new byte[msgs.size()][];
 		byte[][] contents = new byte[msgs.size()][];
 
 		boolean currIsUserRole = false;
 		messages: for (int i = 0; i < msgs.size(); i++) {
-			LlamaCppChatMessage message = msgs.get(i);
+			LlamaCppInstructPart message = msgs.get(i);
 			if (message == null)
+				continue messages; // ignore
+			String content = message.toString();
+			if (content == null)
 				continue messages; // ignore
 			roles[i] = message.getRole().getBytes(UTF_8);
 			currIsUserRole = addAssistantTokens.test(message);
-			contents[i] = message.getContent().getBytes(UTF_8);
+			contents[i] = content.getBytes(UTF_8);
 		}
 
 		if (chatTemplate == null)
