@@ -4,7 +4,11 @@ package org.argeo.jjml.llm.params;
 public enum ModelParam {
 	n_gpu_layers, //
 	vocab_only, //
+	/** @deprecated ignored */
+	@Deprecated
 	use_mmap, //
+	/** @deprecated ignored */
+	@Deprecated
 	use_mlock, //
 	;
 
