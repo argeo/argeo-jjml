@@ -28,7 +28,9 @@ static std::string jjml_tokens_to_cpp_string(const llama_vocab *vocab,
 		text.resize(-n_chars);
 		n_chars = llama_detokenize(vocab, tokens, n_tokens, &text[0],
 				(int32_t) text.size(), remove_special, unparse_special);
-		GGML_ASSERT(n_chars <= (int32_t ) text.size()); // whitespace trimming is performed after per-token detokenization
+		assert(
+				n_chars <= (int32_t ) text.size()
+						&& "Too many dekotinzed characters"); // whitespace trimming is performed after per-token detokenization
 	}
 	text.resize(n_chars);
 	return text;
@@ -46,7 +48,7 @@ static std::vector<llama_token> jjml_cpp_string_to_tokens(
 		tokens.resize(-n_tokens);
 		int check = llama_tokenize(vocab, u8_chars, u8_size, tokens.data(),
 				tokens.size(), add_special, parse_special);
-		GGML_ASSERT(check == -n_tokens);
+		assert(check == -n_tokens && "Not the expected token count");
 	} else {
 		tokens.resize(n_tokens);
 	}

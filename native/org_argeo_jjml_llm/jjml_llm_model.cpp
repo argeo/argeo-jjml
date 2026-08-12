@@ -57,35 +57,42 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doInit(
 		JNIEnv *env, jclass, jstring localPath, jobject modelParams,
 		jobject progressCallback) {
 	const char *path_model = env->GetStringUTFChars(localPath, nullptr);
+	try {
+		llama_model_params mparams = llama_model_default_params();
+		get_model_params(env, modelParams, &mparams);
 
-	llama_model_params mparams = llama_model_default_params();
-	get_model_params(env, modelParams, &mparams);
+		// progress callback
+		argeo::jni::java_callback progress_data;
+		if (progressCallback != nullptr) {
+			progress_data.callback = env->NewGlobalRef(progressCallback);
+			progress_data.method = DoublePredicate__test;
+			env->GetJavaVM(&progress_data.jvm);
+			mparams.progress_callback_user_data = &progress_data;
 
-	// progress callback
-	argeo::jni::java_callback progress_data;
-	if (progressCallback != nullptr) {
-		progress_data.callback = env->NewGlobalRef(progressCallback);
-		progress_data.method = DoublePredicate__test;
-		env->GetJavaVM(&progress_data.jvm);
-		mparams.progress_callback_user_data = &progress_data;
+			mparams.progress_callback = [](float progress,
+					void *user_data) -> bool {
+				return argeo::jni::exec_boolean_callback(
+						static_cast<argeo::jni::java_callback*>(user_data),
+						static_cast<jdouble>(progress));
+			};
+		}
 
-		mparams.progress_callback = [](float progress,
-				void *user_data) -> bool {
-			return argeo::jni::exec_boolean_callback(
-					static_cast<argeo::jni::java_callback*>(user_data),
-					static_cast<jdouble>(progress));
-		};
+		ggml_backend_load_all();
+		llama_model *model = llama_model_load_from_file(path_model, mparams);
+		if (!model)
+			throw std::runtime_error("Cannot load model");
+
+		// free callback global reference
+		if (progress_data.callback != nullptr)
+			env->DeleteGlobalRef(progress_data.callback);
+
+		env->ReleaseStringUTFChars(localPath, path_model);
+		return (jlong) model;
+	} catch (const std::exception &ex) {
+		argeo::jni::throw_to_java(env, ex);
+		// TODO better free JNI resources in case of error
+		return 0;
 	}
-
-	ggml_backend_load_all();
-	llama_model *model = llama_model_load_from_file(path_model, mparams);
-
-	// free callback global reference
-	if (progress_data.callback != nullptr)
-		env->DeleteGlobalRef(progress_data.callback);
-
-	env->ReleaseStringUTFChars(localPath, path_model);
-	return (jlong) model;
 }
 
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doDestroy(
@@ -128,32 +135,46 @@ static jobjectArray jjml_lama_get_meta(JNIEnv *env, llama_model *model,
 	try {
 		int32_t meta_count = llama_model_meta_count(model);
 
-		jobjectArray res = env->NewObjectArray(meta_count, env->FindClass("[B"),
+		// Cache FindClass before the loop for speed and stability
+		jclass byte_array_class = env->FindClass("[B");
+		jobjectArray res = env->NewObjectArray(meta_count, byte_array_class,
 				nullptr);
-		for (int32_t i = 0; i < meta_count; i++) {
-			try {
 
+		for (int32_t i = 0; i < meta_count; i++) {
+			jbyteArray str = nullptr;
+			try {
 				char buf[META_BUFFER_SIZE];
 				int32_t length = supplier(i, buf, META_BUFFER_SIZE);
 				if (length == -1)
 					throw std::runtime_error(
 							"Cannot read model metadata " + std::to_string(i));
+
 				std::string u8_res;
-				if (length > META_BUFFER_SIZE) { // chat templates can be quite big
-					char big_buf[META_BIG_BUFFER_SIZE];
-					length = supplier(i, big_buf, length);
-					u8_res = std::string(big_buf, length);
+				if (length >= META_BUFFER_SIZE) {
+					// Allocate buffer size + 1 to account for the null terminator
+					size_t allocation_size = (size_t) length + 1;
+
+					std::vector<char> big_buf(allocation_size);
+					int32_t read_bytes = supplier(i, big_buf.data(),
+							allocation_size);
+					u8_res = std::string(big_buf.data(), read_bytes);
 				} else {
 					u8_res = std::string(buf, length);
 				}
-				jbyteArray str = env->NewByteArray(u8_res.length());
-				env->SetObjectArrayElement(res, i, str);
+
+				str = env->NewByteArray(u8_res.length());
 				env->SetByteArrayRegion(str, 0, u8_res.length(),
 						(jbyte*) u8_res.c_str());
+				env->SetObjectArrayElement(res, i, str);
 			} catch (std::exception &ex) {
 				// ignore
 				std::cerr << "Cannot read metadata " << i << ": " << ex.what()
 						<< ". Ignoring it." << std::endl;
+			}
+
+			// Clean up local reference to prevent JNI reference table overflow
+			if (str != nullptr) {
+				env->DeleteLocalRef(str);
 			}
 		}
 		return res;

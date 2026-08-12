@@ -12,13 +12,26 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import org.argeo.jjml.llm.util.JinjaOsCallFormatter;
+
 /** A processor based on chat messages. */
 public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 	private final LlamaCppVocabulary vocabulary;
 
-	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
+	private final LlamaCppInstructFormatter instructFormatter;
+
+	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain,
+			LlamaCppInstructFormatter instructFormatter) {
 		super(context, samplerChain);
 		this.vocabulary = context.getModel().getVocabulary();
+		this.instructFormatter = instructFormatter;
+	}
+
+	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
+		// FIXME implement cleaner defaults
+		this(context, samplerChain, System.getenv(JinjaOsCallFormatter.ENV_JJML_JINJA_PYTHON_SCRIPT) == null ? //
+				new LlamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate()) //
+				: new JinjaOsCallFormatter(context.getModel().getMetadataChatTemplate()));
 	}
 
 	public void write(Supplier<String> role, String message) {
@@ -33,7 +46,7 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 
 	public void write(LlamaCppChatMessage message) {
 		Objects.requireNonNull(message);
-		String prompt = getModel().formatChatMessages(message);
+		String prompt = instructFormatter.formatChatMessages(message);
 		writeFormatted(prompt);
 	}
 
@@ -48,11 +61,11 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		// TODO check whether it makes sense (pattern was taken from llama.cpp code)
 		int requiredContextSize = tokenCount + outputMax * getParallelCount();
 
-		int contextSize = getContext().getContextSize();
-		if (getContext().getContextSize() < requiredContextSize)
+		int remainingContextSize = getRemainingContextSize();
+		if (remainingContextSize < requiredContextSize)
 			throw new IllegalArgumentException(
-					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
-							+ " available. Reduce parallel or increase context size.");
+					"The required remaining context size " + requiredContextSize + " is not big enough, only "
+							+ remainingContextSize + " available. Reduce parallel or increase context size.");
 
 		ByteBuffer nativeBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
 		nativeBuf.order(ByteOrder.nativeOrder());

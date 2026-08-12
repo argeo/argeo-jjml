@@ -8,9 +8,16 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 
-/** A processor based on text rather than tokens. */
+/**
+ * A processor based on text rather than tokens.
+ * 
+ * @deprecated Use {@link LlamaCppInstructProcessor} instead.
+ */
+@Deprecated
 public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 	private final LlamaCppVocabulary vocabulary;
+
+	private final LlamaCppInstructFormatter instructFormatter;
 
 	public LlamaCppTextProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
 		this(context, samplerChain, null, Collections.singleton(0));
@@ -20,6 +27,7 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 			LlamaCppNativeSampler validatingSampler, Set<Integer> sequenceIds) {
 		super(context, samplerChain, validatingSampler, sequenceIds);
 		this.vocabulary = context.getModel().getVocabulary();
+		this.instructFormatter = new LlamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate());
 	}
 
 	/*
@@ -149,14 +157,14 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 				buf.position(buf.position() + output.limit());
 			}
 
-			long begin = System.nanoTime();
+//			long begin = System.nanoTime();
 
 			CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
 			CompletableFuture<Boolean> allCompleted = readBatchAsync(outputs, generationCompleted);
 			allCompleted.join();
 
-			long end = System.nanoTime();
-			System.out.println("Read  batch in " + (end - begin) / 1000000 + " ms.");
+//			long end = System.nanoTime();
+//			System.out.println("Read  batch in " + (end - begin) / 1000000 + " ms.");
 
 			int sequencesLeft = 0;
 			for (int i = 0; i < outputs.length; i++) {
@@ -193,4 +201,9 @@ public class LlamaCppTextProcessor extends LlamaCppBatchProcessor {
 			res.add(outputStrings[i]);
 		return res.toString();
 	}
+
+	public LlamaCppInstructFormatter getInstructFormatter() {
+		return instructFormatter;
+	}
+
 }

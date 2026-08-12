@@ -29,6 +29,7 @@ import org.argeo.jjml.llm.util.InstructRole;
  */
 public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
+	/** The raw default model parameters as provided by libllama. */
 	private final static ModelParams DEFAULT_MODEL_PARAMS_NATIVE;
 
 	static {
@@ -116,12 +117,14 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	/*
 	 * USABLE METHODS
 	 */
+	@Deprecated
 	public String formatChatMessages(LlamaCppChatMessage... messages) {
 		return formatChatMessages(Arrays.asList(messages));
 	}
 
+	@Deprecated
 	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
-		return LLamaCppNativeChatFormatter.formatChatMessages(messages, //
+		return LlamaCppNativeChatFormatter.formatChatMessages(messages, //
 				(message) -> message.getRole().equals(InstructRole.USER.get()), chatTemplate);
 	}
 
@@ -181,6 +184,13 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		return metadata;
 	}
 
+	public String getMetadataChatTemplate() {
+		if (metadata.containsKey("tokenizer.chat_template"))
+			return metadata.get("tokenizer.chat_template");
+		else
+			return null;
+	}
+
 	public String getDescription() {
 		return description;
 	}
@@ -198,11 +208,16 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	 */
 
 	public static LlamaCppModel load(Path localPath) throws IOException {
-		return load(localPath, DEFAULT_MODEL_PARAMS_NATIVE);
+		return load(localPath, defaultModelParams());
 	}
 
 	public static ModelParams defaultModelParams() {
 		ModelParams res = DEFAULT_MODEL_PARAMS_NATIVE;
+
+		// we disable GPU offload by default as it is too sensitive to context
+		// and setting context parameters right
+		// res = res.with(n_gpu_layers, 0);
+
 		for (ModelParam param : ModelParam.values()) {
 			String sysProp = System.getProperty(param.asSystemProperty());
 			if (sysProp != null)

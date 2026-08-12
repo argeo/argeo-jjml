@@ -7,17 +7,35 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.argeo.jjml.llm.util.InstructRole;
+
 /**
  * Format chat messages using llama.cpp basic capabilities (Jinja templates are
  * <b>not</b> supported).
  */
-public class LLamaCppNativeChatFormatter {
+public class LlamaCppNativeChatFormatter implements LlamaCppInstructFormatter {
+
+	private String chatTemplate;
+
+	public LlamaCppNativeChatFormatter(String chatTemplate) {
+		this.chatTemplate = chatTemplate;
+	}
 
 	/*
 	 * NATIVE METHODS
 	 */
 	private static native byte[] doFormatChatMessages(byte[][] utf8Roles, byte[][] utf8Contents,
 			boolean addAssistantTokens, byte[] ut8ChatTemplate);
+
+	/*
+	 * LlamaCppInstructFormatter IMPLEMENTATION
+	 */
+	@Override
+	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
+		String formatted = LlamaCppNativeChatFormatter.formatChatMessages(messages, //
+				(message) -> message.getRole().equals(InstructRole.USER.get()), chatTemplate);
+		return formatted;
+	}
 
 	/*
 	 * USABLE METHODS
@@ -49,6 +67,8 @@ public class LLamaCppNativeChatFormatter {
 			contents[i] = message.getContent().getBytes(UTF_8);
 		}
 
+		if (chatTemplate == null)
+			chatTemplate = "chatml";
 		byte[] res = doFormatChatMessages(roles, contents, currIsUserRole, chatTemplate.getBytes(UTF_8));
 		return new String(res, UTF_8);
 	}

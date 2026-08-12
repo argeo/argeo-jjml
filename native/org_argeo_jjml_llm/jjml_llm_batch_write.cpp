@@ -82,8 +82,7 @@ static jint jjml_llm_batch_processor_write(llama_context *ctx,
 			batch.n_tokens++;
 
 		}
-		batch.n_tokens = input_tokens_size;
-		GGML_ASSERT(batch.n_tokens == (int ) input_tokens_size);
+		batch.n_tokens = static_cast<int32_t>(input_tokens_size);
 
 		// FIXME temporary backward compatibility
 		std::vector<llama_seq_id> seq_ids(n_parallel, 0);

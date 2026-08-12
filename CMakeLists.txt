@@ -9,10 +9,6 @@ if(NOT DEFINED A2_JAVA_RELEASE)
 set(A2_JAVA_RELEASE 11)
 endif()
 
-# Can build with headless JDK
-set(JAVA_AWT_LIBRARY NotNeeded)
-set(JAVA_AWT_INCLUDE_PATH NotNeeded)
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/sdk/argeo-build/cmake")
 find_package(ArgeoBuild)
 
@@ -23,4 +19,10 @@ org.argeo.jjml
 
 a2_build_bundles(${BUNDLES})
 
+if(NOT A2_BUILD_INDEP_ONLY)
 add_subdirectory(native)
+endif()
+
+# TESTING
+a2_build_sdk_java(${BUNDLES})
+add_dependencies(sdk_java org.argeo.jjml)

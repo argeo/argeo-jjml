@@ -7,12 +7,12 @@
 
 #include <argeo/jni/argeo_jni.h>
 
-#include "org_argeo_jjml_llm_LLamaCppNativeChatFormatter.h" // IWYU pragma: keep
+#include "org_argeo_jjml_llm_LlamaCppNativeChatFormatter.h" // IWYU pragma: keep
 
 /*
  * CHAT
  */
-JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LLamaCppNativeChatFormatter_doFormatChatMessages(
+JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LlamaCppNativeChatFormatter_doFormatChatMessages(
 		JNIEnv *env, jclass, jobjectArray roles, jobjectArray contents,
 		jboolean addAssistantTokens, jbyteArray chatTemplateStr) {
 	const jsize messages_size = env->GetArrayLength(roles);

@@ -29,8 +29,8 @@ jobs:
         fetch-depth: '0'
         fetch-tags: 'true'
 
-    - name: Use latest third-parties
-      run: make -f tooling.mk tp-clone tp-checkout-latest
+    - name: Use same third-parties versions as Debian
+      run: make -f tooling.mk tp-clone tp-checkout-debian
 
     - name: Set reusable strings
       id: strings
@@ -60,8 +60,8 @@ jobs:
         -DA2_INSTALL_MODE=a2
         -DGGML_CCACHE=ON
         -DLLAMA_CURL=OFF
-        -DLLAMA_BUILD_COMMON=OFF
-        -DLLAMA_BUILD_TOOLS=OFF
+        -DLLAMA_BUILD_COMMON=ON
+        -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_TESTS=OFF
         -DGGML_BACKEND_DL=ON
@@ -79,7 +79,7 @@ jobs:
         "-Djava.library.path=${{ github.workspace }}\a2\lib\x86_64-windows-std\org.argeo.jjml;${{ github.workspace }}\a2\lib\x86_64-windows-std\org.argeo.tp.ggml"
         "--module-path=${{ github.workspace }}\a2\lib\org.argeo.jjml"
         --add-modules org.argeo.jjml
-        sdk/jbin/JjmlSmokeTests.java
+        sdk/java/examples/JjmlSmokeTests.java
 
     - name: Create JDK
       run: |
@@ -94,7 +94,6 @@ jobs:
       run: >
         "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-windows-std\bin\java" -ea
         "${{ github.workspace }}\argeo-jjml\jdk-jjml-21-openj9-x86_64-windows-std\man\examples\JjmlSmokeTests.java"
-        allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Release
       uses: ncipollo/release-action@v1
@@ -125,8 +124,8 @@ jobs:
       run: |
         brew install make
 
-    - name: Use latest third-parties
-      run: gmake -f tooling.mk tp-clone tp-checkout-latest
+    - name: Use same third-parties versions as Debian
+      run: gmake -f tooling.mk tp-clone tp-checkout-debian
 
     - name: Prepare A2 output
       run: |
@@ -165,8 +164,8 @@ jobs:
         -DGGML_METAL_USE_BF16=ON
         -DGGML_METAL_EMBED_LIBRARY=ON
         -DLLAMA_CURL=OFF
-        -DLLAMA_BUILD_COMMON=OFF
-        -DLLAMA_BUILD_TOOLS=OFF
+        -DLLAMA_BUILD_COMMON=ON
+        -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_TESTS=OFF
         -DBUILD_SHARED_LIBS=ON
@@ -197,7 +196,6 @@ jobs:
       run: >
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/bin/java -ea
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/man/examples/JjmlSmokeTests.java
-        allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Release
       uses: ncipollo/release-action@v1
@@ -227,8 +225,8 @@ jobs:
       run: |
         brew install make
 
-    - name: Use latest third-parties
-      run: gmake -f tooling.mk tp-clone tp-checkout-latest
+    - name: Use same third-parties versions as Debian
+      run: gmake -f tooling.mk tp-clone tp-checkout-debian
 
     - name: Prepare A2 output
       run: |
@@ -266,8 +264,8 @@ jobs:
         -DGGML_METAL_USE_BF16=ON
         -DGGML_METAL_EMBED_LIBRARY=ON
         -DLLAMA_CURL=OFF
-        -DLLAMA_BUILD_COMMON=OFF
-        -DLLAMA_BUILD_TOOLS=OFF
+        -DLLAMA_BUILD_COMMON=ON
+        -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF
         -DLLAMA_BUILD_TESTS=OFF
         -DBUILD_SHARED_LIBS=ON
@@ -298,7 +296,6 @@ jobs:
       run: >
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/bin/java -ea
         /Library/Java/JavaVirtualMachines/jdk-jjml-21-openj9/Contents/Home/man/examples/JjmlSmokeTests.java
-        allenai/OLMo-2-0425-1B-Instruct-GGUF
 
     - name: Release
       uses: ncipollo/release-action@v1

@@ -8,11 +8,27 @@ include sdk/argeo-build/jpms.mk
 
 A2_CATEGORY=org.argeo.jjml
 
+<<<<<<< HEAD
 TP_GGML_OLDEST=v0.9.4
 TP_LLAMA_OLDEST=b6641
+=======
+TP_GGML_OLDEST=v0.9.11
+TP_LLAMA_OLDEST=b8681
+TP_WHISPER_OLDEST=v1.8.4
+>>>>>>> refs/heads/merge-from-testing
 
+<<<<<<< HEAD
 TP_GGML_LATEST=ac0c8be49c7458bcc6eae164244d7335ce9cc184
 TP_LLAMA_LATEST=b7446
+=======
+TP_GGML_DEBIAN=v0.16.0
+TP_LLAMA_DEBIAN=b9951
+TP_WHISPER_DEBIAN=v1.9.1
+
+TP_GGML_LATEST=v0.16.0
+TP_LLAMA_LATEST=b9951
+TP_WHISPER_LATEST=v1.9.1
+>>>>>>> refs/heads/merge-from-testing
 
 ##
 # Run make clean / all / install for the default CMake build.
@@ -35,37 +51,61 @@ GGML_BLAS ?= OFF
 GGML_VULKAN ?= OFF
 GGML_CUDA ?= OFF
 GGML_RPC ?= OFF
-GGML_OPENMP ?= OFF
 GGML_CCACHE ?= ON
 
+GGML_NATIVE ?= OFF
+ifeq ($(GGML_NATIVE),ON)
+JJML_CPU ?=-DGGML_NATIVE=ON
+else
+JJML_CPU ?=-DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON
+endif
+
+# Nvidia drivers
+# see https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/
+#JJML_CUDA_TOOLKIT ?= -DCUDAToolkit_ROOT=/usr/local/cuda-13/ -DCMAKE_CUDA_COMPILER=/usr/local/cuda-13/bin/nvcc
+
+
 LLAMA_BUILD_TOOLS ?= ON
+LLAMA_BUILD_SERVER ?= OFF
 JJML_FORCE_BUILD_LLAMA_GGML ?= OFF
 
-ifneq (,$(VCIDEInstallDir))
-MSVC_IDE_BASE=$(shell cygpath -m '$(VCIDEInstallDir)\\..')
-else
-MSVC_IDE_BASE=$(shell cygpath -m 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/IDE/')
+ifeq ($(MSYS_VERSION),0) # Linux
+JJML_SSL ?= -DLLAMA_OPENSSL=ON
+else # MSYS2
+ifeq ($(CMAKE),$(MSVC_CMAKE))
+JJML_SSL ?= -DLLAMA_BUILD_LIBRESSL=ON
+else # CLANG64 or UCRT64
+JJML_SSL ?= -DLLAMA_OPENSSL=ON
 endif
-#MSVC_CMAKE_BASE="$(MSVC_BUILD_TOOLS)/Common7/IDE/CommonExtensions/Microsoft/CMake"
-MSVC_CMAKE_BASE=$(MSVC_IDE_BASE)CommonExtensions/Microsoft/CMake
-MSVC_CMAKE="$(MSVC_CMAKE_BASE)/CMake/bin/cmake.exe"
-
-ifeq ($(MSYS_VERSION),0)
-JJML_CMAKE ?= $(CMAKE)
-LLAMA_CURL ?= ON
-else
-JJML_CMAKE ?= $(MSVC_CMAKE)
-LLAMA_CURL ?= OFF
-
-# To build with MinGW compiler
-# JJML_CMAKE=cmake LLAMA_CURL=ON make -f tooling.mk clean-local rebuild-force-tp
-# (and add runtime to path)
 endif
+
+# OpenMP
+ifeq ($(MSYSTEM),CLANG64)
+GGML_OPENMP ?= ON
+endif
+ifeq ($(CMAKE),$(MSVC_CMAKE))
+GGML_OPENMP ?= ON
+endif
+ifeq ($(CMAKE_C_COMPILER),clang)
+GGML_OPENMP ?= ON
+JJML_COMPILER ?= -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-stdlib=libc++
+endif
+GGML_OPENMP ?= OFF
+
+all: cmake-all
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 
 rebuild-force-tp:
 	echo CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
-	
-	$(JJML_CMAKE) -B $(BUILD_BASE) . \
+
+ifeq ($(MSYSTEM),CLANG64)
+	# MSYS2 clang hangs on AMX
+	# see https://github.com/NixOS/nixpkgs/pull/497818
+	sed -i '/sapphirerapids/d' native/tp/ggml/src/CMakeLists.txt
+endif
+
+	$(CMAKE) -B $(BUILD_BASE) . \
+		-DA2_BUILD_INDEP_ONLY=$(A2_BUILD_INDEP_ONLY) \
 		-DJJML_FORCE_BUILD_TP=ON \
 		-DJJML_FORCE_BUILD_LLAMA_GGML=$(JJML_FORCE_BUILD_LLAMA_GGML) \
 		-DA2_INSTALL_MODE=a2 \
@@ -75,30 +115,49 @@ rebuild-force-tp:
 		-DCMAKE_SKIP_BUILD_RPATH=ON \
 		-DGGML_CCACHE=$(GGML_CCACHE) \
 		\
-		-DLLAMA_CURL=$(LLAMA_CURL) \
+		$(JJML_COMPILER) \
+		$(JJML_SSL) \
 		-DLLAMA_BUILD_COMMON=$(LLAMA_BUILD_TOOLS) \
 		-DLLAMA_BUILD_TOOLS=$(LLAMA_BUILD_TOOLS) \
+<<<<<<< HEAD
+=======
+		-DLLAMA_BUILD_SERVER=$(LLAMA_BUILD_SERVER) \
+>>>>>>> refs/heads/merge-from-testing
 		-DLLAMA_BUILD_EXAMPLES=OFF \
 		-DLLAMA_BUILD_TESTS=OFF \
 		\
+<<<<<<< HEAD
 		-DGGML_NATIVE=OFF \
 		-DGGML_CPU_ALL_VARIANTS=ON \
 		-DGGML_BACKEND_DL=ON \
+=======
+		-DWHISPER_BUILD_EXAMPLES=OFF \
+		\
+		$(JJML_CPU) \
+>>>>>>> refs/heads/merge-from-testing
 		\
 		-DGGML_OPENMP=$(GGML_OPENMP) \
 		-DGGML_BLAS=$(GGML_BLAS) \
 		-DGGML_BLAS_VENDOR=OpenBLAS \
+		-DGGML_RPC=$(GGML_RPC) \
 		-DGGML_VULKAN=$(GGML_VULKAN) \
 		-DGGML_CUDA=$(GGML_CUDA) \
-		-DGGML_CUDA_FORCE_MMQ=ON \
+		-DGGML_CUDA_FORCE_MMQ=OFF \
 		-DGGML_CUDA_FA_ALL_QUANTS=OFF \
-		-DGGML_RPC=$(GGML_RPC) \
+		$(JJML_CUDA_TOOLKIT)
 	
-	$(JJML_CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
+	$(CMAKE) --build $(BUILD_BASE) --config $(CMAKE_BUILD_TYPE) -j $(shell nproc)
+ifneq ($(GGML_NATIVE),ON)
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
+endif
+ifneq ($(TARGET_OS),windows)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix).0 $(TARGET_NATIVE_OUTPUT)
+	ln -f -r -s $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)*$(shlib_suffix).1 $(TARGET_NATIVE_OUTPUT)
+endif
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
 
+<<<<<<< HEAD
 # Remove locally built libraries
 clean-local:
 	$(RM) -r $(A2_OUTPUT)/org.argeo.jjml
@@ -107,8 +166,36 @@ clean-local:
 	$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
+=======
+ifeq ($(MSYSTEM),CLANG64)
+	# revert workaround for MSYS2 clang hangs on AMX
+	git -C native/tp/ggml restore src/CMakeLists.txt
+endif
+
+clean: cmake-clean
+>>>>>>> refs/heads/merge-from-testing
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix).*
+	$(RM) -r $(TARGET_NATIVE_OUTPUT_JJML)	
+
+# Remove locally built libraries
+clean-local: clean
+	$(RM) -r $(A2_OUTPUT)/org.argeo.jjml
+	$(RM) -r $(BUILD_BASE)
+	$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix).0
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix).0
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)mtmd*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)mtmd*$(shlib_suffix).0
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)whisper*$(shlib_suffix)
+	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)whisper*$(shlib_suffix).1
+
+#
+# TEST
+#
+check: cmake-check
 
 #
 # DOC
@@ -143,6 +230,22 @@ tp-checkout-oldest:
 	git -C native/tp/llama.cpp fetch origin
 	git -C native/tp/llama.cpp checkout $(TP_LLAMA_OLDEST)
 
+<<<<<<< HEAD
+=======
+	git -C native/tp/whisper.cpp fetch origin
+	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_OLDEST)
+
+tp-checkout-debian:
+	git -C native/tp/ggml fetch origin
+	git -C native/tp/ggml checkout $(TP_GGML_DEBIAN)
+
+	git -C native/tp/llama.cpp fetch origin
+	git -C native/tp/llama.cpp checkout $(TP_LLAMA_DEBIAN)
+
+	git -C native/tp/whisper.cpp fetch origin
+	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_DEBIAN)
+
+>>>>>>> refs/heads/merge-from-testing
 tp-checkout-latest:
 	git -C native/tp/ggml fetch origin
 	git -C native/tp/ggml checkout $(TP_GGML_LATEST)
@@ -164,7 +267,7 @@ jmod-jjml: a2-prepare-output
 	
 	# examples
 	mkdir -p $(JMODS_BASE)/$(JMOD_JJML)/man/examples
-	$(COPY) -v sdk/jbin/*.java $(JMODS_BASE)/$(JMOD_JJML)/man/examples
+	$(COPY) -v sdk/java/examples/*.java $(JMODS_BASE)/$(JMOD_JJML)/man/examples
 
 	$(call a2_jmod_create_lib,$(JMOD_JJML))
 	# list content
@@ -174,71 +277,126 @@ jmod-jjml-jni: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_JJML_JNI))
 	$(COPY) COPYING.LESSER NOTICE $(JMODS_BASE)/$(JMOD_JJML_JNI)/legal
 
-	$(COPY) $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml*$(shlib_suffix) \
+	$(COPY) \
+	 $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml_ggml$(shlib_suffix) \
+	 $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml_llm$(shlib_suffix) \
+	 $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml_mtmd$(shlib_suffix) \
+	 $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)Java_org_argeo_jjml_whisper$(shlib_suffix) \
 	 $(JMODS_BASE)/$(JMOD_JJML_JNI)/lib
 
 	$(call a2_jmod_bare_module,$(JMOD_JJML_JNI))
 # TODO use distinct version for JNI?
 	$(call a2_jmod_create_native,$(JMOD_JJML_JNI),$(A2_LAYER_VERSION))
 
+#
+# ggml
+#
 jmod-ggml-libs: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_GGML))
 
 	$(COPY) native/tp/ggml/include/*.h $(JMODS_BASE)/$(JMOD_GGML)/include
 	$(COPY) native/tp/ggml/LICENSE native/tp/ggml/AUTHORS $(JMODS_BASE)/$(JMOD_GGML)/legal
 	
+ifeq ($(TARGET_OS),linux)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML)/lib
+endif
 ifeq ($(TARGET_OS),macos)
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+endif
+ifeq ($(TARGET_OS),windows)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
+	# MSVC linker libs
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
+endif
 
+# backends
+ifeq ($(TARGET_OS),macos)
 	# When GGML_BACKEND_DL=ON, *.so are generated,
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-cpu*.so $(JMODS_BASE)/$(JMOD_GGML)/lib
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-metal.so $(JMODS_BASE)/$(JMOD_GGML)/lib
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-blas.so $(JMODS_BASE)/$(JMOD_GGML)/lib
-	#  otherwise *.dylib
-	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-cpu*.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
-	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-metal.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
-	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-blas.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
+	
+	# otherwise *.dylib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-cpu.0.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-metal.0.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/libggml-blas.0.dylib $(JMODS_BASE)/$(JMOD_GGML)/lib
 else
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
-
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-cpu*$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML)/lib
-	# MSVC linker libs
-	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
-	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)ggml-base.lib $(JMODS_BASE)/$(JMOD_GGML)/lib
 endif
 	
 	$(call a2_jmod_bare_module,$(JMOD_GGML))
 	$(call a2_jmod_create_native,$(JMOD_GGML),$(GGML_VERSION))
 
+#
+# llama.cpp
+#
 jmod-ggml-llm-libs: a2-prepare-output
 	$(call a2_jmod_prepare_output,$(JMOD_GGML_LLM))
 
 	$(COPY) native/tp/llama.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_LLM)/include
 	$(COPY) native/tp/llama.cpp/LICENSE native/tp/llama.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_LLM)/legal
 	
+ifeq ($(TARGET_OS),linux)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd$(shlib_suffix).0 $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+endif
 ifeq ($(TARGET_OS),macos)
 	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
-else
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd.0$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 endif
-
 ifeq ($(TARGET_OS),windows)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 	# MSVC linker libs
 	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)llama.lib $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)mtmd.lib $(JMODS_BASE)/$(JMOD_GGML_LLM)/lib
 endif
 
 	$(call a2_jmod_bare_module,$(JMOD_GGML_LLM))
 	$(call a2_jmod_create_native,$(JMOD_GGML_LLM),$(LLAMA_VERSION))
 
+<<<<<<< HEAD
+=======
+#
+# whisper.cpp
+#
+jmod-ggml-whisper-libs: a2-prepare-output
+	$(call a2_jmod_prepare_output,$(JMOD_GGML_WHISPER))
+
+	$(COPY) native/tp/whisper.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/include
+	$(COPY) native/tp/whisper.cpp/LICENSE native/tp/whisper.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/legal
+	
+ifeq ($(TARGET_OS),linux)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper$(shlib_suffix).1 $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
+endif
+ifeq ($(TARGET_OS),macos)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper.1$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
+endif
+ifeq ($(TARGET_OS),windows)
+	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
+	# MSVC linker libs
+	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper.lib $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
+endif
+
+	$(call a2_jmod_bare_module,$(JMOD_GGML_WHISPER))
+	$(call a2_jmod_create_native,$(JMOD_GGML_WHISPER),$(WHISPER_VERSION))
+
+>>>>>>> refs/heads/merge-from-testing
 #
 # DISTRIBUTABLE PACKAGES
 #
 package-jmods: jmod-jjml jmod-jjml-jni jmod-ggml-libs jmod-ggml-llm-libs
 
 jdk-jjml: package-jmods
+<<<<<<< HEAD
 	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM))
+=======
+	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_MULTIMEDIA) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM) $(JMOD_GGML_WHISPER))
+>>>>>>> refs/heads/merge-from-testing
 	$(call a2_jlink_copy_categories,jdk-jjml,$(A2_CATEGORY))
 
 JDK_JJML_WIN_UPGRADE_ID=d87918b9-88e7-51fb-92d5-7186ca73314b

@@ -85,12 +85,14 @@ static void embd_batch_decode(llama_context *ctx, llama_batch &batch,
 			// try to get token embeddings
 			embd = llama_get_embeddings_ith(ctx, i);
 			embd_pos = i;
-			GGML_ASSERT(embd != NULL && "failed to get token embeddings");
+			if (embd == NULL)
+				throw std::runtime_error("Failed to get token embeddings");
 		} else {
 			// try to get sequence embeddings - supported only when pooling_type is not NONE
 			embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
 			embd_pos = batch.seq_id[i][0];
-			GGML_ASSERT(embd != NULL && "failed to get sequence embeddings");
+			if (embd == NULL)
+				throw std::runtime_error("Failed to get sequence embeddings");
 		}
 
 		float *out = output + embd_pos * n_embd;
@@ -101,55 +103,62 @@ static void embd_batch_decode(llama_context *ctx, llama_batch &batch,
 JNIEXPORT void JNICALL Java_org_argeo_jjml_llm_LlamaCppEmbeddingProcessor_doProcessEmbeddings(
 		JNIEnv *env, jclass, jlong contextPointer, jobjectArray tokenLists,
 		jfloatArray res) {
-	auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
+	try {
+		auto *ctx = argeo::jni::as_pointer<llama_context*>(contextPointer);
 
-	// TODO deal with normalization
-	int embd_normalize = -1;
+		// TODO deal with normalization
+		int embd_normalize = -1;
 
-	int n_embd = llama_model_n_embd(llama_get_model(ctx));
-	int n_batch = llama_n_batch(ctx);
-	const enum llama_pooling_type pooling_type = llama_pooling_type(ctx);
+		int n_embd = llama_model_n_embd(llama_get_model(ctx));
+		int n_batch = llama_n_batch(ctx);
+		const enum llama_pooling_type pooling_type = llama_pooling_type(ctx);
 
-	struct llama_batch batch = llama_batch_init(n_batch, 0, 1);
+		struct llama_batch batch = llama_batch_init(n_batch, 0, 1);
 
-	int n_prompts = env->GetArrayLength(tokenLists);
+		int n_prompts = env->GetArrayLength(tokenLists);
 
-	jfloat *emb = (jfloat*) env->GetPrimitiveArrayCritical(res, nullptr);
+		jfloat *emb = (jfloat*) env->GetPrimitiveArrayCritical(res, nullptr);
 
-	// break into batches
-	int e = 0; // number of embeddings already stored
-	int s = 0; // number of prompts in current batch
-	for (int k = 0; k < n_prompts; k++) {
-		jintArray tokenList = (jintArray) env->GetObjectArrayElement(tokenLists,
-				k);
+		// break into batches
+		int e = 0; // number of embeddings already stored
+		int s = 0; // number of prompts in current batch
+		for (int k = 0; k < n_prompts; k++) {
+			jintArray tokenList = (jintArray) env->GetObjectArrayElement(
+					tokenLists, k);
 
-		const uint64_t n_toks = env->GetArrayLength(tokenList);
+			const uint64_t n_toks = env->GetArrayLength(tokenList);
 
-		// encode if at capacity
-		if (batch.n_tokens + n_toks > n_batch) {
-			float *out = emb + e * n_embd;
-			embd_batch_decode(ctx, batch, out, s, n_embd, embd_normalize);
-			e += pooling_type == LLAMA_POOLING_TYPE_NONE ? batch.n_tokens : s;
-			s = 0;
-			jjml_llm_batch_clear(batch);
-		}
+			// encode if at capacity
+			if (batch.n_tokens + n_toks > n_batch) {
+				float *out = emb + e * n_embd;
+				embd_batch_decode(ctx, batch, out, s, n_embd, embd_normalize);
+				e += pooling_type == LLAMA_POOLING_TYPE_NONE ?
+						batch.n_tokens : s;
+				s = 0;
+				jjml_llm_batch_clear(batch);
+			}
 
-		// add to batch
+			// add to batch
 //		embd_batch_add_seq(batch, inp, s);
-		size_t n_tokens = env->GetArrayLength(tokenList);
-		int *tokens = (int*) env->GetPrimitiveArrayCritical(tokenList, nullptr);
-		for (size_t i = 0; i < n_tokens; i++) {
-			jjml_llm_batch_add(batch, tokens[i], i, { s }, true);
+			size_t n_tokens = env->GetArrayLength(tokenList);
+			int *tokens = (int*) env->GetPrimitiveArrayCritical(tokenList,
+					nullptr);
+			for (size_t i = 0; i < n_tokens; i++) {
+				jjml_llm_batch_add(batch, tokens[i], i, { s }, true);
+			}
+			env->ReleasePrimitiveArrayCritical(tokenList, tokens, 0);
+
+			s += 1;
 		}
-		env->ReleasePrimitiveArrayCritical(tokenList, tokens, 0);
 
-		s += 1;
+		// final batch
+		float *out = emb + e * n_embd;
+		embd_batch_decode(ctx, batch, out, s, n_embd, embd_normalize);
+
+		env->ReleasePrimitiveArrayCritical(res, emb, 0);
+	} catch (const std::exception &ex) {
+		argeo::jni::throw_to_java(env, ex);
+		return;
 	}
-
-	// final batch
-	float *out = emb + e * n_embd;
-	embd_batch_decode(ctx, batch, out, s, n_embd, embd_normalize);
-
-	env->ReleasePrimitiveArrayCritical(res, emb, 0);
 }
 
