@@ -8,27 +8,14 @@ include sdk/argeo-build/jpms.mk
 
 A2_CATEGORY=org.argeo.jjml
 
-<<<<<<< HEAD
-TP_GGML_OLDEST=v0.9.4
-TP_LLAMA_OLDEST=b6641
-=======
 TP_GGML_OLDEST=v0.9.11
 TP_LLAMA_OLDEST=b8681
-TP_WHISPER_OLDEST=v1.8.4
->>>>>>> refs/heads/merge-from-testing
 
-<<<<<<< HEAD
-TP_GGML_LATEST=ac0c8be49c7458bcc6eae164244d7335ce9cc184
-TP_LLAMA_LATEST=b7446
-=======
 TP_GGML_DEBIAN=v0.16.0
 TP_LLAMA_DEBIAN=b9951
-TP_WHISPER_DEBIAN=v1.9.1
 
 TP_GGML_LATEST=v0.16.0
 TP_LLAMA_LATEST=b9951
-TP_WHISPER_LATEST=v1.9.1
->>>>>>> refs/heads/merge-from-testing
 
 ##
 # Run make clean / all / install for the default CMake build.
@@ -119,22 +106,13 @@ endif
 		$(JJML_SSL) \
 		-DLLAMA_BUILD_COMMON=$(LLAMA_BUILD_TOOLS) \
 		-DLLAMA_BUILD_TOOLS=$(LLAMA_BUILD_TOOLS) \
-<<<<<<< HEAD
-=======
 		-DLLAMA_BUILD_SERVER=$(LLAMA_BUILD_SERVER) \
->>>>>>> refs/heads/merge-from-testing
 		-DLLAMA_BUILD_EXAMPLES=OFF \
 		-DLLAMA_BUILD_TESTS=OFF \
 		\
-<<<<<<< HEAD
-		-DGGML_NATIVE=OFF \
-		-DGGML_CPU_ALL_VARIANTS=ON \
-		-DGGML_BACKEND_DL=ON \
-=======
 		-DWHISPER_BUILD_EXAMPLES=OFF \
 		\
 		$(JJML_CPU) \
->>>>>>> refs/heads/merge-from-testing
 		\
 		-DGGML_OPENMP=$(GGML_OPENMP) \
 		-DGGML_BLAS=$(GGML_BLAS) \
@@ -157,23 +135,12 @@ endif
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
 
-<<<<<<< HEAD
-# Remove locally built libraries
-clean-local:
-	$(RM) -r $(A2_OUTPUT)/org.argeo.jjml
-	$(RM) -r $(BUILD_BASE)
-	$(RM) -r $(TARGET_NATIVE_OUTPUT_JJML)
-	$(RM) -r $(TARGET_NATIVE_OUTPUT_GGML)
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)ggml*$(shlib_suffix)
-	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)llama*$(shlib_suffix)
-=======
 ifeq ($(MSYSTEM),CLANG64)
 	# revert workaround for MSYS2 clang hangs on AMX
 	git -C native/tp/ggml restore src/CMakeLists.txt
 endif
 
 clean: cmake-clean
->>>>>>> refs/heads/merge-from-testing
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix).*
 	$(RM) -r $(TARGET_NATIVE_OUTPUT_JJML)	
@@ -230,11 +197,6 @@ tp-checkout-oldest:
 	git -C native/tp/llama.cpp fetch origin
 	git -C native/tp/llama.cpp checkout $(TP_LLAMA_OLDEST)
 
-<<<<<<< HEAD
-=======
-	git -C native/tp/whisper.cpp fetch origin
-	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_OLDEST)
-
 tp-checkout-debian:
 	git -C native/tp/ggml fetch origin
 	git -C native/tp/ggml checkout $(TP_GGML_DEBIAN)
@@ -242,10 +204,6 @@ tp-checkout-debian:
 	git -C native/tp/llama.cpp fetch origin
 	git -C native/tp/llama.cpp checkout $(TP_LLAMA_DEBIAN)
 
-	git -C native/tp/whisper.cpp fetch origin
-	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_DEBIAN)
-
->>>>>>> refs/heads/merge-from-testing
 tp-checkout-latest:
 	git -C native/tp/ggml fetch origin
 	git -C native/tp/ggml checkout $(TP_GGML_LATEST)
@@ -359,44 +317,13 @@ endif
 	$(call a2_jmod_bare_module,$(JMOD_GGML_LLM))
 	$(call a2_jmod_create_native,$(JMOD_GGML_LLM),$(LLAMA_VERSION))
 
-<<<<<<< HEAD
-=======
-#
-# whisper.cpp
-#
-jmod-ggml-whisper-libs: a2-prepare-output
-	$(call a2_jmod_prepare_output,$(JMOD_GGML_WHISPER))
-
-	$(COPY) native/tp/whisper.cpp/include/*.h $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/include
-	$(COPY) native/tp/whisper.cpp/LICENSE native/tp/whisper.cpp/AUTHORS $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/legal
-	
-ifeq ($(TARGET_OS),linux)
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper$(shlib_suffix).1 $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
-endif
-ifeq ($(TARGET_OS),macos)
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper.1$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
-endif
-ifeq ($(TARGET_OS),windows)
-	$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper$(shlib_suffix) $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
-	# MSVC linker libs
-	-$(COPY) $(TARGET_NATIVE_OUTPUT_GGML)/$(shlib_prefix)whisper.lib $(JMODS_BASE)/$(JMOD_GGML_WHISPER)/lib
-endif
-
-	$(call a2_jmod_bare_module,$(JMOD_GGML_WHISPER))
-	$(call a2_jmod_create_native,$(JMOD_GGML_WHISPER),$(WHISPER_VERSION))
-
->>>>>>> refs/heads/merge-from-testing
 #
 # DISTRIBUTABLE PACKAGES
 #
 package-jmods: jmod-jjml jmod-jjml-jni jmod-ggml-libs jmod-ggml-llm-libs
 
 jdk-jjml: package-jmods
-<<<<<<< HEAD
-	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM))
-=======
-	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_MULTIMEDIA) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM) $(JMOD_GGML_WHISPER))
->>>>>>> refs/heads/merge-from-testing
+	$(call a2_jlink_create_jdk,jdk-jjml,$(JMOD_JJML) $(JMOD_JJML_MULTIMEDIA) $(JMOD_JJML_JNI) $(JMOD_GGML) $(JMOD_GGML_LLM))
 	$(call a2_jlink_copy_categories,jdk-jjml,$(A2_CATEGORY))
 
 JDK_JJML_WIN_UPGRADE_ID=d87918b9-88e7-51fb-92d5-7186ca73314b
