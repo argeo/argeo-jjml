@@ -31,7 +31,7 @@ jobs:
     - name: Dependencies (backports disabled)
       id: depends
       run: |
-       sudo sed -i '/-backports/d' /etc/apt/sources.list /etc/apt/sources.list.d/* || true
+       sudo sed -i '/^Suites:/ s/[^ ]*-backports//g' /etc/apt/sources.list.d/ubuntu.sources
        sudo apt-get update
        sudo apt-get install -y libllama-dev
 
