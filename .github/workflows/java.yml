@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
 
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-26.04]
         build_type: [RelWithDebInfo]
         c_compiler: [gcc]
         cpp_compiler: [g++]
@@ -30,8 +30,11 @@ jobs:
         fetch-depth: '0'
         fetch-tags: 'true'
 
-    - name: Use oldest third-parties
-      run: make -f tooling.mk tp-clone tp-checkout-oldest
+    - name: Dependencies
+      id: depends
+      run: |
+       sudo apt-get update
+       sudo apt-get install -y libllama-dev
 
     - uses: actions/setup-java@v5
       name: Setup Java
@@ -46,13 +49,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DJJML_FORCE_BUILD_TP=ON
-        -DLLAMA_BUILD_COMMON=ON
-        -DLLAMA_BUILD_TOOLS=ON
-        -DLLAMA_BUILD_SERVER=OFF
-        -DLLAMA_BUILD_EXAMPLES=OFF
-        -DLLAMA_BUILD_TESTS=OFF
-        -DGGML_NATIVE=ON
+        -DJJML_DO_NOT_BUILD_TP=ON
         -S ${{ github.workspace }}
 
     - name: Build
@@ -61,7 +58,7 @@ jobs:
     - name: Test
       run: >
         java -ea
-        -Djava.library.path=${{ github.workspace }}/build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml:${{ github.workspace }}/build/a2/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml
+        -Djava.library.path=${{ github.workspace }}/build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml
         --module-path ${{ github.workspace }}/build/a2/lib/org.argeo.jjml
         --add-modules org.argeo.jjml
         sdk/java/examples/JjmlSmokeTests.java
