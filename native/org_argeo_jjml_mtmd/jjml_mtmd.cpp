@@ -32,6 +32,7 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_mtmd_MtmdProcessor_doSingleTurn(
 
 	mtmd_input_text text;
 	text.text = prompt.c_str();
+	text.text_len = prompt.length();
 	text.add_special = true;
 	text.parse_special = true;
 
