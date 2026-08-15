@@ -16,6 +16,7 @@ public class LlamaCppSamplers {
 	private static native long doInitGreedy();
 
 	private static native long doInitPenalties( //
+			int n_vocab, //
 			int penalty_last_n, //
 			float penalty_repeat, //
 			float penalty_freq, //
@@ -59,7 +60,11 @@ public class LlamaCppSamplers {
 		// see gpt_sampler_init in sampling.cpp
 
 		LlamaCppSamplerChain chain = new LlamaCppSamplerChain();
-		chain.addSampler(LlamaCppSamplers.newSamplerPenalties(params));
+		if (!isPenaltySamplerDisabled(params)) {
+			throw new UnsupportedOperationException("Penalties sampler is currently not supported.");
+			// FIXME find a clean way to pass such contextual parameters
+			// chain.addSampler(LlamaCppSamplers.newSamplerPenalties(-1,params));
+		}
 		if (params.temp() > 0) {
 			chain.addSampler(LlamaCppSamplers.newSamplerTopK(params.top_k()));
 			long min_keep = params.min_keep();
@@ -81,6 +86,13 @@ public class LlamaCppSamplers {
 		return chain;
 	}
 
+	private static boolean isPenaltySamplerDisabled(DefaultSamplerChainParams params) {
+		// see llama_sampler_penalties:is_disabled() in llama-sampler.cpp
+		return params.penalty_last_n() == 0 || (params.penalty_repeat() == 1.0f && params.penalty_freq() == 0.0f
+				&& params.penalty_present() == 0.0f);
+
+	}
+
 	/*
 	 * FACTORY
 	 */
@@ -89,6 +101,7 @@ public class LlamaCppSamplers {
 	}
 
 	public static LlamaCppNativeSampler newSamplerPenalties(//
+			int n_vocab, // vocab size
 			int penalty_last_n, // last n tokens to penalize (0 = disable penalty, -1 = context size)
 			float penalty_repeat, // 1.0 = disabled
 			float penalty_freq, // 0.0 = disabled
@@ -96,12 +109,12 @@ public class LlamaCppSamplers {
 			boolean penalize_nl, // consider newlines as a repeatable token
 			boolean ignore_eos // ignore the end-of-sequence token
 	) {
-		return new LlamaCppNativeSampler(doInitPenalties(penalty_last_n, penalty_repeat, penalty_freq, penalty_present,
-				penalize_nl, ignore_eos));
+		return new LlamaCppNativeSampler(doInitPenalties(n_vocab, penalty_last_n, penalty_repeat, penalty_freq,
+				penalty_present, penalize_nl, ignore_eos));
 	}
 
-	public static LlamaCppNativeSampler newSamplerPenalties(DefaultSamplerChainParams params) {
-		return newSamplerPenalties(params.penalty_last_n(), params.penalty_repeat(), params.penalty_freq(),
+	public static LlamaCppNativeSampler newSamplerPenalties(int n_vocab, DefaultSamplerChainParams params) {
+		return newSamplerPenalties(n_vocab, params.penalty_last_n(), params.penalty_repeat(), params.penalty_freq(),
 				params.penalty_freq(), params.penalize_nl(), params.ignore_eos());
 	}
 
