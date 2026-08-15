@@ -114,18 +114,34 @@
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.79353764" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="GGML_BACKEND_DL"/>
-									<listOptionValue builtIn="false" value="LOG_WRN"/>
-									<listOptionValue builtIn="false" value="LOG_ERR"/>
-									<listOptionValue builtIn="false" value="LOG_INF"/>
-									<listOptionValue builtIn="false" value="LOG_DBG"/>
-									<listOptionValue builtIn="false" value="LOG"/>
+									<listOptionValue builtIn="false" value="LLAMA_LOG_WARN"/>
+									<listOptionValue builtIn="false" value="LLAMA_LOG_INFO"/>
+									<listOptionValue builtIn="false" value="LLAMA_LOG"/>
+									<listOptionValue builtIn="false" value="LLAMA_LOG_ERROR"/>
+									<listOptionValue builtIn="false" value="LLAMA_LOG_DEBUG"/>
+									<listOptionValue builtIn="false" value="LLAMA_LOG_CONT"/>
+									<listOptionValue builtIn="false" value="GGML_BACKEND_SHARED"/>
+									<listOptionValue builtIn="false" value="__cplusplus=201703L"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.295163651" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.so.debug.1155877030" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.so.debug">
 								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.so.debug.option.optimization.level.561799979" name="Optimization level" superClass="gnu.c.compiler.so.debug.option.optimization.level" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option defaultValue="gnu.c.debugging.level.max" id="gnu.c.compiler.so.debug.option.debugging.level.673210932" name="Debug level" superClass="gnu.c.compiler.so.debug.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="gnu.c.compiler.option.include.paths.726700392" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.726700392" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/include/org.argeo.jjml}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/tp/ggml/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/tp/llama.cpp/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/tp/llama.cpp/common}&quot;"/>
+									<listOptionValue builtIn="false" value="/usr/lib/jvm/java-21-openjdk-amd64/include/"/>
+									<listOptionValue builtIn="false" value="/usr/lib/jvm/java-21-openjdk-amd64/include/linux"/>
+								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.preprocessor.def.symbols.639703216" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
+									<listOptionValue builtIn="false" value="__cplusplus=201703L"/>
+									<listOptionValue builtIn="false" value="GGML_BACKEND_SHARED"/>
+									<listOptionValue builtIn="false" value="GGML_BACKEND_DL"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.504150329" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.so.debug.934005072" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.so.debug">
@@ -150,6 +166,7 @@
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="org_argeo_jjml_llm"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="org_argeo_jjml_mtmd"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="org_argeo_jjml_whisper"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/ggml/include"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/ggml/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/common"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/examples/embedding"/>
@@ -158,6 +175,7 @@
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/examples/speculative"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/examples/speculative-simple"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/examples/training"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/include"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/tools/completion"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="tp/llama.cpp/tools/mtmd"/>
@@ -226,5 +244,13 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.so.debug.1460275451.620111777;cdt.managedbuild.config.gnu.so.debug.1460275451.620111777.;cdt.managedbuild.tool.gnu.cpp.compiler.so.debug.2134381860;cdt.managedbuild.tool.gnu.cpp.compiler.input.295163651">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.language.mapping">
+		<project-mappings>
+			<content-type-mapping configuration="" content-type="org.eclipse.cdt.core.cHeader" language="org.eclipse.cdt.core.g++"/>
+			<content-type-mapping configuration="" content-type="org.eclipse.cdt.core.cSource" language="org.eclipse.cdt.core.g++"/>
+			<content-type-mapping configuration="" content-type="org.eclipse.cdt.core.cxxHeader" language="org.eclipse.cdt.core.g++"/>
+			<content-type-mapping configuration="" content-type="org.eclipse.cdt.core.cxxSource" language="org.eclipse.cdt.core.g++"/>
+		</project-mappings>
 	</storageModule>
 </cproject>
