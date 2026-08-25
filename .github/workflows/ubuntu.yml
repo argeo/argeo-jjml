@@ -44,13 +44,13 @@ jobs:
         fetch-tags: 'true'
 
     - name: Use latest third-parties
-      run: make -f tooling.mk tp-clone tp-checkout-latest
+      run: make -f tooling.mk tp-checkout-latest
 
     - name: Dependencies
       id: depends
       run: |
        sudo apt-get update
-       sudo apt-get install -y default-jdk glslc libvulkan-dev spirv-headers
+       sudo apt-get install -y openjdk-21-jdk-headless glslc libvulkan-dev spirv-headers
 
     - name: Configure CMake
       run: >

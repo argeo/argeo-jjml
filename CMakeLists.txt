@@ -6,7 +6,7 @@ DESCRIPTION "Enterprise-grade Java bindings for the ggml ecosystem of machine le
 set(A2_CATEGORY org.argeo.jjml)
 
 if(NOT DEFINED A2_JAVA_RELEASE)
-set(A2_JAVA_RELEASE 11)
+set(A2_JAVA_RELEASE 17)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/sdk/argeo-build/cmake")

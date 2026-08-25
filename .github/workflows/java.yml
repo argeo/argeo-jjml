@@ -18,7 +18,7 @@ jobs:
         build_type: [RelWithDebInfo]
         c_compiler: [gcc]
         cpp_compiler: [g++]
-        java: ['11', '17', '21', '25' ]
+        java: ['17', '21', '25' ]
 
     steps:
     - uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
         fetch-tags: 'true'
 
     - name: Use oldest third-parties
-      run: make -f tooling.mk tp-clone tp-checkout-oldest
+      run: make -f tooling.mk tp-checkout-oldest
 
     - uses: actions/setup-java@v5
       name: Setup Java

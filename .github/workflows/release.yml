@@ -29,7 +29,7 @@ jobs:
         fetch-tags: 'true'
 
     - name: Use same third-parties versions as Debian
-      run: make -f tooling.mk tp-clone tp-checkout-debian
+      run: make -f tooling.mk tp-checkout-debian
 
     - name: Set reusable strings
       id: strings
