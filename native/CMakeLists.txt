@@ -30,7 +30,7 @@ find_package(llama QUIET)
 find_package(whisper QUIET)
 
 if(whisper_FOUND)
-	message(STATUS "Found whisper: ${whisper_LIBRARY} ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
+	message(STATUS "Found whisper packages: ${whisper_LIBRARY} ${GGML_LIBRARY} ${GGML_BASE_LIBRARY}")
 endif()
 
 if(llama_FOUND)
@@ -124,9 +124,28 @@ if(EXISTS "${mtmd_LIBRARY}") # mtmd as external library
 	endif()
 endif()
 
-if(NOT JJML_DO_NOT_BUILD_TP)
-	# Build reference third-party submodules if needed
-	add_subdirectory(tp)
+if(EXISTS "${whisper_LIBRARY}") # whisper as external library
+	if(NOT whisper_FOUND) # not CMake configured
+		add_library(whisper SHARED IMPORTED GLOBAL)
+		if(WIN32)
+		set_target_properties(whisper PROPERTIES IMPORTED_IMPLIB ${whisper_LIBRARY})
+		else()
+		set_target_properties(whisper PROPERTIES IMPORTED_LOCATION ${whisper_LIBRARY})
+		endif()
+		target_link_libraries(whisper INTERFACE ${GGML_LIBRARY})
+		message(STATUS "Found whisper library: ${mtmd_LIBRARY}") 
+	endif()
+endif()
+
+if(EXISTS "${llama_LIBRARY}" AND EXISTS "${mtmd_LIBRARY}" AND EXISTS "${whisper_LIBRARY}")
+	message(STATUS "Build will only use system libraries.")
+else()
+	if(NOT JJML_DO_NOT_BUILD_TP)
+		# Build reference third-party components if needed
+		add_subdirectory(tp)
+	else()
+		message(FATAL "Not all system libraries where found and build of third-party components is disabled.")
+	endif()
 endif()
 
 # FIXME - LLAMA_BUILD_NUMBER is set to 1 in the MSYS-provided libraries

@@ -195,35 +195,35 @@ tp-clone:
 	if [ ! -d "native/tp/llama.cpp" ]; then git clone --single-branch --branch master https://github.com/ggml-org/llama.cpp.git native/tp/llama.cpp; fi;
 	if [ ! -d "native/tp/whisper.cpp" ]; then git clone --single-branch --branch master https://github.com/ggml-org/whisper.cpp.git native/tp/whisper.cpp; fi;
 
-tp-checkout-oldest:
+tp-checkout-oldest: tp-clone
 	git -C native/tp/ggml fetch origin
-	git -C native/tp/ggml checkout $(TP_GGML_OLDEST)
+	git -C native/tp/ggml -c advice.detachedHead=false checkout $(TP_GGML_OLDEST)
 
 	git -C native/tp/llama.cpp fetch origin
-	git -C native/tp/llama.cpp checkout $(TP_LLAMA_OLDEST)
+	git -C native/tp/llama.cpp -c advice.detachedHead=false checkout $(TP_LLAMA_OLDEST)
 
 	git -C native/tp/whisper.cpp fetch origin
-	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_OLDEST)
+	git -C native/tp/whisper.cpp -c advice.detachedHead=false checkout $(TP_WHISPER_OLDEST)
 
-tp-checkout-debian:
+tp-checkout-debian: tp-clone
 	git -C native/tp/ggml fetch origin
-	git -C native/tp/ggml checkout $(TP_GGML_DEBIAN)
+	git -C native/tp/ggml -c advice.detachedHead=false checkout $(TP_GGML_DEBIAN)
 
 	git -C native/tp/llama.cpp fetch origin
-	git -C native/tp/llama.cpp checkout $(TP_LLAMA_DEBIAN)
+	git -C native/tp/llama.cpp -c advice.detachedHead=false checkout $(TP_LLAMA_DEBIAN)
 
 	git -C native/tp/whisper.cpp fetch origin
-	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_DEBIAN)
+	git -C native/tp/whisper.cpp -c advice.detachedHead=false checkout $(TP_WHISPER_DEBIAN)
 
-tp-checkout-latest:
+tp-checkout-latest: tp-clone
 	git -C native/tp/ggml fetch origin
-	git -C native/tp/ggml checkout $(TP_GGML_LATEST)
+	git -C native/tp/ggml -c advice.detachedHead=false checkout $(TP_GGML_LATEST)
 
 	git -C native/tp/llama.cpp fetch origin
-	git -C native/tp/llama.cpp checkout $(TP_LLAMA_LATEST)
+	git -C native/tp/llama.cpp -c advice.detachedHead=false checkout $(TP_LLAMA_LATEST)
 
 	git -C native/tp/whisper.cpp fetch origin
-	git -C native/tp/whisper.cpp checkout $(TP_WHISPER_LATEST)
+	git -C native/tp/whisper.cpp -c advice.detachedHead=false checkout $(TP_WHISPER_LATEST)
 
 #
 # PACKAGING
