@@ -1,1 +1,5 @@
+/ggml
+/llama.cpp
+/whisper.cpp
+
 /versions.mk
