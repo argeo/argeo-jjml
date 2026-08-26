@@ -13,13 +13,6 @@ option(JJML_FORCE_LLAMA_BUILD_NUMBER "Force LLAMA_BUILD_NUMBER, in environments 
 
 if(NOT JJML_FORCE_BUILD_TP)
 
-if(NOT MSVC)
-# Debian official until libraries are stable
-set(CMAKE_PREFIX_PATH
-/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/llama/cmake-private
-)
-endif()
-
 if(JJML_JDK_TP) # Use environment provided by a ggml-instrumented JDK
 	set(CMAKE_LIBRARY_PATH ${JAVA_HOME}/bin ${JAVA_HOME}/lib)
 	include_directories(${JAVA_HOME}/include SYSTEM)
@@ -64,7 +57,7 @@ else()
 		find_library(GGML_LIBRARY ggml)
 		find_library(GGML_BASE_LIBRARY ggml-base)
 	endif()
-endif()
+endif() # llama_FOUND
 	
 endif() # JJML_FORCE_BUILD_TP
 
