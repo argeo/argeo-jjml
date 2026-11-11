@@ -12,6 +12,10 @@ TP_GGML_OLDEST=v0.21.0
 TP_LLAMA_OLDEST=v0.2.0
 TP_WHISPER_OLDEST=v1.9.3
 
+TP_GGML_FROZEN=v0.26.0
+TP_LLAMA_FROZEN=v0.6.0
+TP_WHISPER_FROZEN=v1.9.5
+
 TP_GGML_DEBIAN=v0.26.0
 TP_LLAMA_DEBIAN=v0.6.0
 TP_WHISPER_DEBIAN=v1.9.5
@@ -191,38 +195,28 @@ else
 endif
 
 tp-clone:
-	if [ ! -d "native/tp/ggml" ]; then git clone --single-branch --branch master https://github.com/ggml-org/ggml.git native/tp/ggml; fi;
-	if [ ! -d "native/tp/llama.cpp" ]; then git clone --single-branch --branch master https://github.com/ggml-org/llama.cpp.git native/tp/llama.cpp; fi;
-	if [ ! -d "native/tp/whisper.cpp" ]; then git clone --single-branch --branch master https://github.com/ggml-org/whisper.cpp.git native/tp/whisper.cpp; fi;
+	if [ ! -d "native/tp/ggml" ]; then git clone --single-branch --branch master https://github.com/ggml-org/ggml.git native/tp/ggml; else git -C native/tp/ggml fetch origin; fi;
+	if [ ! -d "native/tp/llama.cpp" ]; then git clone --single-branch --branch master https://github.com/ggml-org/llama.cpp.git native/tp/llama.cpp; else git -C native/tp/llama.cpp fetch origin; fi;
+	if [ ! -d "native/tp/whisper.cpp" ]; then git clone --single-branch --branch master https://github.com/ggml-org/whisper.cpp.git native/tp/whisper.cpp; else git -C native/tp/whisper.cpp fetch origin; fi;
 
 tp-checkout-oldest: tp-clone
-	git -C native/tp/ggml fetch origin
 	git -C native/tp/ggml -c advice.detachedHead=false checkout $(TP_GGML_OLDEST)
-
-	git -C native/tp/llama.cpp fetch origin
 	git -C native/tp/llama.cpp -c advice.detachedHead=false checkout $(TP_LLAMA_OLDEST)
-
-	git -C native/tp/whisper.cpp fetch origin
 	git -C native/tp/whisper.cpp -c advice.detachedHead=false checkout $(TP_WHISPER_OLDEST)
 
+tp-checkout-frozen: tp-clone
+	git -C native/tp/ggml -c advice.detachedHead=false checkout $(TP_GGML_FROZEN)
+	git -C native/tp/llama.cpp -c advice.detachedHead=false checkout $(TP_LLAMA_FROZEN)
+	git -C native/tp/whisper.cpp -c advice.detachedHead=false checkout $(TP_WHISPER_FROZEN)
+
 tp-checkout-debian: tp-clone
-	git -C native/tp/ggml fetch origin
 	git -C native/tp/ggml -c advice.detachedHead=false checkout $(TP_GGML_DEBIAN)
-
-	git -C native/tp/llama.cpp fetch origin
 	git -C native/tp/llama.cpp -c advice.detachedHead=false checkout $(TP_LLAMA_DEBIAN)
-
-	git -C native/tp/whisper.cpp fetch origin
 	git -C native/tp/whisper.cpp -c advice.detachedHead=false checkout $(TP_WHISPER_DEBIAN)
 
 tp-checkout-latest: tp-clone
-	git -C native/tp/ggml fetch origin
 	git -C native/tp/ggml -c advice.detachedHead=false checkout $(TP_GGML_LATEST)
-
-	git -C native/tp/llama.cpp fetch origin
 	git -C native/tp/llama.cpp -c advice.detachedHead=false checkout $(TP_LLAMA_LATEST)
-
-	git -C native/tp/whisper.cpp fetch origin
 	git -C native/tp/whisper.cpp -c advice.detachedHead=false checkout $(TP_WHISPER_LATEST)
 
 #
