@@ -1,9 +1,13 @@
 name: All Java versions
 # Used to test all supported Java versions
-# and to test the "oldest" versions of the third parties.
+# and to test the "latest" versions of the third parties.
+# on the oldest possible Linux platform.
 
 on:
   workflow_dispatch: # allows manual triggering
+  push:
+    tags:
+    - '*'
   pull_request:
     branches: [ "testing", "unstable" ]
 
@@ -17,7 +21,7 @@ jobs:
 
       matrix:
         os: [ubuntu-22.04]
-        build_type: [RelWithDebInfo]
+        build_type: [Release]
         c_compiler: [gcc]
         cpp_compiler: [g++]
         java: ['17', '21', '25' ]
@@ -31,7 +35,7 @@ jobs:
         fetch-tags: 'true'
 
     - name: Use oldest third-parties
-      run: make -f tooling.mk tp-checkout-oldest
+      run: make -f tooling.mk tp-checkout-latest
 
     - uses: actions/setup-java@v5
       name: Setup Java

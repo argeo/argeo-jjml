@@ -1,9 +1,12 @@
 name: Ubuntu with default JDK
-# Used to test the "latest" versions of the third parties
-# on the oldest possible Linux platform.
+# Used to test the "oldest" versions of the third parties
+# on the most recent Linux platform.
 
 on:
   workflow_dispatch: # allows manual triggering
+  push:
+    tags:
+    - '*'
   pull_request:
     branches: [ "testing", "unstable" ]
 
@@ -16,26 +19,10 @@ jobs:
       fail-fast: false
 
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        os: [ubuntu-26.04, ubuntu-26.04-arm]
         build_type: [Release]
         c_compiler: [gcc, clang]
-        include:
-          - os: ubuntu-24.04
-            c_compiler: gcc
-            cpp_compiler: g++
-            cpu_all_variants: ON
-          - os: ubuntu-24.04-arm
-            c_compiler: gcc
-            cpp_compiler: g++
-            cpu_all_variants: OFF
-          - os: ubuntu-24.04
-            c_compiler: clang
-            cpp_compiler: clang++
-            cpu_all_variants: ON
-          - os: ubuntu-24.04-arm
-            c_compiler: clang
-            cpp_compiler: clang++
-            cpu_all_variants: OFF
+        cpu_all_variants: [ON, OFF]
 
     steps:
     - uses: actions/checkout@v4
