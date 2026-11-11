@@ -1,4 +1,6 @@
 name: All Java versions
+# Used to test all supported Java versions
+# and to test the "oldest" versions of the third parties.
 
 on:
   workflow_dispatch: # allows manual triggering

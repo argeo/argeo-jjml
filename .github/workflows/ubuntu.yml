@@ -1,4 +1,6 @@
 name: Ubuntu with default JDK
+# Used to test the "latest" versions of the third parties
+# on the oldest possible Linux platform.
 
 on:
   workflow_dispatch: # allows manual triggering

@@ -1,4 +1,6 @@
 name: JJML Release
+# Used for proprietary operating systems releases
+# and to test the "frozen" versions of the third parties.
 
 on:
   workflow_dispatch: # allows manual triggering
@@ -28,8 +30,8 @@ jobs:
         fetch-depth: '0'
         fetch-tags: 'true'
 
-    - name: Use same third-parties versions as Debian
-      run: make -f tooling.mk tp-checkout-debian
+    - name: Use frozen third-parties versions
+      run: make -f tooling.mk tp-checkout-frozen
 
     - name: Set reusable strings
       id: strings
@@ -109,7 +111,7 @@ jobs:
 ## MACOS ARM
 ##
   macos-aarch64:
-    runs-on: macos-14
+    runs-on: macos-26
 
     steps:
     - uses: actions/checkout@v4
@@ -123,8 +125,8 @@ jobs:
       run: |
         brew install make
 
-    - name: Use same third-parties versions as Debian
-      run: gmake -f tooling.mk tp-clone tp-checkout-debian
+    - name: Use frozen third-parties versions
+      run: gmake -f tooling.mk tp-checkout-frozen
 
     - name: Prepare A2 output
       run: |
@@ -210,7 +212,7 @@ jobs:
 ## MACOS INTEL
 ##
   macos-x86_64:
-    runs-on: macos-15-intel
+    runs-on: macos-26-intel
 
     steps:
     - uses: actions/checkout@v4
@@ -224,8 +226,8 @@ jobs:
       run: |
         brew install make
 
-    - name: Use same third-parties versions as Debian
-      run: gmake -f tooling.mk tp-clone tp-checkout-debian
+    - name: Use frozen third-parties versions
+      run: gmake -f tooling.mk tp-checkout-frozen
 
     - name: Prepare A2 output
       run: |
