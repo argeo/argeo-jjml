@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.os }} (${{ matrix.c_compiler }})
+    name: ${{ matrix.os }} (${{ matrix.c_compiler }} cpu_all_variants=${{ matrix.cpu_all_variants }})
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -23,6 +23,11 @@ jobs:
         build_type: [Release]
         c_compiler: [gcc, clang]
         cpu_all_variants: [ON, OFF]
+        include:
+          - c_compiler: gcc
+            cpp_compiler: g++
+          - c_compiler: clang
+            cpp_compiler: clang++
 
     steps:
     - uses: actions/checkout@v4
