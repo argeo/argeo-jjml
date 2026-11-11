@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
 
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        os: [ubuntu-26.04, ubuntu-26.04-arm]
         build_type: [Release]
         c_compiler: [gcc, clang]
         cpu_all_variants: [ON, OFF]
@@ -67,6 +67,8 @@ jobs:
       run: cmake --build build/argeo-jjml -j $(nproc)
 
     - name: Test
+      # Temporarily skipped for arm64 with cpu_all_variants=ON due to runner deployment issues
+      if: ${{ !(matrix.os == 'ubuntu-26.04-arm' && matrix.cpu_all_variants == 'ON') }}
       run: >
         java -ea
         -Djava.library.path=${{ github.workspace }}/build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml:${{ github.workspace }}/build/a2/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml
