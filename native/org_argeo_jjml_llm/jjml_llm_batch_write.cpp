@@ -200,8 +200,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doWrite(
 		newPosition = jjml_llm_batch_processor_write(ctx, smpl, cur_pos, inputs,
 				inputs_count, env, offsets, lengths, sequenceIds, outputIds,
 				lastLogits);
-	} catch (std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
 	}
 	return newPosition;
 }
@@ -235,8 +235,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doWriteArr
 		newPosition = jjml_llm_batch_processor_write(ctx, smpl, cur_pos, inputs,
 				inputs_count, env, offsets, lengths, sequenceIds, outputIds,
 				lastLogits);
-	} catch (std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
 	}
 
 	// clean up

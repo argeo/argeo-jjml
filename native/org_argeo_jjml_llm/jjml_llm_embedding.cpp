@@ -156,9 +156,8 @@ JNIEXPORT void JNICALL Java_org_argeo_jjml_llm_LlamaCppEmbeddingProcessor_doProc
 		embd_batch_decode(ctx, batch, out, s, n_embd, embd_normalize);
 
 		env->ReleasePrimitiveArrayCritical(res, emb, 0);
-	} catch (const std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
-		return;
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
 	}
 }
 

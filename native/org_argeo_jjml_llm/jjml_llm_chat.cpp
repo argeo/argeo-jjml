@@ -79,7 +79,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LlamaCppNativeChatFormatter
 		jbyteArray res = env->NewByteArray(u8_res.length());
 		env->SetByteArrayRegion(res, 0, u8_res.length(), (jbyte*) &u8_res[0]);
 		return res;
-	} catch (std::exception &ex) {
-		return argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		return argeo::jni::throw_to_java(env);
 	}
 }

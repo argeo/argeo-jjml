@@ -136,8 +136,8 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_mtmd_MtmdContext_doInit(JNIEnv *env,
 		mtmd_context *mtmd_ctx = mtmd_init_from_file(mmproj_path.c_str(), model,
 				mparams);
 		return (jlong) mtmd_ctx;
-	} catch (const std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
 		return 0;
 	}
 }

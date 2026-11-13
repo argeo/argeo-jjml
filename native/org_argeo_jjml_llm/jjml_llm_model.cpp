@@ -88,8 +88,8 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doInit(
 
 		env->ReleaseStringUTFChars(localPath, path_model);
 		return (jlong) model;
-	} catch (const std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
 		// TODO better free JNI resources in case of error
 		return 0;
 	}
@@ -178,8 +178,8 @@ static jobjectArray jjml_lama_get_meta(JNIEnv *env, llama_model *model,
 			}
 		}
 		return res;
-	} catch (std::exception &ex) {
-		return argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		return argeo::jni::throw_to_java(env);
 	}
 }
 
@@ -222,8 +222,8 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doGetDescript
 		env->SetByteArrayRegion(res, 0, u8_res.length(),
 				(jbyte*) u8_res.c_str());
 		return res;
-	} catch (std::exception &ex) {
-		return argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		return argeo::jni::throw_to_java(env);
 	}
 }
 

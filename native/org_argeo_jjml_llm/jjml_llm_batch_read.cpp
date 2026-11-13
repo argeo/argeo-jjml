@@ -256,12 +256,12 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doRead(
 			newPosition = jjml_llm_batch_processor_read(ctx, smpl, grmr,
 					cur_pos, outputs, outputs_count, env, offsets, lengths,
 					sequenceIds, outputIds, completionHandler);
-		} catch (std::exception &ex) {
-			argeo::jni::throw_to_java(env, ex);
+		} catch (...) {
+			argeo::jni::throw_to_java(env);
 		}
 		return newPosition;
-	} catch (const std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
 		return 0;
 	}
 }
@@ -299,8 +299,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doReadToAr
 			newPosition = jjml_llm_batch_processor_read(ctx, smpl, grmr,
 					cur_pos, outputs, outputs_count, env, offsets, lengths,
 					sequenceIds, outputIds, completionHandler);
-		} catch (std::exception &ex) {
-			argeo::jni::throw_to_java(env, ex);
+		} catch (...) {
+			argeo::jni::throw_to_java(env);
 		}
 
 		// clean up
@@ -313,8 +313,8 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppBatchProcessor_doReadToAr
 		}
 
 		return newPosition;
-	} catch (const std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
 		return 0;
 	}
 }

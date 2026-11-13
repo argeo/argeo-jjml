@@ -284,8 +284,8 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppContext_doInit(
 		llama_attach_threadpool(ctx, threadpool, NULL);
 
 		return (jlong) ctx;
-	} catch (const std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
 		return 0;
 	}
 }

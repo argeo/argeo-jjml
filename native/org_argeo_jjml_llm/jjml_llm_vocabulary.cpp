@@ -139,8 +139,8 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llm_LlamaCppVocabulary_doTokeniz
 				reinterpret_cast<jint*>(tokens.data()));
 
 		return res;
-	} catch (const std::exception &ex) {
-		return argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		return argeo::jni::throw_to_java(env);
 	}
 }
 
@@ -168,8 +168,9 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppVocabulary_doTokenizeUtf8
 
 		n_tokens = llama_tokenize(vocab, u8_chars, length, tokens, size,
 				addSpecial, parseSpecial);
-	} catch (const std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
+		return 0;
 	}
 	return n_tokens;
 }
@@ -245,8 +246,9 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppVocabulary_doDeTokenizeAs
 //					"Output buffer capacity " + std::to_string(length)
 //							+ " is too small for " + std::to_string(-n_chars)
 //							+ " characters - " + __func__);
-	} catch (const std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
+		return 0;
 	}
 	return n_chars;
 }
