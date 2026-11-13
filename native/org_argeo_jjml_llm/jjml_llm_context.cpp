@@ -214,7 +214,7 @@ JNIEXPORT jobject JNICALL Java_org_argeo_jjml_llm_LlamaCppBackend_newContextPara
 			ctx_params.yarn_beta_fast, //
 			ctx_params.yarn_beta_slow, //
 			ctx_params.yarn_orig_ctx, //
-			ctx_params.defrag_thold, //
+			-1, //
 			ctx_params.type_k, //
 			ctx_params.type_v, //
 			ctx_params.embeddings, //
