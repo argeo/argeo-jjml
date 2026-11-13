@@ -41,7 +41,7 @@ class BatchTests extends AbstractLlmTests {
 		Integer[] sequenceIds = { 1, 10, 63 };
 		try ( //
 				LlamaCppContext context = new LlamaCppContext(model, defaultContextParams() //
-						.with(n_ctx, 6144) //
+						.with(n_ctx, 10240) //
 						.with(n_batch, sequenceIds.length * prompt.length()) //
 						.with(kv_unified, true) // required for robustness
 				); //
