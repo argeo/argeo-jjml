@@ -21,23 +21,24 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LlamaCppNativeChatFormatter
 	std::vector<llama_chat_message> chat_messages;
 
 	try {
+		std::vector<std::string> role_strs;
+		std::vector<std::string> content_strs;
+		role_strs.reserve(messages_size);
+		content_strs.reserve(messages_size);
 		int alloc_size = 0;
-		// since the content can be quite big, we go through the heap
+
 		for (int i = 0; i < messages_size; i++) {
-			std::string u8_role = argeo::jni::to_string(env, roles, i);
-			std::string u8_content = argeo::jni::to_string(env, contents, i);
-
-			char *role = new char[u8_role.length() + 1];
-			strcpy(role, u8_role.c_str());
-
-			char *content = new char[u8_content.length() + 1];
-			strcpy(content, u8_content.c_str());
-
-			llama_chat_message message { role, content };
-			chat_messages.push_back(message);
-
+			role_strs.push_back(argeo::jni::to_string(env, roles, i));
+			content_strs.push_back(argeo::jni::to_string(env, contents, i));
 			// using the same factor as in common.cpp
-			alloc_size += (u8_role.length() + u8_content.length()) * 1.25;
+			alloc_size += (role_strs[i].length() + content_strs[i].length())
+					* 1.25;
+		}
+
+		chat_messages.reserve(messages_size);
+		for (int i = 0; i < messages_size; i++) {
+			chat_messages.push_back(
+					{ role_strs[i].c_str(), content_strs[i].c_str() });
 		}
 
 		std::string u8_chat_template;
@@ -66,13 +67,6 @@ JNIEXPORT jbyteArray JNICALL Java_org_argeo_jjml_llm_LlamaCppNativeChatFormatter
 							u8_chat_template.c_str() : nullptr,
 					chat_messages.data(), chat_messages.size(),
 					addAssistantTokens, buf.data(), buf.size());
-		}
-
-		// we clean up, since we don't need the messages anymore
-		for (int i = 0; i < messages_size; i++) {
-			llama_chat_message message = chat_messages[i];
-			delete message.role;
-			delete message.content;
 		}
 
 		std::string u8_res(buf.data(), resLength);
