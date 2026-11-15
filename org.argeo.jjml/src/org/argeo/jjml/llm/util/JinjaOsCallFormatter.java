@@ -125,7 +125,7 @@ public class JinjaOsCallFormatter implements LlamaCppInstructFormatter {
 		if (!Files.exists(jinjaTemplatePath))
 			throw new IllegalArgumentException("GGUF model " + jinjaTemplatePath + " was not found.");
 
-		String jinjaTemplate = Files.readString(jinjaTemplatePath);
+		String jinjaTemplate = new String(Files.readAllBytes(jinjaTemplatePath), StandardCharsets.UTF_8);
 		JinjaOsCallFormatter instructFormatter = new JinjaOsCallFormatter(jinjaTemplate);
 		String outputStr = instructFormatter.formatChatMessages(new LlamaCppChatMessage("user", "Hello world"));
 		System.out.println(outputStr);
