@@ -89,8 +89,12 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doInit(
 		env->ReleaseStringUTFChars(localPath, path_model);
 		return (jlong) model;
 	} catch (...) {
+		// Clean up local JNI resources before throwing to Java
+		if (progress_data.callback != nullptr) {
+			env->DeleteGlobalRef(progress_data.callback);
+		}
+		env->ReleaseStringUTFChars(localPath, path_model);
 		argeo::jni::throw_to_java(env);
-		// TODO better free JNI resources in case of error
 		return 0;
 	}
 }
