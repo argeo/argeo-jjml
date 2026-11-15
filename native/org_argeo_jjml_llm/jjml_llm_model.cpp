@@ -62,7 +62,7 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doInit(
 		get_model_params(env, modelParams, &mparams);
 
 		// progress callback
-		argeo::jni::java_callback progress_data;
+		argeo::jni::java_callback progress_data = { };
 		if (progressCallback != nullptr) {
 			progress_data.callback = env->NewGlobalRef(progressCallback);
 			progress_data.method = DoublePredicate__test;
