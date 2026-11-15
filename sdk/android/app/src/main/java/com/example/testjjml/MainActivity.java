@@ -42,10 +42,10 @@ public class MainActivity extends AppCompatActivity {
                     loadFragment(new ChatFragment());
                     return true;
                 } else if (itemId == R.id.nav_image) {
-                    loadFragment(new PlaceholderFragment("Image Analysis (MTMD)"));
+                    loadFragment(new ImageFragment());
                     return true;
                 } else if (itemId == R.id.nav_audio) {
-                    loadFragment(new PlaceholderFragment("Audio Transcription (Whisper)"));
+                    loadFragment(new AudioFragment());
                     return true;
                 }
                 return false;
