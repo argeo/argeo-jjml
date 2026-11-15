@@ -19,14 +19,16 @@ import org.argeo.jjml.llm.params.ContextParams;
 import org.argeo.jjml.llm.params.ModelParam;
 import org.argeo.jjml.llm.params.ModelParams;
 import org.argeo.jjml.llm.util.InstructRole;
-import org.argeo.jjml.llm.util.SimpleModelDownload;
 import org.argeo.jjml.mtmd.MtmdNative;
 import org.argeo.jjml.whisper.WhisperNative;
 
+import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -47,20 +49,25 @@ public class MainActivity extends AppCompatActivity {
 
         TextView tv = binding.sampleText;
 
-        Path defaultModelbase = SimpleModelDownload.getDefaultModelsBase();
         new Thread(()-> {
             long begin = System.currentTimeMillis();
             try {
                 Path modelsBase = Paths.get(getExternalFilesDir(null).getAbsolutePath());
                 boolean isWritable = Files.isWritable(modelsBase);
-                Path modelPath = new SimpleModelDownload(modelsBase).getOrDownloadModel("allenai/OLMo-2-0425-1B-Instruct-GGUF", "Q4_K_M", null);
-                //Files.delete(modelPath);
-                //modelPath = new SimpleModelDownload(modelsBase).getOrDownloadModel("allenai/OLMo-2-0425-1B-Instruct-GGUF", "Q4_K_M", null);
+                Path modelPath = modelsBase.resolve("granite-4.0-350m-Q4_0.gguf");
+                if (!Files.exists(modelPath)) {
+                    String url = "https://huggingface.co/ibm-granite/granite-4.0-350m-GGUF/resolve/main/granite-4.0-350m-Q4_0.gguf";
+                    System.out.println("Downloading " + url);
+                    try (InputStream in = URI.create(url).toURL().openStream()) {
+                        Files.copy(in, modelPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                }
+                
                 ModelParams modelParams = LlamaCppModel.defaultModelParams() //
                         .with(ModelParam.vocab_only, false) //
                         ;
                 ContextParams contextParams = LlamaCppContext.defaultContextParams() //
-                        .with(ContextParam.n_ctx, 2048) //
+                        .with(ContextParam.n_ctx, 1024) //
                         .with(ContextParam.n_batch, 512) //
                         .with(ContextParam.n_threads, Runtime.getRuntime().availableProcessors()) //
                         ;
@@ -73,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println("WRITING...");
                     LlamaCppInstructProcessor processor = new LlamaCppInstructProcessor(context, chain);
                     processor.write(InstructRole.SYSTEM, "You are a helpful assistant.");
-                    processor.write(InstructRole.ASSISTANT, "Cycle detection algorithm in Java. Code only.");
+                    processor.write(InstructRole.USER, "In one word, the capital of France is ");
                     System.out.println("READING...");
                     StringWriter out = new StringWriter();
                     //Writer out = new OutputStreamWriter(System.out, StandardCharsets.UTF_8);

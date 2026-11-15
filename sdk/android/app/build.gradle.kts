@@ -44,6 +44,14 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src/main/java")
+            java.srcDir(fileTree("../../../org.argeo.jjml/src") {
+                exclude("**/module-info.java")
+            })
+        }
+    }
 }
 
 dependencies {
