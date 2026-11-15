@@ -14,3 +14,8 @@
 .cxx
 local.properties
 /.idea/
+
+# Ignore Gradle Wrapper scripts and binary
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
