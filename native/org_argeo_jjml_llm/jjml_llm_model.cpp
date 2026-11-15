@@ -57,12 +57,12 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doInit(
 		JNIEnv *env, jclass, jstring localPath, jobject modelParams,
 		jobject progressCallback) {
 	const char *path_model = env->GetStringUTFChars(localPath, nullptr);
+	// progress callback
+	argeo::jni::java_callback progress_data = { };
 	try {
 		llama_model_params mparams = llama_model_default_params();
 		get_model_params(env, modelParams, &mparams);
 
-		// progress callback
-		argeo::jni::java_callback progress_data = { };
 		if (progressCallback != nullptr) {
 			progress_data.callback = env->NewGlobalRef(progressCallback);
 			progress_data.method = DoublePredicate__test;
@@ -89,8 +89,12 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppModel_doInit(
 		env->ReleaseStringUTFChars(localPath, path_model);
 		return (jlong) model;
 	} catch (...) {
+		// Clean up local JNI resources before throwing to Java
+		if (progress_data.callback != nullptr) {
+			env->DeleteGlobalRef(progress_data.callback);
+		}
+		env->ReleaseStringUTFChars(localPath, path_model);
 		argeo::jni::throw_to_java(env);
-		// TODO better free JNI resources in case of error
 		return 0;
 	}
 }
