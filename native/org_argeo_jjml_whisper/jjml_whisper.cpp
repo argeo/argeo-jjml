@@ -61,8 +61,8 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_whisper_WhisperCppContext_doInit(
 		struct whisper_context *ctx = whisper_init_from_file_with_params(
 				model_path.c_str(), cparams);
 		return (jlong) ctx;
-	} catch (const std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
 		return 0;
 	}
 }

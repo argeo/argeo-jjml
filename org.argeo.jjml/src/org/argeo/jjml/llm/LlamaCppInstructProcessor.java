@@ -12,13 +12,69 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import org.argeo.jjml.llm.instruct.LlamaCppInstructFormatter;
+import org.argeo.jjml.llm.instruct.LlamaCppInstructPart;
+import org.argeo.jjml.llm.util.JinjaOsCallFormatter;
+import org.argeo.jjml.llm.util.models.ChatMlFormatter;
+import org.argeo.jjml.llm.util.models.Granite4Formatter;
+import org.argeo.jjml.llm.util.models.Ministral3Formatter;
+import org.argeo.jjml.llm.util.models.Olmo2Formatter;
+import org.argeo.jjml.llm.util.models.Qwen3Formatter;
+
 /** A processor based on chat messages. */
 public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 	private final LlamaCppVocabulary vocabulary;
 
-	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
+	private final LlamaCppInstructFormatter instructFormatter;
+
+	protected PrintStream debugPrompts = null;
+
+	// TODO use tokens[] from LlamaCppBatchProcessor ?
+	private final ByteBuffer tokenBuffer;
+
+	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain,
+			LlamaCppInstructFormatter instructFormatter) {
 		super(context, samplerChain);
 		this.vocabulary = context.getModel().getVocabulary();
+		this.instructFormatter = instructFormatter != null ? instructFormatter : getDefaultInstructFormatter(context);
+
+		tokenBuffer = ByteBuffer.allocateDirect(4 * Integer.BYTES);
+		tokenBuffer.order(ByteOrder.nativeOrder());
+	}
+
+	public LlamaCppInstructProcessor(LlamaCppContext context, LlamaCppSamplerChain samplerChain) {
+		this(context, samplerChain, null);
+	}
+
+	protected LlamaCppInstructFormatter getDefaultInstructFormatter(LlamaCppContext context) {
+		LlamaCppInstructFormatter instructFormatter = null;
+		if (System.getenv(JinjaOsCallFormatter.ENV_JJML_JINJA_PYTHON_SCRIPT) != null)
+			return new JinjaOsCallFormatter(context.getModel().getMetadataChatTemplate());
+
+		// TODO introduce extension mechanisms
+		String modelArchitecture = context.getModel().getArchitecture();
+		switch (modelArchitecture) {
+		case "llama":
+			instructFormatter = new ChatMlFormatter();
+			break;
+		case "qwen35":
+			instructFormatter = new Qwen3Formatter();
+			break;
+		case "mistral3":
+			instructFormatter = new Ministral3Formatter();
+			break;
+		case "granitehybrid":
+		case "granite":
+			instructFormatter = new Granite4Formatter();
+			break;
+		case "olmo2":
+			instructFormatter = new Olmo2Formatter();
+			break;
+		}
+
+		if (instructFormatter == null)
+			instructFormatter = new LlamaCppNativeChatFormatter(context.getModel().getMetadataChatTemplate());
+		return instructFormatter;
 	}
 
 	public void write(Supplier<String> role, String message) {
@@ -31,13 +87,16 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		write(new LlamaCppChatMessage(role, message));
 	}
 
-	public void write(LlamaCppChatMessage message) {
+	public void write(LlamaCppInstructPart message) {
 		Objects.requireNonNull(message);
-		String prompt = getModel().formatChatMessages(message);
+		String prompt = instructFormatter.formatMessage(message);
 		writeFormatted(prompt);
 	}
 
 	protected void writeFormatted(String prompt) {
+		if (debugPrompts != null)
+			debugPrompts.print(prompt);
+
 		IntBuffer promptTokens = vocabulary.tokenize(prompt);
 		assert promptTokens.position() == 0;
 		int tokenCount = promptTokens.limit();
@@ -48,11 +107,11 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		// TODO check whether it makes sense (pattern was taken from llama.cpp code)
 		int requiredContextSize = tokenCount + outputMax * getParallelCount();
 
-		int contextSize = getContext().getContextSize();
-		if (getContext().getContextSize() < requiredContextSize)
+		int remainingContextSize = getRemainingContextSize();
+		if (remainingContextSize < requiredContextSize)
 			throw new IllegalArgumentException(
-					"The required KV cache size " + requiredContextSize + " is not big enough, only " + contextSize
-							+ " available. Reduce parallel or increase context size.");
+					"The required remaining context size " + requiredContextSize + " is not big enough, only "
+							+ remainingContextSize + " available. Reduce parallel or increase context size.");
 
 		ByteBuffer nativeBuf = ByteBuffer.allocateDirect(requiredContextSize * Integer.BYTES);
 		nativeBuf.order(ByteOrder.nativeOrder());
@@ -84,13 +143,27 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		}
 	}
 
-	public String nextToken() {
+//	public String nextToken() {
+//		if (isGenerationCompleted(0))
+//			return null;
+//		ByteBuffer nativeBuf = ByteBuffer.allocateDirect(1 * Integer.BYTES);
+//		nativeBuf.order(ByteOrder.nativeOrder());
+//		IntBuffer output = nativeBuf.asIntBuffer();
+//		// IntBuffer output = IntBuffer.allocate(1);
+//
+//		CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
+//		CompletableFuture<Boolean> allCompleted = readBatchAsync(new IntBuffer[] { output }, generationCompleted);
+//		allCompleted.join();
+//
+//		output.flip();
+//		String outputStr = vocabulary.deTokenize(output);
+//		return outputStr;
+//	}
+
+	public String nextAnswer() {
 		if (isGenerationCompleted(0))
 			return null;
-		ByteBuffer nativeBuf = ByteBuffer.allocateDirect(1 * Integer.BYTES);
-		nativeBuf.order(ByteOrder.nativeOrder());
-		IntBuffer output = nativeBuf.asIntBuffer();
-		// IntBuffer output = IntBuffer.allocate(1);
+		IntBuffer output = getNextAnswerTokenBuffer();
 
 		CompletableFuture<Boolean>[] generationCompleted = newGenerationCompletableFutures();
 		CompletableFuture<Boolean> allCompleted = readBatchAsync(new IntBuffer[] { output }, generationCompleted);
@@ -101,6 +174,12 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 		return outputStr;
 	}
 
+	protected IntBuffer getNextAnswerTokenBuffer() {
+		tokenBuffer.clear();
+		IntBuffer output = tokenBuffer.asIntBuffer();
+		return output;
+	}
+
 	public void readMessage(PrintStream out) throws IOException {
 		out.flush();
 		// FIXME deal properly with charset, esp. on Windows
@@ -109,14 +188,29 @@ public class LlamaCppInstructProcessor extends LlamaCppBatchProcessor {
 	}
 
 	public void readMessage(Writer writer) throws IOException {
+		// in case a generation prompt is needed
+		StringBuilder generationPrompt = new StringBuilder();
+		instructFormatter.appendGenerationPrompt(generationPrompt);
+		if (generationPrompt.length() > 0)
+			writeFormatted(generationPrompt.toString());
 
 		boolean reading = true;
 		reads: while (reading) {
-			String outputStr = nextToken();
+//			String outputStr = nextToken();
+			String outputStr = nextAnswer();
 			if (outputStr == null)
 				break reads;
 			writer.write(outputStr);
 			writer.flush();
 		}
 	}
+
+	public void setDebugPrompts(PrintStream debugPrompts) {
+		this.debugPrompts = debugPrompts;
+	}
+
+	public LlamaCppVocabulary getVocabulary() {
+		return vocabulary;
+	}
+
 }

@@ -13,11 +13,20 @@ import java.nio.file.Paths;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.argeo.jjml.whisper.WhisperCppContext;
 import org.argeo.jjml.whisper.WhisperCppProcessor;
 
 public class WhisperTranscription {
+	public static FloatBuffer convert(Path wavPath) throws IOException {
+		try {
+			AudioInputStream inputStream = AudioSystem.getAudioInputStream(wavPath.toFile());
+			return convert(inputStream);
+		} catch (UnsupportedAudioFileException e) {
+			throw new IllegalArgumentException("Unsupported WAV file " + wavPath, e);
+		}
+	}
 
 	public static FloatBuffer convert(AudioInputStream input) throws IOException {
 		AudioInputStream ais;
@@ -65,7 +74,7 @@ public class WhisperTranscription {
 		return floatBuf;
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws IOException {
 		String modelId = "ggml-base.en.bin";
 		modelId = "ggml-base.bin";
 //		modelId = "ggml-base-q8_0.bin";
@@ -85,8 +94,7 @@ public class WhisperTranscription {
 //		wavRelPath = "Music/18juin/cdg-remastered.wav";
 //		wavRelPath = "Music/18juin/cdg-48kHz.wav";
 		Path wavPath = Paths.get(System.getProperty("user.home"), wavRelPath);
-		AudioInputStream inputStream = AudioSystem.getAudioInputStream(wavPath.toFile());
-		FloatBuffer floatBuf = convert(inputStream);
+		FloatBuffer floatBuf = convert(wavPath);
 
 		long begin = System.currentTimeMillis();
 		String str = processor.transcribe(floatBuf);

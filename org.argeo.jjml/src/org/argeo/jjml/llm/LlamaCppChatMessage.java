@@ -1,9 +1,15 @@
 package org.argeo.jjml.llm;
 
+import java.util.Collections;
 import java.util.function.Supplier;
 
+import org.argeo.jjml.llm.instruct.LlamaCppInstructBlock;
+import org.argeo.jjml.llm.instruct.LlamaCppInstructPart;
+import org.argeo.jjml.llm.instruct.LlamaCppTextBlock;
+
 /** A message qualified by a role. */
-public class LlamaCppChatMessage {
+@Deprecated
+public class LlamaCppChatMessage implements LlamaCppInstructPart {
 	private final String role;
 	private final String content;
 
@@ -23,4 +29,16 @@ public class LlamaCppChatMessage {
 	public String getContent() {
 		return content;
 	}
+
+	@Override
+	public Iterable<LlamaCppInstructBlock<?>> getBlocks() {
+		return Collections.singleton(new LlamaCppTextBlock(content));
+	}
+
+	@Override
+	public String toString() {
+		return content;
+	}
+	
+	
 }

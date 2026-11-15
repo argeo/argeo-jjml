@@ -4,12 +4,3 @@
 [submodule "native/include/argeo/jni"]
 	path = native/include/argeo/jni
 	url = ../argeo-include-jni
-[submodule "tp/native/llama.cpp"]
-	path = native/tp/llama.cpp
-	url = https://github.com/ggml-org/llama.cpp.git
-[submodule "tp/native/ggml"]
-	path = native/tp/ggml
-	url = https://github.com/ggml-org/ggml.git
-[submodule "native/tp/whisper.cpp"]
-	path = native/tp/whisper.cpp
-	url = https://github.com/ggml-org/whisper.cpp.git

@@ -18,19 +18,57 @@
 
 // UTILITIES
 static std::string jjml_tokens_to_cpp_string(const llama_vocab *vocab,
-		llama_token *tokens, int32_t n_tokens, bool remove_special,
+		const llama_token *tokens, int32_t n_tokens, bool remove_special,
 		bool unparse_special) {
+	assert(n_tokens > 0 && "No token");
+	assert(tokens != nullptr && "No token");
+
 	std::string text;
-	text.resize(std::max((int32_t) text.capacity(), n_tokens));
-	int32_t n_chars = llama_detokenize(vocab, tokens, n_tokens, &text[0],
-			(int32_t) text.size(), remove_special, unparse_special);
-	if (n_chars < 0) {
-		text.resize(-n_chars);
-		n_chars = llama_detokenize(vocab, tokens, n_tokens, &text[0],
-				(int32_t) text.size(), remove_special, unparse_special);
-		GGML_ASSERT(n_chars <= (int32_t ) text.size()); // whitespace trimming is performed after per-token detokenization
+	text.reserve(n_tokens * 4);
+
+	// stay on the stack for most cases
+	char stack_buffer[16];
+
+	for (int32_t i = 0; i < n_tokens; ++i) {
+		llama_token token = tokens[i];
+
+		if (llama_vocab_is_control(vocab, token)) {
+			if (remove_special) {
+				continue;
+			}
+			if (unparse_special) {
+				int32_t n_chars = llama_token_to_piece(vocab, token,
+						stack_buffer, sizeof(stack_buffer), 0, true);
+
+				if (n_chars < 0) { // the token is expecially big
+					std::vector<char> heap_buffer(-n_chars);
+					n_chars = llama_token_to_piece(vocab, token,
+							heap_buffer.data(), (int32_t) heap_buffer.size(), 0,
+							true);
+					if (n_chars > 0)
+						text.append(heap_buffer.data(), n_chars);
+				} else if (n_chars > 0) {
+					text.append(stack_buffer, n_chars);
+				}
+				continue;
+			}
+		}
+
+		// usual case
+		int32_t n_chars = llama_token_to_piece(vocab, token, stack_buffer,
+				sizeof(stack_buffer), 0, false);
+
+		if (n_chars < 0) { // the token is especially big
+			std::vector<char> heap_buffer(-n_chars);
+			n_chars = llama_token_to_piece(vocab, token, heap_buffer.data(),
+					(int32_t) heap_buffer.size(), 0, false);
+			if (n_chars > 0)
+				text.append(heap_buffer.data(), n_chars);
+		} else if (n_chars > 0) {
+			text.append(stack_buffer, n_chars);
+		}
 	}
-	text.resize(n_chars);
+
 	return text;
 }
 
@@ -46,7 +84,7 @@ static std::vector<llama_token> jjml_cpp_string_to_tokens(
 		tokens.resize(-n_tokens);
 		int check = llama_tokenize(vocab, u8_chars, u8_size, tokens.data(),
 				tokens.size(), add_special, parse_special);
-		GGML_ASSERT(check == -n_tokens);
+		assert(check == -n_tokens && "Not the expected token count");
 	} else {
 		tokens.resize(n_tokens);
 	}
@@ -101,8 +139,8 @@ JNIEXPORT jintArray JNICALL Java_org_argeo_jjml_llm_LlamaCppVocabulary_doTokeniz
 				reinterpret_cast<jint*>(tokens.data()));
 
 		return res;
-	} catch (const std::exception &ex) {
-		return argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		return argeo::jni::throw_to_java(env);
 	}
 }
 
@@ -130,8 +168,9 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppVocabulary_doTokenizeUtf8
 
 		n_tokens = llama_tokenize(vocab, u8_chars, length, tokens, size,
 				addSpecial, parseSpecial);
-	} catch (const std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
+		return 0;
 	}
 	return n_tokens;
 }
@@ -207,8 +246,9 @@ JNIEXPORT jint JNICALL Java_org_argeo_jjml_llm_LlamaCppVocabulary_doDeTokenizeAs
 //					"Output buffer capacity " + std::to_string(length)
 //							+ " is too small for " + std::to_string(-n_chars)
 //							+ " characters - " + __func__);
-	} catch (const std::exception &ex) {
-		argeo::jni::throw_to_java(env, ex);
+	} catch (...) {
+		argeo::jni::throw_to_java(env);
+		return 0;
 	}
 	return n_chars;
 }

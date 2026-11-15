@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.argeo.jjml.llm.LlamaCppNativeChatFormatter;
 import org.argeo.jjml.llm.LlamaCppChatMessage;
 import org.argeo.jjml.llm.LlamaCppContext;
 import org.argeo.jjml.llm.LlamaCppModel;
@@ -14,7 +15,6 @@ import org.argeo.jjml.llm.LlamaCppSamplerChain;
 import org.argeo.jjml.llm.LlamaCppSamplers;
 import org.argeo.jjml.llm.params.ContextParam;
 import org.argeo.jjml.llm.util.InstructRole;
-import org.argeo.jjml.llm.util.SimpleModelDownload;
 import org.argeo.jjml.mtmd.MtmdBackend;
 import org.argeo.jjml.mtmd.MtmdBitmap;
 import org.argeo.jjml.mtmd.MtmdContext;
@@ -32,13 +32,9 @@ public class ImageDescription {
 
 		Path modelPath = Paths.get(args[0]);
 		if (!Files.exists(modelPath))
-			modelPath = SimpleModelDownload.getDefaultModelsBase().resolve(modelPath);
-		if (!Files.exists(modelPath))
 			throw new IllegalArgumentException("Cannot find model " + args[0]);
 
 		Path mmprojPath = Paths.get(args[1]);
-		if (!Files.exists(mmprojPath))
-			mmprojPath = SimpleModelDownload.getDefaultModelsBase().resolve(mmprojPath);
 		if (!Files.exists(mmprojPath))
 			throw new IllegalArgumentException("Cannot find mmproj " + args[1]);
 
@@ -60,7 +56,8 @@ public class ImageDescription {
 			LlamaCppChatMessage systemPrompt = null;
 			LlamaCppChatMessage userPrompt = new LlamaCppChatMessage(InstructRole.USER, //
 					MtmdBackend.getDefaultMarker() + prompt);
-			String formatted = model.formatChatMessages(systemPrompt, userPrompt);
+			String formatted = new LlamaCppNativeChatFormatter(model.getMetadataChatTemplate())
+					.formatChatMessages(systemPrompt, userPrompt);
 			MtmdImageBitmap bitmap = ImageIoBitmap.load(imageIn);
 			MtmdBitmap[] bitmaps = new MtmdBitmap[] { bitmap };
 

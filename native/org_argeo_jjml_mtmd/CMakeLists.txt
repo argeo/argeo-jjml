@@ -11,4 +11,9 @@ else()
 target_link_libraries(${TARGET} PRIVATE	ggml ggml-base llama mtmd)
 endif()
 
+if(LLAMA_BUILD_NUMBER LESS 8775)
+## Breaks mtmd_decode_use_non_causal
+target_compile_definitions(${TARGET} PRIVATE JJML_PRE_LLAMA_0_0_8775)
+endif()
+
 a2_jni_target(${TARGET})

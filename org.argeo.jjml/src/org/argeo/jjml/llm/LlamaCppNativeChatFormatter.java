@@ -6,18 +6,40 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import org.argeo.jjml.llm.instruct.LlamaCppInstructFormatter;
+import org.argeo.jjml.llm.instruct.LlamaCppInstructPart;
+import org.argeo.jjml.llm.util.InstructRole;
 
 /**
  * Format chat messages using llama.cpp basic capabilities (Jinja templates are
  * <b>not</b> supported).
  */
-public class LLamaCppNativeChatFormatter {
+public class LlamaCppNativeChatFormatter implements LlamaCppInstructFormatter {
+
+	private String chatTemplate;
+
+	public LlamaCppNativeChatFormatter(String chatTemplate) {
+		this.chatTemplate = chatTemplate;
+	}
 
 	/*
 	 * NATIVE METHODS
 	 */
 	private static native byte[] doFormatChatMessages(byte[][] utf8Roles, byte[][] utf8Contents,
 			boolean addAssistantTokens, byte[] ut8ChatTemplate);
+
+	/*
+	 * LlamaCppInstructFormatter IMPLEMENTATION
+	 */
+	@Override
+	public String formatMessages(Iterable<? extends LlamaCppInstructPart> messages) {
+		String formatted = LlamaCppNativeChatFormatter.formatChatMessages(messages, //
+				(message) -> message.getRole().equals(InstructRole.USER.get()), chatTemplate);
+		return formatted;
+	}
 
 	/*
 	 * USABLE METHODS
@@ -32,23 +54,29 @@ public class LLamaCppNativeChatFormatter {
 	 *                           'granite'), not a full template
 	 * @return the formatted messages as single string
 	 */
-	static String formatChatMessages(List<LlamaCppChatMessage> messages,
-			Predicate<LlamaCppChatMessage> addAssistantTokens, String chatTemplate) {
+	static String formatChatMessages(Iterable<? extends LlamaCppInstructPart> messages,
+			Predicate<LlamaCppInstructPart> addAssistantTokens, String chatTemplate) {
 		// filter out null values
-		List<LlamaCppChatMessage> msgs = messages.stream().filter(Objects::nonNull).collect(Collectors.toList());
+		Stream<? extends LlamaCppInstructPart> stream = StreamSupport.stream(messages.spliterator(), false);
+		List<? extends LlamaCppInstructPart> msgs = stream.filter(Objects::nonNull).collect(Collectors.toList());
 		byte[][] roles = new byte[msgs.size()][];
 		byte[][] contents = new byte[msgs.size()][];
 
 		boolean currIsUserRole = false;
 		messages: for (int i = 0; i < msgs.size(); i++) {
-			LlamaCppChatMessage message = msgs.get(i);
+			LlamaCppInstructPart message = msgs.get(i);
 			if (message == null)
+				continue messages; // ignore
+			String content = message.toString();
+			if (content == null)
 				continue messages; // ignore
 			roles[i] = message.getRole().getBytes(UTF_8);
 			currIsUserRole = addAssistantTokens.test(message);
-			contents[i] = message.getContent().getBytes(UTF_8);
+			contents[i] = content.getBytes(UTF_8);
 		}
 
+		if (chatTemplate == null)
+			chatTemplate = "chatml";
 		byte[] res = doFormatChatMessages(roles, contents, currIsUserRole, chatTemplate.getBytes(UTF_8));
 		return new String(res, UTF_8);
 	}

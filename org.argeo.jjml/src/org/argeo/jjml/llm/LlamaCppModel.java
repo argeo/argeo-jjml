@@ -1,7 +1,6 @@
 package org.argeo.jjml.llm;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.argeo.jjml.llm.params.ModelParam.n_gpu_layers;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -57,7 +56,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	private final long modelSize;
 	private final int endOfGenerationToken;
 
-	private String chatTemplate = null;
+	private final String architecture;
 
 	LlamaCppModel(long pointer, Path localPath, ModelParams initParams) {
 		this.pointer = pointer;
@@ -70,6 +69,8 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		contextTrainingSize = doGetContextTrainingSize();
 		embeddingSize = doGetEmbeddingSize();
 		layerCount = doGetLayerCount();
+
+		// metadata
 		byte[][] keys = doGetMetadataKeys();
 		byte[][] values = doGetMetadataValues();
 		if (keys.length != values.length)
@@ -79,9 +80,11 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 			map.put(new String(keys[i], UTF_8), new String(values[i], UTF_8));
 		}
 		metadata = Collections.unmodifiableMap(map);
-		if (metadata.containsKey("tokenizer.chat_template")) {
-			chatTemplate = metadata.get("tokenizer.chat_template");
-		}
+
+		// general metadata
+		architecture = metadata.get("general.architecture");
+		if (architecture == null)
+			throw new IllegalStateException("Cannot determine model architetcure");
 
 		description = new String(doGetDescription(), UTF_8);
 		modelSize = doGetModelSize();
@@ -118,13 +121,15 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 	/*
 	 * USABLE METHODS
 	 */
+	@Deprecated
 	public String formatChatMessages(LlamaCppChatMessage... messages) {
 		return formatChatMessages(Arrays.asList(messages));
 	}
 
+	@Deprecated
 	public String formatChatMessages(List<LlamaCppChatMessage> messages) {
-		return LLamaCppNativeChatFormatter.formatChatMessages(messages, //
-				(message) -> message.getRole().equals(InstructRole.USER.get()), chatTemplate);
+		return LlamaCppNativeChatFormatter.formatChatMessages(messages, //
+				(message) -> message.getRole().equals(InstructRole.USER.get()), getMetadataChatTemplate());
 	}
 
 	/*
@@ -183,6 +188,17 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 		return metadata;
 	}
 
+	public String getArchitecture() {
+		return architecture;
+	}
+
+	public String getMetadataChatTemplate() {
+		if (metadata.containsKey("tokenizer.chat_template"))
+			return metadata.get("tokenizer.chat_template");
+		else
+			return null;
+	}
+
 	public String getDescription() {
 		return description;
 	}
@@ -208,7 +224,7 @@ public class LlamaCppModel implements LongSupplier, AutoCloseable {
 
 		// we disable GPU offload by default as it is too sensitive to context
 		// and setting context parameters right
-		res = res.with(n_gpu_layers, 0);
+		// res = res.with(n_gpu_layers, 0);
 
 		for (ModelParam param : ModelParam.values()) {
 			String sysProp = System.getProperty(param.asSystemProperty());

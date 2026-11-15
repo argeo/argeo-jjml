@@ -1,39 +1,33 @@
 name: Ubuntu with default JDK
+# Used to test the "oldest" versions of the third parties
+# on the most recent Linux platform.
 
 on:
   workflow_dispatch: # allows manual triggering
+  push:
+    tags:
+    - '*'
   pull_request:
     branches: [ "testing", "unstable" ]
 
 jobs:
   build:
-    name: ${{ matrix.os }} (${{ matrix.c_compiler }})
+    name: ${{ matrix.os }} (${{ matrix.c_compiler }} cpu_all_variants=${{ matrix.cpu_all_variants }})
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
 
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        os: [ubuntu-26.04, ubuntu-26.04-arm]
         build_type: [Release]
         c_compiler: [gcc, clang]
+        cpu_all_variants: [ON, OFF]
         include:
-          - os: ubuntu-24.04
-            c_compiler: gcc
+          - c_compiler: gcc
             cpp_compiler: g++
-            cpu_all_variants: ON
-          - os: ubuntu-24.04-arm
-            c_compiler: gcc
-            cpp_compiler: g++
-            cpu_all_variants: OFF
-          - os: ubuntu-24.04
-            c_compiler: clang
+          - c_compiler: clang
             cpp_compiler: clang++
-            cpu_all_variants: ON
-          - os: ubuntu-24.04-arm
-            c_compiler: clang
-            cpp_compiler: clang++
-            cpu_all_variants: OFF
 
     steps:
     - uses: actions/checkout@v4
@@ -44,13 +38,13 @@ jobs:
         fetch-tags: 'true'
 
     - name: Use latest third-parties
-      run: make -f tooling.mk tp-clone tp-checkout-latest
+      run: make -f tooling.mk tp-checkout-latest
 
     - name: Dependencies
       id: depends
       run: |
        sudo apt-get update
-       sudo apt-get install -y default-jdk glslc libvulkan-dev
+       sudo apt-get install -y openjdk-21-jdk-headless glslc libvulkan-dev spirv-headers
 
     - name: Configure CMake
       run: >
@@ -60,7 +54,6 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DJJML_FORCE_BUILD_TP=ON
-        -DLLAMA_CURL=OFF
         -DLLAMA_BUILD_COMMON=ON
         -DLLAMA_BUILD_TOOLS=ON
         -DLLAMA_BUILD_EXAMPLES=OFF
@@ -74,10 +67,11 @@ jobs:
       run: cmake --build build/argeo-jjml -j $(nproc)
 
     - name: Test
+      # Temporarily skipped for arm64 with cpu_all_variants=ON due to runner deployment issues
+      if: ${{ !(matrix.os == 'ubuntu-26.04-arm' && matrix.cpu_all_variants == 'ON') }}
       run: >
         java -ea
         -Djava.library.path=${{ github.workspace }}/build/a2/lib/$(uname -m)-linux-gnu/org.argeo.jjml:${{ github.workspace }}/build/a2/lib/$(uname -m)-linux-gnu/org.argeo.tp.ggml
         --module-path ${{ github.workspace }}/build/a2/lib/org.argeo.jjml
         --add-modules org.argeo.jjml
-        sdk/jbin/JjmlSmokeTests.java
-        allenai/OLMo-2-0425-1B-Instruct-GGUF
+        sdk/java/examples/JjmlSmokeTests.java

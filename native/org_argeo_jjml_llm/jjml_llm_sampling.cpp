@@ -18,10 +18,10 @@ JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppSamplers_doInitGreedy(
 }
 
 JNIEXPORT jlong JNICALL Java_org_argeo_jjml_llm_LlamaCppSamplers_doInitPenalties(
-		JNIEnv *env, jclass, jint penalty_last_n, jfloat penalty_repeat,
-		jfloat penalty_freq, jfloat penalty_present, jboolean penalize_nl,
-		jboolean ignore_eos) {
-	llama_sampler *smpl = llama_sampler_init_penalties(penalty_last_n,
+		JNIEnv *env, jclass, jint n_vocab, jint penalty_last_n,
+		jfloat penalty_repeat, jfloat penalty_freq, jfloat penalty_present,
+		jboolean penalize_nl, jboolean ignore_eos) {
+	llama_sampler *smpl = llama_sampler_init_penalties(n_vocab, penalty_last_n,
 			penalty_repeat, penalty_freq, penalty_present);
 	return reinterpret_cast<jlong>(smpl);
 }

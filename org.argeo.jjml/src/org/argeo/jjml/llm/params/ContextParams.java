@@ -39,6 +39,8 @@ public class ContextParams { //
 	private final float yarn_beta_fast; // YaRN low correction dim
 	private final float yarn_beta_slow; // YaRN high correction dim
 	private final int yarn_orig_ctx; // YaRN original context size
+	/** Unused. */
+	@Deprecated
 	private final float defrag_thold; // defragment the KV cache if holes/size > thold, < 0 disabled (default)
 
 	private final int type_k; // data type for K cache [EXPERIMENTAL]
@@ -224,6 +226,8 @@ public class ContextParams { //
 		return yarn_orig_ctx;
 	}
 
+	/** Unused. */
+	@Deprecated
 	public float defrag_thold() {
 		return defrag_thold;
 	}

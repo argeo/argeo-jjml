@@ -54,6 +54,5 @@ public interface LlamaCppJavaSampler {
 			}
 			return res;
 		}
-
 	}
 }

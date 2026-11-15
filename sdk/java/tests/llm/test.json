@@ -1,0 +1,19 @@
+{
+	"type": "function",
+	"function": {
+		"name": "java_lang_system__getproperty",
+		"description": "Gets the system property indicated by the specified key.",
+		"parameters": {
+			"type": "object",
+			"properties": {
+				"key": {
+					"type": "string",
+					"description": "the name of the system property."
+				}
+			},
+			"required": [
+				"key"
+			]
+		}
+	}
+}
