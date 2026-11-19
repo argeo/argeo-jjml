@@ -3,6 +3,9 @@ package com.example.testjjml;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -50,6 +53,9 @@ public class ImageFragment extends Fragment {
         imageDescription = view.findViewById(R.id.image_description);
         imageModelStatus = view.findViewById(R.id.image_model_status);
 
+        // Load MTMD model when this tab is opened
+        loadMtmdModel();
+
         updateModelStatus();
 
         takePictureLauncher = registerForActivityResult(
@@ -66,6 +72,9 @@ public class ImageFragment extends Fragment {
                 }
         );
 
+        Button btnTestImage = view.findViewById(R.id.btn_test_image);
+        btnTestImage.setOnClickListener(v -> testWithSampleImage());
+
         btnTakePicture.setOnClickListener(v -> {
             Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             if (takePictureIntent.resolveActivity(requireActivity().getPackageManager()) != null) {
@@ -74,6 +83,23 @@ public class ImageFragment extends Fragment {
         });
 
         return view;
+    }
+
+    private void loadMtmdModel() {
+        if (!LlmManager.INSTANCE.isMtmdLoaded()) {
+            imageModelStatus.setText("MMProj Model: Loading...");
+            imageModelStatus.setTextColor(0xFF0000FF);
+            LlmManager.INSTANCE.loadMtmd(requireContext(), () -> {
+                updateModelStatus();
+                imageModelStatus.setText("MMProj Model: Successfully loaded!");
+                imageModelStatus.setTextColor(0xFF008800);
+                
+                // Reset to normal status after 2 seconds
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    updateModelStatus();
+                }, 2000);
+            });
+        }
     }
 
     private void updateModelStatus() {
@@ -105,6 +131,25 @@ public class ImageFragment extends Fragment {
         } else {
             doProcessImage();
         }
+    }
+
+    private void testWithSampleImage() {
+        imageDescription.setText("Testing with sample image...");
+        
+        // Create a simple test pattern as a bitmap
+        Bitmap testBitmap = Bitmap.createBitmap(200, 200, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(testBitmap);
+        Paint paint = new Paint();
+        
+        // Draw a simple pattern for testing
+        paint.setColor(Color.RED);
+        canvas.drawCircle(100, 100, 80, paint);
+        paint.setColor(Color.BLUE);
+        canvas.drawText("Test Image", 70, 120, paint);
+        
+        currentBitmap = testBitmap;
+        imagePreview.setImageBitmap(currentBitmap);
+        processImage();
     }
 
     private void doProcessImage() {

@@ -119,14 +119,20 @@ public class LlmManager {
                 Path modelPath = modelsBase.resolve("Qwen3.5-0.8B-Q4_K_M.gguf");
 
                 if (!Files.exists(modelPath)) {
-                    updateStatus("Downloading model...");
+                    updateStatus("Downloading main model...");
                     String url = "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf";
                     try (InputStream in = URI.create(url).toURL().openStream()) {
                         Files.copy(in, modelPath, StandardCopyOption.REPLACE_EXISTING);
                     }
                 }
 
-                updateStatus("Loading model into memory...");
+                // Download mmproj model in parallel
+                downloadModelIfNeeded(androidContext, "mmproj-BF16.gguf", "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/mmproj-BF16.gguf");
+                
+                // Download whisper model in parallel
+                downloadModelIfNeeded(androidContext, "ggml-base.bin", "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin");
+
+                updateStatus("Loading main model into memory...");
                 ModelParams modelParams = LlamaCppModel.defaultModelParams();
 
                 ContextParams contextParams = LlamaCppContext.defaultContextParams()
@@ -210,6 +216,23 @@ public class LlmManager {
                 isWhisperLoaded = true;
                 new Handler(Looper.getMainLooper()).post(onLoaded);
 
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void downloadModelIfNeeded(Context androidContext, String filename, String url) {
+        executor.submit(() -> {
+            try {
+                Path modelsBase = Paths.get(androidContext.getExternalFilesDir(null).getAbsolutePath());
+                Path modelPath = modelsBase.resolve(filename);
+
+                if (!Files.exists(modelPath)) {
+                    try (InputStream in = URI.create(url).toURL().openStream()) {
+                        Files.copy(in, modelPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

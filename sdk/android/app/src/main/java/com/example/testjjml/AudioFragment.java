@@ -58,6 +58,9 @@ public class AudioFragment extends Fragment {
         audioTranscription = view.findViewById(R.id.audio_transcription);
         audioModelStatus = view.findViewById(R.id.audio_model_status);
 
+        // Load Whisper model when this tab is opened
+        loadWhisperModel();
+
         updateModelStatus();
 
         requestPermissionLauncher = registerForActivityResult(
@@ -71,6 +74,9 @@ public class AudioFragment extends Fragment {
                 }
         );
 
+        Button btnTestAudio = view.findViewById(R.id.btn_test_audio);
+        btnTestAudio.setOnClickListener(v -> testWithSampleAudio());
+
         btnRecord.setOnClickListener(v -> {
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                 toggleRecording();
@@ -80,6 +86,23 @@ public class AudioFragment extends Fragment {
         });
 
         return view;
+    }
+
+    private void loadWhisperModel() {
+        if (!LlmManager.INSTANCE.isWhisperLoaded()) {
+            audioModelStatus.setText("Whisper Model: Loading...");
+            audioModelStatus.setTextColor(0xFF0000FF);
+            LlmManager.INSTANCE.loadWhisper(requireContext(), () -> {
+                updateModelStatus();
+                audioModelStatus.setText("Whisper Model: Successfully loaded!");
+                audioModelStatus.setTextColor(0xFF008800);
+                
+                // Reset to normal status after 2 seconds
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    updateModelStatus();
+                }, 2000);
+            });
+        }
     }
 
     private void updateModelStatus() {
@@ -154,6 +177,51 @@ public class AudioFragment extends Fragment {
         } else {
             doProcessAudio();
         }
+    }
+
+    private void testWithSampleAudio() {
+        audioStatus.setText("Testing with sample audio...");
+        audioTranscription.setText("");
+        
+        // Generate a simple sine wave as test audio
+        int sampleRate = 16000;
+        int durationMs = 2000; // 2 seconds
+        int numSamples = (sampleRate * durationMs) / 1000;
+        
+        // Create a simple "hello world" sine wave pattern
+        float[] samples = new float[numSamples];
+        for (int i = 0; i < numSamples; i++) {
+            double time = (double) i / sampleRate;
+            // Simple sine wave at 440Hz (A4 note)
+            samples[i] = (float) Math.sin(2 * Math.PI * 440 * time) * 0.3f;
+        }
+        
+        // Convert to FloatBuffer for Whisper
+        FloatBuffer floatBuffer = ByteBuffer.allocateDirect(samples.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        for (float sample : samples) {
+            floatBuffer.put(sample);
+        }
+        floatBuffer.flip();
+        
+        // Process the test audio
+        LlmManager.INSTANCE.executeInBg(() -> {
+            try {
+                WhisperCppProcessor processor = LlmManager.INSTANCE.getWhisperProcessor();
+                String transcription = processor.transcribe(floatBuffer);
+
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    audioStatus.setText("Test complete.");
+                    audioTranscription.setText("Sample transcription: " + transcription);
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    audioStatus.setText("Test error.");
+                    audioTranscription.setText("Error: " + e.getMessage());
+                });
+            }
+        });
     }
 
     private void doProcessAudio() {

@@ -23,11 +23,25 @@
         android:background="#EEEEEE"
         android:layout_marginBottom="16dp" />
 
-    <Button
-        android:id="@+id/btn_take_picture"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Take Picture" />
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+        <Button
+            android:id="@+id/btn_take_picture"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Take Picture" />
+        <Button
+            android:id="@+id/btn_test_image"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginLeft="8dp"
+            android:text="Test Image" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/image_description"
