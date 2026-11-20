@@ -93,9 +93,10 @@ rebuild-force-tp:
 	echo CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 
 ifeq ($(MSYSTEM),CLANG64)
-	# MSYS2 clang hangs on AMX
-	# see https://github.com/NixOS/nixpkgs/pull/497818
-	sed -i '/sapphirerapids/d' native/tp/ggml/src/CMakeLists.txt
+# For use with CDT
+#	-G "MSYS Makefiles" \
+#	-DLLAMA_BUILD_NUMBER=0 \
+
 endif
 
 	$(CMAKE) -B $(BUILD_BASE) . \
@@ -142,11 +143,6 @@ ifneq ($(TARGET_OS),windows)
 endif
 	ln -f -r -s $(TARGET_NATIVE_OUTPUT_JJML)/$(shlib_prefix)*$(shlib_suffix) $(TARGET_NATIVE_OUTPUT)
 	@$(RM) $(TARGET_NATIVE_OUTPUT_GGML)/vulkan-shaders-gen*
-
-ifeq ($(MSYSTEM),CLANG64)
-	# revert workaround for MSYS2 clang hangs on AMX
-	git -C native/tp/ggml restore src/CMakeLists.txt
-endif
 
 clean: cmake-clean
 	@$(RM) -v $(TARGET_NATIVE_OUTPUT)/$(shlib_prefix)Java_org_argeo_jjml_*$(shlib_suffix)
