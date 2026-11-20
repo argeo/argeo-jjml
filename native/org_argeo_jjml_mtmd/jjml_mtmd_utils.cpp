@@ -180,13 +180,8 @@ int32_t jjml_mtmd_decode_image_chunk(mtmd_context *ctx,
 	} else {
 		batch_embd.set_position_normal(n_past, seq_id);
 	}
-#ifdef JJML_PRE_LLAMA_0_0_8775
-	if (mtmd_decode_use_non_causal(ctx)) {
-#else
 	if (mtmd_decode_use_non_causal(ctx, chunk)) {
-#endif
 		llama_set_causal_attn(lctx, false);
-		// TODO @ngxson : need to make sure only one image is processed at a time, and n_ubatch must be enough to hold the image
 	}
 
 	while (i_batch < n_img_batches) { // split into batches
